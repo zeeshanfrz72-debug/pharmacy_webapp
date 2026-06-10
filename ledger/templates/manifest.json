@@ -5,7 +5,7 @@
   "start_url": "/accounts/login/",
   "display": "standalone",
   "background_color": "#ffffff",
-  "theme_color": "#0d6efd",
+  "theme_color": "#011b36",
   "orientation": "portrait-primary",
   "icons": [
     {
