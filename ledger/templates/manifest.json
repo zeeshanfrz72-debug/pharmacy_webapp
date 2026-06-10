@@ -2,7 +2,7 @@
   "name": "Pharmacy Ledger",
   "short_name": "Ledger",
   "description": "Offline-first pharmacy ledger for managing debts and payments.",
-  "start_url": "/ledger/",
+  "start_url": "/accounts/login/",
   "display": "standalone",
   "background_color": "#ffffff",
   "theme_color": "#0d6efd",
