@@ -1,8 +1,8 @@
 const CACHE_NAME = 'pharmacy-ledger-v1';
 const ASSETS_TO_CACHE = [
-  '/ledger/',
   '/manifest.json',
-  // We will cache static CSS/JS later as needed
+  '/accounts/login/',
+  // Other static assets will be cached dynamically as the user browses
 ];
 
 // Install Event - Caching core assets
