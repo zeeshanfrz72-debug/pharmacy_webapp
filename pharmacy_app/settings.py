@@ -122,6 +122,8 @@ STATICFILES_DIRS = [
     BASE_DIR / "static",
 ]
 
+STATIC_ROOT = BASE_DIR / "staticfiles"
+
 # Redirect after login/logout
 LOGIN_REDIRECT_URL = '/ledger/'
 LOGOUT_REDIRECT_URL = '/accounts/login/'
