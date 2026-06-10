@@ -1,0 +1,1134 @@
+{% extends "ledger/base.html" %}
+
+{% block title %}Dashboard | Pharmacy Ledger{% endblock %}
+
+{% block content %}
+    <div class="dashboard-layout">
+        <aside class="dashboard-side">
+            <div class="dashboard-grid">
+                <div class="metric-card" onclick="openPeriodModal('today')" style="cursor: pointer;">
+                    <div class="metric-label">Today Payments</div>
+                    <div class="metric-value">{{ today_payment_count }}</div>
+                    <div class="metric-subvalue">
+                        <span class="metric-sub-label">Amount</span>
+                        {{ today_payment_total }}
+                    </div>
+                </div>
+
+                <div class="metric-card" onclick="openPeriodModal('week')" style="cursor: pointer;">
+                    <div class="metric-label">This Week</div>
+                    <div class="metric-value">{{ week_payment_count }}</div>
+                    <div class="metric-subvalue">
+                        <span class="metric-sub-label">Amount</span>
+                        {{ week_payment_total }}
+                    </div>
+                </div>
+
+                <div class="metric-card" onclick="openPeriodModal('month')" style="cursor: pointer;">
+                    <div class="metric-label">This Month</div>
+                    <div class="metric-value">{{ month_payment_count }}</div>
+                    <div class="metric-subvalue">
+                        <span class="metric-sub-label">Amount</span>
+                        {{ month_payment_total }}
+                    </div>
+                </div>
+
+                <div class="metric-card total-debt-card">
+                    <div class="metric-label">Total Debt</div>
+                    <div class="metric-value debt-hidden" id="total-debt-value">******</div>
+                    <div class="metric-subvalue">
+                        <button type="button" id="toggle-debt-button" class="eye-button">Show</button>
+                    </div>
+                </div>
+            </div>
+
+            <div class="panel transaction-card">
+                <h2>Add Ledger Transaction</h2>
+
+                <form method="post" id="transaction-form">
+                    {% csrf_token %}
+
+                    <div class="transaction-grid">
+                        <div class="transaction-field">
+                            <label for="{{ form.source_type.id_for_label }}">{{ form.source_type.label }}</label>
+                            {{ form.source_type }}
+                        </div>
+
+                        <div class="transaction-field">
+                            <label for="{{ form.firm.id_for_label }}">{{ form.firm.label }}</label>
+                            {{ form.firm }}
+                        </div>
+
+                        <div class="transaction-field">
+                            <label for="{{ form.representative.id_for_label }}">{{ form.representative.label }}</label>
+                            {{ form.representative }}
+                        </div>
+
+                        <div class="transaction-field">
+                            <label for="{{ form.bill_choice.id_for_label }}">{{ form.bill_choice.label }}</label>
+                            {{ form.bill_choice }}
+                        </div>
+
+                        <div class="transaction-field">
+                            <label for="{{ form.new_bill_number.id_for_label }}">{{ form.new_bill_number.label }}</label>
+                            {{ form.new_bill_number }}
+                        </div>
+
+                        <div class="transaction-field">
+                            <label for="{{ form.new_bill_amount.id_for_label }}">{{ form.new_bill_amount.label }}</label>
+                            {{ form.new_bill_amount }}
+                        </div>
+
+                        <div class="transaction-field">
+                            <label for="{{ form.payment_choice.id_for_label }}">{{ form.payment_choice.label }}</label>
+                            {{ form.payment_choice }}
+                        </div>
+
+                        <div class="transaction-field">
+                            <label for="{{ form.custom_payment_amount.id_for_label }}">{{ form.custom_payment_amount.label }}</label>
+                            {{ form.custom_payment_amount }}
+                        </div>
+
+                        <div class="transaction-field full transaction-actions">
+                            <button type="submit" id="save-transaction-button">Save Transaction</button>
+                        </div>
+                    </div>
+                </form>
+            </div>
+        </aside>
+
+        <section class="dashboard-main">
+            {% if saved_summary %}
+                <div class="success-box">
+                    <strong>Saved.</strong>
+                    <p>Firm: {{ saved_summary.firm.name }}</p>
+                    <p>Previous debt: {{ saved_summary.previous_debt }}</p>
+                    <p>Remaining debt: {{ saved_summary.remaining_debt }}</p>
+                </div>
+            {% endif %}
+
+            <div class="chart-grid-2 compact-top-chart-grid">
+                <div class="panel chart-panel">
+                    <div class="chart-header">
+                        <h2>Payments Over Time</h2>
+                        <div class="chart-toolbar" id="payments-period-toolbar">
+                            <button type="button" class="chart-chip active" data-period="week">Week</button>
+                            <button type="button" class="chart-chip" data-period="month">Month</button>
+                            <button type="button" class="chart-chip" data-period="year">Year</button>
+                            <button type="button" class="chart-chip" data-period="5years">5 Yrs</button>
+                        </div>
+                    </div>
+                    <div class="chart-canvas-wrap">
+                        <canvas id="payments-over-time-chart"></canvas>
+                    </div>
+                </div>
+
+                <div class="panel chart-panel">
+                    <div class="chart-header">
+                        <h2>Business Over Time</h2>
+                        <div class="chart-toolbar" id="business-toolbar">
+                            <button type="button" class="chart-chip active" data-period="month">Month</button>
+                            <button type="button" class="chart-chip" data-period="year">Year</button>
+                            <button type="button" class="chart-chip active" data-metric="amount">Amount</button>
+                            <button type="button" class="chart-chip" data-metric="count">Count</button>
+                        </div>
+                    </div>
+                    <div class="chart-canvas-wrap">
+                        <canvas id="business-over-time-chart"></canvas>
+                    </div>
+                </div>
+            </div>
+
+            <div class="panel chart-panel">
+                <div class="chart-header">
+                    <h2>Debt Overview</h2>
+                </div>
+                <div class="chart-grid-2">
+                    <div class="chart-card chart-blurred" id="debt-over-time-card">
+                        <div class="chart-header">
+                            <h3>Debt Over Time</h3>
+                            <button type="button" class="eye-button" id="debt-chart-eye">Show</button>
+                        </div>
+                        <div class="chart-toolbar" id="debt-period-toolbar">
+                            <button type="button" class="chart-chip active" data-period="week">Week</button>
+                            <button type="button" class="chart-chip" data-period="month">Month</button>
+                            <button type="button" class="chart-chip" data-period="year">Year</button>
+                        </div>
+                        <div class="chart-canvas-wrap">
+                            <canvas id="debt-over-time-chart"></canvas>
+                        </div>
+                    </div>
+
+                    <div class="chart-card">
+                        <div class="chart-header">
+                            <h3>Debt by Firm</h3>
+                        </div>
+                        <div class="chart-canvas-wrap">
+                            <canvas id="debt-by-firm-chart"></canvas>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+    </div>
+
+    <!-- History Modal -->
+    <div id="historyModal" class="history-modal" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.5); z-index:2000; align-items:center; justify-content:center;">
+        <div style="background:white; border-radius:16px; padding:24px; max-width:800px; width:90%; max-height:80vh; display:flex; flex-direction:column; box-shadow:0 20px 60px rgba(0,0,0,0.3);">
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:16px;">
+                <h3 style="margin:0; font-size:20px; color:#111827;" id="historyModalTitle">Period Transactions</h3>
+                <button type="button" onclick="closeHistoryModal()" style="background:transparent; border:none; font-size:24px; cursor:pointer; color:#6b7280;">&times;</button>
+            </div>
+            <div id="historyModalContent" style="overflow-y:auto; flex:1; padding-right:8px;">
+                <!-- content goes here -->
+            </div>
+        </div>
+    </div>
+
+    <!-- Add Firm Modal -->
+    <div id="addFirmModal" class="history-modal" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.5); z-index:2000; align-items:center; justify-content:center;">
+        <div style="background:white; border-radius:16px; padding:24px; max-width:500px; width:90%; box-shadow:0 20px 60px rgba(0,0,0,0.3);">
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:16px;">
+                <h3 style="margin:0; font-size:20px; color:#111827;">Add New Firm</h3>
+                <button type="button" onclick="closeAddFirmModal()" style="background:transparent; border:none; font-size:24px; cursor:pointer; color:#6b7280;">&times;</button>
+            </div>
+            <form id="ajax-add-firm-form" method="post">
+                {% csrf_token %}
+                <div class="transaction-grid" style="display:block;">
+                    {{ firm_form.as_p }}
+                </div>
+                <div style="margin-top:16px; text-align:right;">
+                    <button type="button" class="button-link" onclick="closeAddFirmModal()">Cancel</button>
+                    <button type="submit">Save Firm</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Add Representative Modal -->
+    <div id="addRepModal" class="history-modal" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.5); z-index:2000; align-items:center; justify-content:center;">
+        <div style="background:white; border-radius:16px; padding:24px; max-width:500px; width:90%; box-shadow:0 20px 60px rgba(0,0,0,0.3);">
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:16px;">
+                <h3 style="margin:0; font-size:20px; color:#111827;">Add New Representative</h3>
+                <button type="button" onclick="closeAddRepModal()" style="background:transparent; border:none; font-size:24px; cursor:pointer; color:#6b7280;">&times;</button>
+            </div>
+            <form id="ajax-add-rep-form" method="post">
+                {% csrf_token %}
+                <input type="hidden" name="deactivate_previous" id="ajax_deactivate_previous" value="no">
+                <div class="transaction-grid" style="display:block;">
+                    {{ rep_form.as_p }}
+                </div>
+                <div style="margin-top:16px; text-align:right;">
+                    <button type="button" class="button-link" onclick="closeAddRepModal()">Cancel</button>
+                    <button type="submit">Save Representative</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+
+    <script>
+        function getFormattedDate(d) {
+            let month = '' + (d.getMonth() + 1),
+                day = '' + d.getDate(),
+                year = d.getFullYear();
+            if (month.length < 2) month = '0' + month;
+            if (day.length < 2) day = '0' + day;
+            return [year, month, day].join('-');
+        }
+
+        function getTodayDates() {
+            const today = new Date();
+            const formatted = getFormattedDate(today);
+            return { start: formatted, end: formatted };
+        }
+
+        function getThisWeekDates() {
+            const today = new Date();
+            const day = today.getDay();
+            const diff = today.getDate() - day + (day === 0 ? -6 : 1);
+            const start = new Date(today.setDate(diff));
+            const end = new Date();
+            return { start: getFormattedDate(start), end: getFormattedDate(end) };
+        }
+
+        function getThisMonthDates() {
+            const today = new Date();
+            const start = new Date(today.getFullYear(), today.getMonth(), 1);
+            const end = new Date();
+            return { start: getFormattedDate(start), end: getFormattedDate(end) };
+        }
+
+        function openPeriodModal(period) {
+            let dates;
+            let title = "";
+            if (period === 'today') {
+                dates = getTodayDates();
+                title = "Today's Payments";
+            } else if (period === 'week') {
+                dates = getThisWeekDates();
+                title = "This Week's Payments";
+            } else if (period === 'month') {
+                dates = getThisMonthDates();
+                title = "This Month's Payments";
+            }
+
+            const modal = document.getElementById("historyModal");
+            const content = document.getElementById("historyModalContent");
+            const titleElem = document.getElementById("historyModalTitle");
+            
+            titleElem.textContent = title;
+            content.innerHTML = "<p style='text-align:center; color:#6b7280;'>Loading...</p>";
+            
+            const mainDashboard = document.querySelector(".dashboard-layout");
+            if (mainDashboard) {
+                mainDashboard.style.pointerEvents = "none";
+                mainDashboard.style.filter = "blur(4px)";
+            }
+            
+            modal.style.display = "flex";
+            
+            const url = `/ledger/history/?ajax=1&start_date=${dates.start}&end_date=${dates.end}`;
+            fetch(url)
+                .then(r => r.text())
+                .then(html => {
+                    content.innerHTML = html;
+                })
+                .catch(err => {
+                    console.error('Failed to load history', err);
+                    content.innerHTML = "<p style='text-align:center; color:#ef4444;'>Error loading transactions.</p>";
+                });
+        }
+
+        function closeHistoryModal() {
+            const modal = document.getElementById("historyModal");
+            modal.style.display = "none";
+            
+            const mainDashboard = document.querySelector(".dashboard-layout");
+            if (mainDashboard) {
+                mainDashboard.style.pointerEvents = "auto";
+                mainDashboard.style.filter = "none";
+            }
+        }
+    </script>
+
+    <script>
+        // AJAX submit for transaction form to avoid page reload.
+        (function () {
+            const form = document.getElementById('transaction-form');
+            const saveButton = document.getElementById('save-transaction-button');
+            const totalDebtElem = document.getElementById('total-debt-value');
+
+            function resetForm() {
+                form.reset();
+                // Reset JS-driven bill fields
+                const evt = new Event('change');
+                document.getElementById('id_source_type').dispatchEvent(evt);
+            }
+
+            if (!form) return;
+
+            form.addEventListener('submit', function (e) {
+                e.preventDefault();
+
+                saveButton.disabled = true;
+
+                const url = form.action || window.location.pathname;
+                const fd = new FormData(form);
+
+                if (!navigator.onLine) {
+                    if (typeof saveToOfflineQueue === 'function') {
+                        saveToOfflineQueue(url, fd);
+                        if (window.showToast) window.showToast('You are offline. Saved locally. Will sync when online.', 'warning');
+                        resetForm();
+                    } else {
+                        if (window.showToast) window.showToast('Offline, but sync script not loaded.', 'error');
+                    }
+                    saveButton.disabled = false;
+                    return;
+                }
+
+                fetch(url, {
+                    method: 'POST',
+                    headers: {
+                        'X-CSRFToken': window.csrftoken,
+                        'X-Requested-With': 'XMLHttpRequest',
+                    },
+                    body: fd,
+                })
+                .then(r => r.json())
+                .then(data => {
+                    if (data && (data.previous_debt || data.remaining_debt)) {
+                        // update total debt
+                        if (data.total_debt !== undefined && totalDebtElem) {
+                            window.rawTotalDebt = data.total_debt;
+                            if (!totalDebtElem.classList.contains('debt-hidden')) {
+                                totalDebtElem.textContent = window.rawTotalDebt;
+                            }
+                        }
+
+                        // show toast
+                        if (window.showToast) {
+                            window.showToast('Transaction saved', 'success');
+                        }
+
+                        resetForm();
+                    }
+                })
+                .catch(err => {
+                    console.error('Save transaction failed', err);
+                    if (window.showToast) window.showToast('Failed to save transaction', 'error');
+                })
+                .finally(() => {
+                    saveButton.disabled = false;
+                });
+            });
+        })();
+    </script>
+
+    <script>
+        const paymentChoiceSelect = document.getElementById("id_payment_choice");
+        const customPaymentAmountInput = document.getElementById("id_custom_payment_amount");
+        const sourceTypeSelect = document.getElementById("id_source_type");
+        const firmSelect = document.getElementById("id_firm");
+        const representativeSelect = document.getElementById("id_representative");
+        const billChoiceInput = document.getElementById("id_bill_choice");
+        const newBillNumberInput = document.getElementById("id_new_bill_number");
+        const newBillAmountInput = document.getElementById("id_new_bill_amount");
+        const saveTransactionButton = document.getElementById("save-transaction-button");
+
+        const firmsUrl = "{% url 'ledger:firms_for_source_type' %}";
+        const repsUrl = "{% url 'ledger:representatives_for_firm' %}";
+
+        const offlineData = JSON.parse('{{ offline_data_json|escapejs|default:"{}" }}');
+        const firmsBySource = offlineData.firms_by_source || {};
+        const repsByFirm = offlineData.reps_by_firm || {};
+        const billsByFirm = offlineData.bills_by_firm || {};
+
+        const billSelect = document.createElement("select");
+        billSelect.id = "bill-choice-select";
+
+        function getFieldRow(input) {
+            return input.closest(".transaction-field");
+        }
+
+        function addRequiredStarsToNewBillFields() {
+            const newBillNumberLabel = document.querySelector('label[for="id_new_bill_number"]');
+            const newBillAmountLabel = document.querySelector('label[for="id_new_bill_amount"]');
+
+            if (newBillNumberLabel && !newBillNumberLabel.querySelector(".required-star")) {
+                const star = document.createElement("span");
+                star.className = "required-star";
+                star.textContent = "*";
+                newBillNumberLabel.appendChild(star);
+            }
+
+            if (newBillAmountLabel && !newBillAmountLabel.querySelector(".required-star")) {
+                const star = document.createElement("span");
+                star.className = "required-star";
+                star.textContent = "*";
+                newBillAmountLabel.appendChild(star);
+            }
+        }
+
+        function updateSaveButtonState() {
+            const addingNewBill = billSelect.value === "add_new";
+            const sourceType = sourceTypeSelect.value;
+            const repRequired = sourceType && sourceType !== "local_market";
+
+            if (repRequired && !representativeSelect.value) {
+                saveTransactionButton.disabled = true;
+                return;
+            }
+
+            if (!addingNewBill) {
+                saveTransactionButton.disabled = false;
+                return;
+            }
+
+            const hasBillNumber = newBillNumberInput.value.trim() !== "";
+            const hasBillAmount = newBillAmountInput.value.trim() !== "";
+
+            saveTransactionButton.disabled = !(hasBillNumber && hasBillAmount);
+        }
+
+        function hideNewBillFields() {
+            const numberRow = getFieldRow(newBillNumberInput);
+            const amountRow = getFieldRow(newBillAmountInput);
+
+            if (numberRow) numberRow.style.display = "none";
+            if (amountRow) amountRow.style.display = "none";
+
+            newBillNumberInput.value = "";
+            newBillAmountInput.value = "";
+            updateSaveButtonState();
+        }
+
+        function showNewBillFields() {
+            const numberRow = getFieldRow(newBillNumberInput);
+            const amountRow = getFieldRow(newBillAmountInput);
+
+            if (numberRow) numberRow.style.display = "";
+            if (amountRow) amountRow.style.display = "";
+
+            addRequiredStarsToNewBillFields();
+            updateSaveButtonState();
+        }
+
+        function installBillSelect() {
+            const billChoiceRow = getFieldRow(billChoiceInput);
+
+            billChoiceInput.type = "hidden";
+            billChoiceRow.appendChild(billSelect);
+
+            billSelect.addEventListener("change", function () {
+                billChoiceInput.value = billSelect.value;
+
+                if (billSelect.value === "add_new") {
+                    showNewBillFields();
+                } else {
+                    hideNewBillFields();
+                }
+
+                updateSaveButtonState();
+            });
+        }
+
+        function setupPaymentChoice() {
+            const customPaymentRow = getFieldRow(customPaymentAmountInput);
+
+            function updatePaymentField() {
+                if (paymentChoiceSelect.value === "other") {
+                    customPaymentRow.style.display = "";
+                    customPaymentAmountInput.focus();
+                } else {
+                    customPaymentRow.style.display = "none";
+                    customPaymentAmountInput.value = "";
+                }
+            }
+
+            customPaymentRow.style.display = "none";
+            paymentChoiceSelect.addEventListener("change", updatePaymentField);
+        }
+
+        function clearFirms() {
+            firmSelect.innerHTML = "";
+            const emptyOption = document.createElement("option");
+            emptyOption.value = "";
+            emptyOption.textContent = "---------";
+            firmSelect.appendChild(emptyOption);
+        }
+
+        function clearRepresentatives() {
+            representativeSelect.innerHTML = "";
+            const emptyOption = document.createElement("option");
+            emptyOption.value = "";
+            emptyOption.textContent = "---------";
+            representativeSelect.appendChild(emptyOption);
+        }
+
+        function clearBills() {
+            billSelect.innerHTML = "";
+            const emptyOption = document.createElement("option");
+            emptyOption.value = "";
+            emptyOption.textContent = "Select a firm first";
+            billSelect.appendChild(emptyOption);
+            billChoiceInput.value = "";
+            hideNewBillFields();
+        }
+
+        function loadFirmsForSelectedSourceType() {
+            const sourceType = sourceTypeSelect.value;
+
+            clearFirms();
+            clearRepresentatives();
+            clearBills();
+
+            if (sourceType === "local_market") {
+                representativeSelect.disabled = true;
+                billSelect.disabled = true;
+            } else {
+                representativeSelect.disabled = false;
+                billSelect.disabled = false;
+            }
+
+            if (!sourceType) {
+                updateSaveButtonState();
+                return;
+            }
+
+            const firms = firmsBySource[sourceType] || [];
+            
+            firms.forEach(firm => {
+                const option = document.createElement("option");
+                option.value = firm.id;
+                option.textContent = firm.name;
+                firmSelect.appendChild(option);
+            });
+            
+            const addFirmOption = document.createElement("option");
+            addFirmOption.value = "add_new_firm";
+            addFirmOption.textContent = "+ Add Firm";
+            firmSelect.appendChild(addFirmOption);
+
+            updateSaveButtonState();
+        }
+
+        function loadRepresentativesAndBillsForSelectedFirm() {
+            const firmId = firmSelect.value;
+            const sourceType = sourceTypeSelect.value;
+
+            clearRepresentatives();
+            clearBills();
+
+            if (!firmId || firmId === "add_new_firm" || sourceType === "local_market") {
+                updateSaveButtonState();
+                return;
+            }
+
+            const reps = repsByFirm[firmId] || [];
+            reps.forEach(rep => {
+                const option = document.createElement("option");
+                option.value = rep.id;
+                option.textContent = rep.name;
+                representativeSelect.appendChild(option);
+            });
+
+            const addRepOption = document.createElement("option");
+            addRepOption.value = "add_new_rep";
+            addRepOption.textContent = "+ Add Representative";
+            representativeSelect.appendChild(addRepOption);
+
+            billSelect.innerHTML = "";
+
+            const addNewOption = document.createElement("option");
+            addNewOption.value = "add_new";
+            addNewOption.textContent = "Add New Bill";
+            billSelect.appendChild(addNewOption);
+
+            const bills = billsByFirm[firmId] || [];
+            bills.forEach(bill => {
+                const option = document.createElement("option");
+                option.value = bill.id;
+
+                if (bill.is_latest) {
+                    option.textContent = `Latest: ${bill.bill_number} | ${bill.bill_amount} | ${bill.bill_date}`;
+                } else {
+                    option.textContent = `Previous: ${bill.bill_number} | ${bill.bill_amount} | ${bill.bill_date}`;
+                    option.disabled = true;
+                }
+
+                billSelect.appendChild(option);
+            });
+
+            if (bills.length > 0) {
+                billSelect.value = bills[0].id;
+                billChoiceInput.value = bills[0].id;
+                hideNewBillFields();
+            } else {
+                billSelect.value = "add_new";
+                billChoiceInput.value = "add_new";
+                showNewBillFields();
+            }
+
+            updateSaveButtonState();
+        }
+
+        const totalDebtValue = document.getElementById("total-debt-value");
+        const toggleDebtButton = document.getElementById("toggle-debt-button");
+        window.rawTotalDebt = "{{ total_debt|default:'0' }}";
+
+        function hideTotalDebt() {
+            totalDebtValue.classList.add("debt-hidden");
+            totalDebtValue.textContent = "******";
+            toggleDebtButton.textContent = "Show";
+        }
+
+        function showTotalDebtTemporarily() {
+            totalDebtValue.classList.remove("debt-hidden");
+            totalDebtValue.textContent = window.rawTotalDebt;
+            toggleDebtButton.textContent = "Hide";
+
+            window.clearTimeout(window.totalDebtTimer);
+            window.totalDebtTimer = window.setTimeout(() => {
+                hideTotalDebt();
+            }, 10000);
+        }
+
+        if (
+            sourceTypeSelect &&
+            firmSelect &&
+            representativeSelect &&
+            billChoiceInput &&
+            newBillNumberInput &&
+            newBillAmountInput &&
+            paymentChoiceSelect &&
+            customPaymentAmountInput &&
+            saveTransactionButton
+        ) {
+            installBillSelect();
+            setupPaymentChoice();
+
+            clearFirms();
+            clearRepresentatives();
+            clearBills();
+
+            newBillNumberInput.addEventListener("input", updateSaveButtonState);
+            newBillAmountInput.addEventListener("input", updateSaveButtonState);
+            sourceTypeSelect.addEventListener("change", loadFirmsForSelectedSourceType);
+            firmSelect.addEventListener("change", function(e) {
+                if (e.target.value === "add_new_firm") {
+                    openAddFirmModal();
+                    e.target.value = ""; // Reset until saved
+                } else {
+                    loadRepresentativesAndBillsForSelectedFirm();
+                }
+            });
+
+            representativeSelect.addEventListener("change", function(e) {
+                if (e.target.value === "add_new_rep") {
+                    openAddRepModal();
+                    e.target.value = ""; // Reset until saved
+                } else {
+                    updateSaveButtonState();
+                }
+            });
+
+            updateSaveButtonState();
+        }
+
+        if (toggleDebtButton && totalDebtValue) {
+            hideTotalDebt();
+            toggleDebtButton.addEventListener("click", function () {
+                if (totalDebtValue.classList.contains("debt-hidden")) {
+                    showTotalDebtTemporarily();
+                } else {
+                    hideTotalDebt();
+                }
+            });
+        }
+
+        function openAddFirmModal() {
+            // pre-select source type in the modal to match dashboard
+            const modalSourceSelect = document.querySelector('#ajax-add-firm-form select[name="source_type"]');
+            if(modalSourceSelect && sourceTypeSelect.value) {
+                modalSourceSelect.value = sourceTypeSelect.value;
+            }
+            document.getElementById("addFirmModal").style.display = "flex";
+        }
+
+        function closeAddFirmModal() {
+            document.getElementById("addFirmModal").style.display = "none";
+        }
+
+        function openAddRepModal() {
+            const modalSourceSelect = document.querySelector('#ajax-add-rep-form select[name="source_type"]');
+            const modalFirmSelect = document.querySelector('#ajax-add-rep-form select[name="firm"]');
+            if(modalSourceSelect && sourceTypeSelect.value) {
+                modalSourceSelect.value = sourceTypeSelect.value;
+            }
+            if(modalFirmSelect && firmSelect.value) {
+                // Populate firm dropdown temporarily if needed or just set value
+                modalFirmSelect.innerHTML = `<option value="${firmSelect.value}">${firmSelect.options[firmSelect.selectedIndex].text}</option>`;
+                modalFirmSelect.value = firmSelect.value;
+            }
+            document.getElementById("addRepModal").style.display = "flex";
+        }
+
+        function closeAddRepModal() {
+            document.getElementById("addRepModal").style.display = "none";
+        }
+
+        // AJAX submit for Add Firm Modal
+        const ajaxFirmForm = document.getElementById('ajax-add-firm-form');
+        if (ajaxFirmForm) {
+            ajaxFirmForm.addEventListener('submit', function(e) {
+                e.preventDefault();
+                const fd = new FormData(ajaxFirmForm);
+                fetch("{% url 'ledger:ajax_add_firm' %}", {
+                    method: 'POST',
+                    headers: { 'X-Requested-With': 'XMLHttpRequest' },
+                    body: fd
+                })
+                .then(r => r.json())
+                .then(data => {
+                    if (data.success) {
+                        closeAddFirmModal();
+                        if (window.showToast) window.showToast('Firm added', 'success');
+                        ajaxFirmForm.reset();
+                        // reload firms dropdown
+                        loadFirmsForSelectedSourceType();
+                        // wait a bit then select it
+                        setTimeout(() => {
+                            firmSelect.value = data.id;
+                            loadRepresentativesAndBillsForSelectedFirm();
+                        }, 500);
+                    } else {
+                        alert("Error adding firm: " + JSON.stringify(data.errors));
+                    }
+                });
+            });
+        }
+
+        // AJAX submit for Add Rep Modal
+        const ajaxRepForm = document.getElementById('ajax-add-rep-form');
+        if (ajaxRepForm) {
+            ajaxRepForm.addEventListener('submit', function(e) {
+                e.preventDefault();
+                
+                // Check if firm already has active reps
+                const firmId = document.querySelector('#ajax-add-rep-form select[name="firm"]').value;
+                if (!firmId) return;
+
+                fetch(`${repsUrl}?firm_id=${firmId}`)
+                    .then(r => r.json())
+                    .then(data => {
+                        if (data.representatives && data.representatives.length > 0) {
+                            const shouldDeactivate = confirm("This firm already has active representative(s). Do you want to deactivate the previous representative(s)?");
+                            document.getElementById("ajax_deactivate_previous").value = shouldDeactivate ? "yes" : "no";
+                        }
+                        
+                        const fd = new FormData(ajaxRepForm);
+                        fetch("{% url 'ledger:ajax_add_representative' %}", {
+                            method: 'POST',
+                            headers: { 'X-Requested-With': 'XMLHttpRequest' },
+                            body: fd
+                        })
+                        .then(r => r.json())
+                        .then(resp => {
+                            if (resp.success) {
+                                closeAddRepModal();
+                                if (window.showToast) window.showToast('Representative added', 'success');
+                                ajaxRepForm.reset();
+                                // reload rep dropdown
+                                loadRepresentativesAndBillsForSelectedFirm();
+                                setTimeout(() => {
+                                    representativeSelect.value = resp.id;
+                                    updateSaveButtonState();
+                                }, 500);
+                            } else {
+                                alert("Error adding representative: " + JSON.stringify(resp.errors));
+                            }
+                        });
+                    });
+            });
+        }
+    </script>
+
+    <script>
+        const paymentsTrendUrl = "{% url 'ledger:dashboard_payments_trend' %}";
+        const businessTrendUrl = "{% url 'ledger:dashboard_business_trend' %}";
+        const debtOverTimeUrl = "{% url 'ledger:dashboard_debt_over_time' %}";
+        const debtBreakdownUrl = "{% url 'ledger:dashboard_debt_breakdown' %}";
+
+        let paymentsChart = null;
+        let businessChart = null;
+        let debtOverTimeChart = null;
+        let debtByFirmChart = null;
+
+        let paymentsPeriod = "week";
+        let businessPeriod = "month";
+        let businessMetric = "amount";
+        let debtPeriod = "week";
+
+        Chart.defaults.font.family = "Inter, Arial, sans-serif";
+        Chart.defaults.color = "#6b7280";
+
+        function destroyChart(chartInstance) {
+            if (chartInstance) {
+                chartInstance.destroy();
+            }
+        }
+
+        function setActive(toolbar, attrName, value) {
+            toolbar.querySelectorAll(`.chart-chip[data-${attrName}]`).forEach(button => {
+                button.classList.toggle("active", button.dataset[attrName] === value);
+            });
+        }
+
+        function buildLineChart(canvasId, labels, values, label, color, fillColor) {
+            const canvas = document.getElementById(canvasId);
+
+            return new Chart(canvas, {
+                type: "line",
+                data: {
+                    labels,
+                    datasets: [
+                        {
+                            label,
+                            data: values,
+                            borderColor: color,
+                            backgroundColor: fillColor,
+                            pointRadius: 3,
+                            pointHoverRadius: 5,
+                            borderWidth: 3,
+                            tension: 0.38,
+                            fill: true,
+                        },
+                    ],
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            display: false,
+                        },
+                        tooltip: {
+                            backgroundColor: "#061421",
+                            titleColor: "#ffffff",
+                            bodyColor: "#ffffff",
+                            padding: 12,
+                            cornerRadius: 8,
+                        },
+                    },
+                    scales: {
+                        x: {
+                            grid: {
+                                display: false,
+                            },
+                            border: {
+                                display: false,
+                            },
+                        },
+                        y: {
+                            beginAtZero: true,
+                            grid: {
+                                color: "#eef0f2",
+                            },
+                            border: {
+                                display: false,
+                            },
+                        },
+                    },
+                },
+            });
+        }
+
+        function buildBarChart(canvasId, labels, values, label, color) {
+            const canvas = document.getElementById(canvasId);
+
+            return new Chart(canvas, {
+                type: "bar",
+                data: {
+                    labels,
+                    datasets: [
+                        {
+                            label,
+                            data: values,
+                            backgroundColor: color,
+                            borderRadius: 8,
+                            borderSkipped: false,
+                        },
+                    ],
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            display: false,
+                        },
+                        tooltip: {
+                            backgroundColor: "#061421",
+                            padding: 12,
+                            cornerRadius: 8,
+                        },
+                    },
+                    scales: {
+                        x: {
+                            grid: {
+                                display: false,
+                            },
+                            border: {
+                                display: false,
+                            },
+                        },
+                        y: {
+                            beginAtZero: true,
+                            grid: {
+                                color: "#eef0f2",
+                            },
+                            border: {
+                                display: false,
+                            },
+                        },
+                    },
+                },
+            });
+        }
+
+        function buildDoughnutChart(canvasId, labels, values) {
+            const canvas = document.getElementById(canvasId);
+
+            return new Chart(canvas, {
+                type: "doughnut",
+                data: {
+                    labels,
+                    datasets: [
+                        {
+                            data: values,
+                            backgroundColor: [
+                                "#011b36",
+                                "#22c55e",
+                                "#60a5fa",
+                                "#f59e0b",
+                                "#ef4444",
+                                "#a78bfa",
+                                "#14b8a6",
+                                "#64748b",
+                            ],
+                            borderColor: "#ffffff",
+                            borderWidth: 3,
+                        },
+                    ],
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    cutout: "64%",
+                    plugins: {
+                        legend: {
+                            position: "bottom",
+                            labels: {
+                                usePointStyle: true,
+                                boxWidth: 8,
+                            },
+                        },
+                    },
+                },
+            });
+        }
+
+        function loadPaymentsChart() {
+            fetch(`${paymentsTrendUrl}?period=${paymentsPeriod}`)
+                .then(response => response.json())
+                .then(data => {
+                    destroyChart(paymentsChart);
+                    paymentsChart = buildLineChart(
+                        "payments-over-time-chart",
+                        data.labels,
+                        data.values,
+                        "Payments",
+                        "#22c55e",
+                        "rgba(34, 197, 94, 0.16)"
+                    );
+                });
+        }
+
+        function loadBusinessChart() {
+            fetch(`${businessTrendUrl}?period=${businessPeriod}`)
+                .then(response => response.json())
+                .then(data => {
+                    destroyChart(businessChart);
+
+                    const values = businessMetric === "count" ? data.count_values : data.amount_values;
+                    const label = businessMetric === "count" ? "Bill Count" : "Bill Amount";
+                    const color = businessMetric === "count" ? "#60a5fa" : "#011b36";
+                    const fill = businessMetric === "count" ? "rgba(96, 165, 250, 0.16)" : "rgba(1, 27, 54, 0.12)";
+
+                    businessChart = buildLineChart(
+                        "business-over-time-chart",
+                        data.labels,
+                        values,
+                        label,
+                        color,
+                        fill
+                    );
+                });
+        }
+
+        function loadDebtChart() {
+            fetch(`${debtOverTimeUrl}?period=${debtPeriod}`)
+                .then(response => response.json())
+                .then(data => {
+                    destroyChart(debtOverTimeChart);
+                    debtOverTimeChart = buildLineChart(
+                        "debt-over-time-chart",
+                        data.labels,
+                        data.values,
+                        "Debt",
+                        "#ef4444",
+                        "rgba(239, 68, 68, 0.14)"
+                    );
+                });
+        }
+
+        function loadDebtBreakdownCharts() {
+            fetch(debtBreakdownUrl)
+                .then(response => response.json())
+                .then(data => {
+                    destroyChart(debtByFirmChart);
+
+                    debtByFirmChart = buildDoughnutChart(
+                        "debt-by-firm-chart",
+                        data.firms.map(item => item.label),
+                        data.firms.map(item => item.value)
+                    );
+                });
+        }
+
+        document.querySelectorAll("#payments-period-toolbar .chart-chip").forEach(button => {
+            button.addEventListener("click", function () {
+                paymentsPeriod = button.dataset.period;
+                setActive(document.getElementById("payments-period-toolbar"), "period", paymentsPeriod);
+                loadPaymentsChart();
+            });
+        });
+
+        document.querySelectorAll("#business-toolbar .chart-chip").forEach(button => {
+            button.addEventListener("click", function () {
+                if (button.dataset.period) {
+                    businessPeriod = button.dataset.period;
+                    setActive(document.getElementById("business-toolbar"), "period", businessPeriod);
+                }
+
+                if (button.dataset.metric) {
+                    businessMetric = button.dataset.metric;
+                    setActive(document.getElementById("business-toolbar"), "metric", businessMetric);
+                }
+
+                loadBusinessChart();
+            });
+        });
+
+        document.querySelectorAll("#debt-period-toolbar .chart-chip").forEach(button => {
+            button.addEventListener("click", function () {
+                debtPeriod = button.dataset.period;
+                setActive(document.getElementById("debt-period-toolbar"), "period", debtPeriod);
+                loadDebtChart();
+            });
+        });
+
+        const debtCard = document.getElementById("debt-over-time-card");
+        const debtEyeButton = document.getElementById("debt-chart-eye");
+
+        if (debtEyeButton && debtCard) {
+            let debtChartVisible = false;
+
+            debtEyeButton.addEventListener("click", function () {
+                debtChartVisible = !debtChartVisible;
+
+                if (debtChartVisible) {
+                    debtCard.classList.remove("chart-blurred");
+                    debtEyeButton.textContent = "Hide";
+
+                    window.clearTimeout(window.debtChartTimer);
+                    window.debtChartTimer = window.setTimeout(() => {
+                        debtChartVisible = false;
+                        debtCard.classList.add("chart-blurred");
+                        debtEyeButton.textContent = "Show";
+                    }, 10000);
+                } else {
+                    debtCard.classList.add("chart-blurred");
+                    debtEyeButton.textContent = "Show";
+                }
+            });
+        }
+
+        loadPaymentsChart();
+        loadBusinessChart();
+        loadDebtChart();
+        loadDebtBreakdownCharts();
+    </script>
+{% endblock %}

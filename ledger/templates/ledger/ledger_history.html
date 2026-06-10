@@ -1,0 +1,136 @@
+{% extends "ledger/base.html" %}
+
+{% block title %}Ledger History | Pharmacy Ledger{% endblock %}
+
+{% block content %}
+<div class="panel compact-panel ledger-history-panel">
+    <div class="ledger-history-header">
+        <h2>Ledger Entries</h2>
+
+        <form method="get" class="ledger-history-filter-form">
+            <div class="ledger-history-filter-group">
+                <label for="start_date">From</label>
+                <input type="date" id="start_date" name="start_date" value="{{ start_date }}">
+            </div>
+
+            <div class="ledger-history-filter-group">
+                <label for="end_date">To</label>
+                <input type="date" id="end_date" name="end_date" value="{{ end_date }}">
+            </div>
+
+            <div class="ledger-history-filter-actions">
+                <button type="submit">Apply</button>
+                <a class="button-link" href="{% url 'ledger:ledger_history' %}">Clear</a>
+            </div>
+        </form>
+    </div>
+
+    <!-- Card list rendered by the fragment -->
+    <div id="history-card-container">
+        {% include 'ledger/_history_table.html' %}
+    </div>
+</div>
+
+<!-- Delete Confirmation Modal -->
+<div id="deleteModal" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.5); z-index:2000; align-items:center; justify-content:center;">
+    <div style="background:white; border-radius:16px; padding:24px; max-width:380px; width:90%; margin:20px auto; box-shadow:0 20px 60px rgba(0,0,0,0.3);">
+        <h3 style="margin-top:0; color:#ef4444; font-size:17px;">Confirm Deletion</h3>
+        <p style="color:#374151; font-size:14px;">Are you sure you want to delete this ledger entry?</p>
+        <div style="background:#fef2f2; padding:12px; border-radius:10px; margin:14px 0;">
+            <p style="margin:4px 0; font-size:13px;"><strong>Date:</strong> <span id="modal-date"></span></p>
+            <p style="margin:4px 0; font-size:13px;"><strong>Firm:</strong> <span id="modal-firm"></span></p>
+        </div>
+        <p style="color:#6b7280; font-size:12px;">⚠️ This action will mark the entry as deleted.</p>
+
+        <form id="deleteForm" method="post" style="margin-top:18px;">
+            {% csrf_token %}
+            <input type="hidden" name="next" value="{{ request.get_full_path }}">
+            <input type="hidden" id="deleteEntryId" name="entry_id" value="">
+            <div style="margin-bottom:14px;">
+                <label for="delete_reason" style="font-size:12px; color:#374151; display:block; margin-bottom:6px;">Reason (optional):</label>
+                <input type="text" name="reason" id="delete_reason" placeholder="Why are you deleting this entry?" style="border-radius:10px;">
+            </div>
+            <div style="display:flex; gap:10px; justify-content:flex-end;">
+                <button type="button" onclick="closeModal();" style="background:#f3f4f6; color:#374151;">Cancel</button>
+                <button type="submit" id="confirmDeleteButton" style="background:#ef4444;">Yes, Delete</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<script>
+    function showDeleteModal(entryId, date, firmName) {
+        document.getElementById('modal-date').textContent = date;
+        document.getElementById('modal-firm').textContent = firmName;
+
+        const form = document.getElementById('deleteForm');
+        form.action = `/ledger/ledger-entry/${entryId}/soft-delete/`;
+        document.getElementById('deleteEntryId').value = entryId;
+        form.dataset.currentEntryId = entryId;
+
+        document.getElementById('deleteModal').style.display = 'flex';
+    }
+
+    function closeModal() {
+        document.getElementById('deleteModal').style.display = 'none';
+        document.getElementById('delete_reason').value = '';
+    }
+
+    document.getElementById('deleteModal').addEventListener('click', function(e) {
+        if (e.target === this) closeModal();
+    });
+
+    (function() {
+        const deleteForm = document.getElementById('deleteForm');
+        if (!deleteForm) return;
+
+        deleteForm.addEventListener('submit', function(e) {
+            e.preventDefault();
+
+            const entryId = deleteForm.dataset.currentEntryId || document.getElementById('deleteEntryId').value;
+            const url = deleteForm.action;
+            const formData = new FormData(deleteForm);
+
+            fetch(url, {
+                method: 'POST',
+                headers: {
+                    'X-CSRFToken': window.csrftoken,
+                    'X-Requested-With': 'XMLHttpRequest',
+                },
+                body: formData,
+            })
+            .then(r => r.json())
+            .then(data => {
+                if (data && data.status === 'deleted') {
+                    // Remove the matching card
+                    const card = document.querySelector(`.ledger-entry-card[data-entry-id="${entryId}"]`);
+                    if (card) card.remove();
+
+                    // Update total debt if provided
+                    if (data.total_debt !== undefined) {
+                        const totalCell = document.getElementById('total-debt-cell');
+                        if (totalCell) totalCell.textContent = data.total_debt;
+                    }
+                }
+
+                // Refresh the card list fragment
+                const params = new URLSearchParams(window.location.search);
+                params.set('ajax', '1');
+
+                fetch(`/ledger/history/?${params.toString()}`)
+                    .then(r => r.text())
+                    .then(html => {
+                        const container = document.getElementById('history-card-container');
+                        if (container) container.innerHTML = html;
+                    })
+                    .catch(err => console.error('Failed to refresh history cards', err))
+                    .finally(() => closeModal());
+            })
+            .catch(err => {
+                console.error('Delete failed', err);
+                deleteForm.submit();
+            });
+        });
+    })();
+</script>
+{% endblock %}

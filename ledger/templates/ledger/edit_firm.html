@@ -1,0 +1,22 @@
+{% extends "ledger/base.html" %}
+
+{% block title %}Edit Firm | Pharmacy Ledger{% endblock %}
+
+{% block content %}
+    <div class="panel compact-panel add-firm-inline-panel">
+        <h2>Edit Firm: {{ firm.name }}</h2>
+
+        <form method="post" class="add-firm-inline-form">
+            {% csrf_token %}
+
+            <div class="add-firm-inline-grid">
+                {{ form.as_p }}
+            </div>
+
+            <div class="compact-form-actions add-firm-inline-actions add-firm-buttons-row">
+                <button type="submit">Update Firm</button>
+                <a class="button-link" href="{% url 'ledger:add_firm' %}">Cancel</a>
+            </div>
+        </form>
+    </div>
+{% endblock %}
