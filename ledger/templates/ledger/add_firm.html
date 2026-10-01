@@ -1,90 +1,101 @@
-<!-- Use the shared layout from base.html. -->
 {% extends "ledger/base.html" %}
 
-{% block title %}Add Firm | Pharmacy Ledger{% endblock %}
+{% block title %}Firms | Pharmacy Ledger{% endblock %}
 
 {% block content %}
-
-
-<!-- Set the browser tab title for this page. -->
-
-    <!-- This panel shows current balances for all firms. -->
     <div class="panel compact-panel ledger-history-panel">
-        <h2>Firm Balances</h2>
+        <div class="ledger-history-header">
+            <h2>Firm Balances</h2>
+        </div>
 
         <div class="ledger-total-card">
             <span class="total-label">Net Balance Across Active and Archived Firms</span>
             <strong class="total-value">{{ total_debt }}</strong>
         </div>
 
-        <div class="ledger-history-list">
-            {% for firm in firms %}
-                <div class="ledger-entry-card">
-                    <div class="entry-header">
-                        <div>
-                            <div class="entry-date">{{ firm.name }}</div>
-                        </div>
-                    </div>
-
-                    <div class="entry-body">
-                        <div class="entry-field">
-                            <span class="entry-field-label">Source Type</span>
-                            <span class="entry-field-value">{{ firm.get_source_type_display }}</span>
-                        </div>
-
-                        <div class="entry-field">
-                            <span class="entry-field-label">Phone</span>
-                            <span class="entry-field-value">{{ firm.phone|default:"—" }}</span>
-                        </div>
-                    </div>
-
-                    <div class="entry-footer" style="display:flex; justify-content:space-between; align-items:center;">
-                        <div>
-                            {% if firm.current_debt < 0 %}
-                                <span class="entry-field-label">Supplier Credit</span>
-                                <span class="entry-credit">{{ firm.current_credit }}</span>
-                            {% else %}
-                                <span class="entry-field-label">Remaining Debt</span>
-                                <span class="entry-debt">{{ firm.current_debt }}</span>
-                            {% endif %}
-                        </div>
-                        <div class="entity-actions">
-                            <a href="{% url 'ledger:edit_firm' firm.id %}" class="button-link" style="padding:4px 8px; font-size:12px;">Edit</a>
-                            <form method="post" action="{% url 'ledger:archive_firm' firm.id %}">
-                                {% csrf_token %}
-                                <button type="submit" class="archive-button">Archive</button>
-                            </form>
-                        </div>
-                    </div>
-                </div>
-            {% empty %}
-                <div class="panel" style="text-align:center; color:var(--muted); padding:32px;">
-                    No firms added yet.
-                </div>
-            {% endfor %}
+        <div class="data-table-wrap">
+            <table class="data-table firm-data-table">
+                <thead>
+                    <tr>
+                        <th scope="col">Firm</th>
+                        <th scope="col">Source Type</th>
+                        <th scope="col">Phone</th>
+                        <th scope="col">Balance</th>
+                        <th scope="col">Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for firm in firms %}
+                        <tr>
+                            <td data-label="Firm"><strong class="table-primary">{{ firm.name }}</strong></td>
+                            <td data-label="Source Type">{{ firm.get_source_type_display }}</td>
+                            <td data-label="Phone">{{ firm.phone|default:"—" }}</td>
+                            <td data-label="Balance">
+                                {% if firm.current_debt < 0 %}
+                                    <span class="entry-credit">Supplier Credit {{ firm.current_credit }}</span>
+                                {% else %}
+                                    <span class="entry-debt">Remaining Debt {{ firm.current_debt }}</span>
+                                {% endif %}
+                            </td>
+                            <td data-label="Actions" class="table-actions">
+                                <div class="entity-actions">
+                                    <a href="{% url 'ledger:edit_firm' firm.id %}" class="button-link">Edit</a>
+                                    <form method="post" action="{% url 'ledger:archive_firm' firm.id %}">
+                                        {% csrf_token %}
+                                        <button type="submit" class="archive-button">Archive</button>
+                                    </form>
+                                </div>
+                            </td>
+                        </tr>
+                    {% empty %}
+                        <tr class="empty-table-row"><td colspan="5">No firms added yet.</td></tr>
+                    {% endfor %}
+                </tbody>
+            </table>
         </div>
     </div>
 
     <div class="panel compact-panel ledger-history-panel">
-        <h2>Archived Firms</h2>
-        <div class="ledger-history-list">
-            {% for firm in archived_firms %}
-                <div class="ledger-entry-card">
-                    <div class="entry-header"><strong>{{ firm.name }}</strong><span class="archive-badge">Archived</span></div>
-                    <div class="entry-body">
-                        <div class="entry-field"><span class="entry-field-label">Source Type</span><span>{{ firm.get_source_type_display }}</span></div>
-                        <div class="entry-field"><span class="entry-field-label">Balance</span><span>{{ firm.current_debt }}</span></div>
-                    </div>
-                    <div class="entry-footer">
-                        <span>History and balance are retained.</span>
-                        <form method="post" action="{% url 'ledger:restore_firm' firm.id %}">
-                            {% csrf_token %}<button type="submit" class="restore-button">Restore</button>
-                        </form>
-                    </div>
-                </div>
-            {% empty %}
-                <p>No archived firms.</p>
-            {% endfor %}
+        <div class="ledger-history-header">
+            <h2>Archived Firms</h2>
+        </div>
+        <div class="data-table-wrap">
+            <table class="data-table archived-firm-data-table">
+                <thead>
+                    <tr>
+                        <th scope="col">Firm</th>
+                        <th scope="col">Source Type</th>
+                        <th scope="col">Balance</th>
+                        <th scope="col">Restore</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for firm in archived_firms %}
+                        <tr>
+                            <td data-label="Firm">
+                                <strong class="table-primary">{{ firm.name }}</strong>
+                                <span class="archive-badge">Archived</span>
+                            </td>
+                            <td data-label="Source Type">{{ firm.get_source_type_display }}</td>
+                            <td data-label="Balance">
+                                {% if firm.current_debt < 0 %}
+                                    <span class="entry-credit">Supplier Credit {{ firm.current_credit }}</span>
+                                {% else %}
+                                    <span class="entry-debt">Remaining Debt {{ firm.current_debt }}</span>
+                                {% endif %}
+                            </td>
+                            <td data-label="Restore" class="table-actions">
+                                <form method="post" action="{% url 'ledger:restore_firm' firm.id %}">
+                                    {% csrf_token %}
+                                    <button type="submit" class="restore-button">Restore</button>
+                                </form>
+                            </td>
+                        </tr>
+                    {% empty %}
+                        <tr class="empty-table-row"><td colspan="4">No archived firms.</td></tr>
+                    {% endfor %}
+                </tbody>
+            </table>
         </div>
     </div>
 {% endblock %}

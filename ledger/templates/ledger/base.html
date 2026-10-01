@@ -669,7 +669,7 @@
         /* ===== DASHBOARD LAYOUT ===== */
         .dashboard-layout {
             display: grid;
-            grid-template-columns: minmax(0, 1fr) 390px;
+            grid-template-columns: minmax(320px, 390px) minmax(0, 1fr);
             gap: 18px;
             align-items: start;
         }
@@ -961,6 +961,41 @@
         tbody tr:hover { background: #f9fafb; }
         tbody tr:last-child td { border-bottom: none; }
 
+        .data-table-wrap {
+            width: 100%;
+            overflow-x: auto;
+            border-radius: var(--radius);
+        }
+
+        table.data-table {
+            min-width: 760px;
+            margin: 0;
+        }
+
+        .data-table th { top: 64px; }
+        table.history-data-table { min-width: 1080px; }
+
+        .data-table td { font-size: 13px; }
+        .data-table .table-primary { font-weight: 800; color: var(--ink); }
+        .data-table .table-secondary { display: block; margin-top: 3px; color: var(--muted); font-size: 11px; }
+        .data-table .table-actions { min-width: 174px; }
+        .data-table .table-actions .entity-actions { flex-wrap: nowrap; }
+        .data-table .entry-batch-details { min-width: 240px; }
+        .data-table .entry-batch-line { padding: 5px 0; border-bottom: 1px solid #f1f5f9; }
+        .data-table .entry-batch-line:last-child { border-bottom: 0; }
+        .data-table .batch-action-form {
+            display: grid;
+            grid-template-columns: minmax(0, 1fr);
+            min-width: 190px;
+            gap: 6px;
+        }
+        .data-table .batch-action-form input { width: 100%; }
+        .data-table .amount-cell { white-space: nowrap; font-weight: 800; }
+        .data-table .balance-cell { white-space: nowrap; font-weight: 800; }
+        .data-table .history-reason { margin: 6px 0 0; color: var(--muted); font-size: 11px; }
+        .status-toggle-inline { display: flex; align-items: center; gap: 8px; }
+        .status-toggle-inline .status-switch { flex: 0 0 54px; }
+
         /* ===== MISC UTILITIES ===== */
         .muted { color: var(--muted); }
 
@@ -1030,7 +1065,7 @@
         button.status-switch.is-inactive:hover { background: #f87171; }
 
         /* ===== RESPONSIVE: TABLET ===== */
-        @media (max-width: 1180px) {
+        @media (max-width: 1279px) {
             .dashboard-layout {
                 grid-template-columns: 1fr;
             }
@@ -1103,6 +1138,152 @@
             }
 
             .ledger-history-filter-group input { width: 100%; }
+
+            .data-table-wrap { overflow: visible; }
+
+            table.data-table,
+            table.data-table tbody,
+            table.data-table tr,
+            table.data-table td {
+                display: block;
+                width: 100%;
+                min-width: 0;
+            }
+
+            table.data-table {
+                border: 0;
+                border-radius: 0;
+                border-spacing: 0;
+                background: transparent;
+                box-shadow: none;
+            }
+
+            .data-table thead { display: none; }
+
+            .data-table tbody {
+                display: grid;
+                gap: 12px;
+            }
+
+            .data-table tbody tr {
+                overflow: hidden;
+                background: var(--panel);
+                border: 1px solid var(--line);
+                border-radius: var(--radius);
+                box-shadow: var(--shadow-sm);
+            }
+
+            .data-table tbody tr:hover { background: var(--panel); }
+
+            .data-table tbody td {
+                display: grid;
+                grid-template-columns: minmax(94px, 0.38fr) minmax(0, 1fr);
+                align-items: start;
+                gap: 12px;
+                padding: 10px 12px;
+                border-bottom: 1px solid #f1f5f9;
+                overflow-wrap: anywhere;
+            }
+
+            .data-table tbody td::before {
+                content: attr(data-label);
+                color: var(--muted);
+                font-size: 10px;
+                font-weight: 800;
+                letter-spacing: 0.04em;
+                text-transform: uppercase;
+            }
+
+            .data-table tbody td:last-child { border-bottom: 0; }
+            .data-table .table-actions { min-width: 0; }
+            .data-table .table-actions .entity-actions { flex-wrap: wrap; }
+            .data-table .entry-batch-details { min-width: 0; }
+            .data-table .history-activity-cell { display: block; }
+            .data-table .history-activity-cell::before { display: block; margin-bottom: 6px; }
+            .data-table .batch-action-form { min-width: 0; width: 100%; }
+            .data-table .batch-action-form input,
+            .data-table .batch-action-form button { width: 100%; }
+            .data-table .history-action-cell .batch-action-form { align-items: stretch; }
+            .data-table tbody .empty-table-row td {
+                display: block;
+                text-align: center;
+            }
+            .data-table tbody .empty-table-row td::before { display: none; }
+        }
+
+        /* ===== DESKTOP APP SHELL ===== */
+        @media (min-width: 1100px) {
+            body { padding-top: 72px; padding-bottom: 0; }
+
+            .app-header {
+                height: 72px;
+                justify-content: space-between;
+                padding: 0 28px;
+            }
+
+            .header-left { display: none; }
+            .header-center { flex: 0 0 auto; justify-content: flex-start; }
+            .app-header .site-logo { max-width: 240px; height: 54px; padding: 0; }
+            .header-right { flex: 0 0 auto; padding: 0; }
+
+            .bottom-nav {
+                top: 72px;
+                right: auto;
+                bottom: 0;
+                left: 0;
+                width: 232px;
+                height: auto;
+                flex-direction: column;
+                align-items: stretch;
+                padding: 18px 12px;
+                border-top: 0;
+                border-right: 1px solid var(--line);
+                box-shadow: 4px 0 18px rgba(1, 27, 54, 0.04);
+            }
+
+            .bottom-nav a {
+                flex: 0 0 auto;
+                min-height: 48px;
+                flex-direction: row;
+                justify-content: flex-start;
+                gap: 12px;
+                padding: 10px 14px;
+                margin: 3px 0;
+                font-size: 14px;
+            }
+
+            .bottom-nav a svg { width: 20px; height: 20px; }
+            .page-main { padding: 28px 32px 40px 264px; }
+            .container { max-width: 1680px; }
+
+            .dashboard-grid {
+                grid-template-columns: repeat(4, minmax(0, 1fr));
+                gap: 16px;
+                margin-bottom: 20px;
+            }
+
+            .metric-card { min-height: 122px; padding: 18px; }
+            .metric-label { font-size: 12px; }
+            .metric-value { font-size: 30px; }
+            .panel { padding: 22px; margin-bottom: 20px; }
+            .add-firm-inline-panel, .add-rep-inline-panel { max-width: 1120px; }
+            .chart-panel { margin-bottom: 20px; }
+            .chart-canvas-wrap { height: 320px; }
+            .compact-top-chart-grid .chart-canvas-wrap { height: 230px; }
+            .data-table th, .data-table td { padding: 13px 15px; }
+            .data-table th { top: 72px; }
+        }
+
+        @media (min-width: 1280px) {
+            .dashboard-layout {
+                grid-template-columns: minmax(340px, 380px) minmax(0, 1fr);
+                gap: 24px;
+            }
+
+            .dashboard-side { position: sticky; top: 92px; }
+            .transaction-card { padding: 20px; }
+            .transaction-card h2 { font-size: 20px; }
+            .transaction-grid { gap: 14px; }
         }
     </style>
 </head>
@@ -1162,23 +1343,23 @@
     </div>
 
     <!-- ===== BOTTOM NAVIGATION ===== -->
-    <nav class="bottom-nav">
-        <a href="{% url 'ledger:add_transaction' %}" class="{% if request.resolver_match.url_name == 'add_transaction' or request.resolver_match.url_name == 'add_transaction_cap' %}active{% endif %}">
+    <nav class="bottom-nav" aria-label="Main navigation">
+        <a href="{% url 'ledger:add_transaction' %}" class="{% if request.resolver_match.url_name == 'add_transaction' or request.resolver_match.url_name == 'add_transaction_cap' %}active{% endif %}" {% if request.resolver_match.url_name == 'add_transaction' or request.resolver_match.url_name == 'add_transaction_cap' %}aria-current="page"{% endif %}>
             <!-- Dashboard icon -->
             <svg viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg>
             Dashboard
         </a>
-        <a href="{% url 'ledger:add_firm' %}" class="{% if request.resolver_match.url_name == 'add_firm' %}active{% endif %}">
+        <a href="{% url 'ledger:add_firm' %}" class="{% if request.resolver_match.url_name == 'add_firm' %}active{% endif %}" {% if request.resolver_match.url_name == 'add_firm' %}aria-current="page"{% endif %}>
             <!-- Building icon -->
             <svg viewBox="0 0 24 24"><path d="M3 21h18M5 21V7l7-4 7 4v14M9 21v-5h6v5"/></svg>
             Firms
         </a>
-        <a href="{% url 'ledger:add_representative' %}" class="{% if request.resolver_match.url_name == 'add_representative' %}active{% endif %}">
+        <a href="{% url 'ledger:add_representative' %}" class="{% if request.resolver_match.url_name == 'add_representative' %}active{% endif %}" {% if request.resolver_match.url_name == 'add_representative' %}aria-current="page"{% endif %}>
             <!-- Person icon -->
             <svg viewBox="0 0 24 24"><circle cx="12" cy="8" r="4"/><path d="M4 20c0-4 3.6-7 8-7s8 3 8 7"/></svg>
             Reps
         </a>
-        <a href="{% url 'ledger:ledger_history' %}" class="{% if request.resolver_match.url_name == 'ledger_history' %}active{% endif %}">
+        <a href="{% url 'ledger:ledger_history' %}" class="{% if request.resolver_match.url_name == 'ledger_history' %}active{% endif %}" {% if request.resolver_match.url_name == 'ledger_history' %}aria-current="page"{% endif %}>
             <!-- History/list icon -->
             <svg viewBox="0 0 24 24"><path d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2"/><rect x="9" y="3" width="6" height="4" rx="1"/><line x1="9" y1="12" x2="15" y2="12"/><line x1="9" y1="16" x2="13" y2="16"/></svg>
             History

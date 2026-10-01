@@ -3,77 +3,90 @@
     <strong id="total-debt-cell" class="total-value">{{ total_debt }}</strong>
 </div>
 
-<div class="ledger-history-list">
-{% for row in history_rows %}
-    <article class="ledger-entry-card" data-batch-id="{{ row.batch_id|default:'' }}">
-        <div class="entry-header">
-            <div>
-                <div class="entry-date">{{ row.date|date:"d M Y" }} · {{ row.firm.name }}</div>
-                <div class="entry-day">{{ row.day }} · {{ row.source_type }}</div>
-            </div>
-            {% if row.batch %}
-                <span class="archive-badge">{{ row.batch.get_kind_display }}{% if row.batch.kind == 'transaction' and row.batch.status == 'reversed' %} · Reversed{% endif %}</span>
-            {% endif %}
-        </div>
-
-        <div class="entry-batch-details">
-            {% for entry in row.entries %}
-                <div class="entry-batch-line">
-                    <div>
-                        <strong>{{ entry.get_entry_type_display }}</strong>
-                        {% if entry.bill %}<span> · Bill {{ entry.bill.bill_number }}</span>{% endif %}
-                        {% if entry.payment %}<span> · Payment {{ entry.payment.amount }}</span>{% endif %}
-                        {% if entry.bill and entry.bill.representative %}<span> · {{ entry.bill.representative.name }}</span>{% endif %}
-                        {% if entry.payment and entry.payment.representative %}<span> · {{ entry.payment.representative.name }}</span>{% endif %}
-                        {% if not entry.bill and not entry.payment %}<span> · {{ entry.description }}</span>{% endif %}
-                    </div>
-                    <div class="entry-batch-amounts">
-                        {% if entry.increase %}<span class="entry-credit">+{{ entry.increase }}</span>{% endif %}
-                        {% if entry.decrease %}<span class="entry-payment">−{{ entry.decrease }}</span>{% endif %}
-                    </div>
-                </div>
+<div class="data-table-wrap">
+    <table class="data-table history-data-table">
+        <thead>
+            <tr>
+                <th scope="col">Date</th>
+                <th scope="col">Firm</th>
+                <th scope="col">Activity</th>
+                <th scope="col">Payment</th>
+                <th scope="col">Balance After</th>
+                <th scope="col">Correction</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for row in history_rows %}
+                <tr data-batch-id="{{ row.batch_id|default:'' }}">
+                    <td data-label="Date">
+                        <strong>{{ row.date|date:"d M Y" }}</strong>
+                        <span class="table-secondary">{{ row.day }}</span>
+                    </td>
+                    <td data-label="Firm">
+                        <strong class="table-primary">{{ row.firm.name }}</strong>
+                        <span class="table-secondary">{{ row.source_type }}</span>
+                        {% if row.batch %}
+                            <span class="archive-badge">{{ row.batch.get_kind_display }}{% if row.batch.kind == 'transaction' and row.batch.status == 'reversed' %} · Reversed{% endif %}</span>
+                        {% endif %}
+                    </td>
+                    <td data-label="Activity" class="history-activity-cell">
+                        <div class="entry-batch-details">
+                            {% for entry in row.entries %}
+                                <div class="entry-batch-line">
+                                    <div>
+                                        <strong>{{ entry.get_entry_type_display }}</strong>
+                                        {% if entry.bill %}<span> · Bill {{ entry.bill.bill_number }}</span>{% endif %}
+                                        {% if entry.payment %}<span> · Payment {{ entry.payment.amount }}</span>{% endif %}
+                                        {% if entry.bill and entry.bill.representative %}<span> · {{ entry.bill.representative.name }}</span>{% endif %}
+                                        {% if entry.payment and entry.payment.representative %}<span> · {{ entry.payment.representative.name }}</span>{% endif %}
+                                        {% if not entry.bill and not entry.payment %}<span> · {{ entry.description }}</span>{% endif %}
+                                    </div>
+                                    <div class="entry-batch-amounts">
+                                        {% if entry.increase %}<span class="entry-credit">+{{ entry.increase }}</span>{% endif %}
+                                        {% if entry.decrease %}<span class="entry-payment">−{{ entry.decrease }}</span>{% endif %}
+                                    </div>
+                                </div>
+                            {% endfor %}
+                        </div>
+                        {% if row.batch.reason %}<p class="history-reason"><strong>Reason:</strong> {{ row.batch.reason }}</p>{% endif %}
+                    </td>
+                    <td data-label="Payment" class="amount-cell entry-payment">{{ row.payment_made }}</td>
+                    <td data-label="Balance After" class="balance-cell">
+                        {% if row.remaining_debt < 0 %}
+                            <span class="entry-credit">Supplier credit {{ row.remaining_debt|cut:"-" }}</span>
+                        {% else %}
+                            <span class="entry-debt">{{ row.remaining_debt }}</span>
+                        {% endif %}
+                    </td>
+                    <td data-label="Correction" class="table-actions history-action-cell">
+                        {% if row.is_reversible %}
+                            {% if row.batch.status == 'reversed' %}
+                                <form method="post" action="{% url 'ledger:restore_batch' row.batch.pk %}" class="batch-action-form">
+                                    {% csrf_token %}
+                                    <input type="hidden" name="next" value="{{ request.get_full_path }}">
+                                    <label for="undo-reason-{{ row.batch.pk }}">Undo reason</label>
+                                    <input id="undo-reason-{{ row.batch.pk }}" name="reason" required maxlength="500" placeholder="Why restore this transaction?">
+                                    <button class="restore-button" type="submit">Undo</button>
+                                </form>
+                            {% else %}
+                                <form method="post" action="{% url 'ledger:reverse_batch' row.batch.pk %}" class="batch-action-form">
+                                    {% csrf_token %}
+                                    <input type="hidden" name="next" value="{{ request.get_full_path }}">
+                                    <label for="reverse-reason-{{ row.batch.pk }}">Correction reason</label>
+                                    <input id="reverse-reason-{{ row.batch.pk }}" name="reason" required maxlength="500" placeholder="Why reverse this transaction?">
+                                    <button class="archive-button" type="submit">Reverse</button>
+                                </form>
+                            {% endif %}
+                        {% else %}
+                            <span class="muted">—</span>
+                        {% endif %}
+                    </td>
+                </tr>
+            {% empty %}
+                <tr class="empty-table-row">
+                    <td colspan="6">No ledger history found for this date range.</td>
+                </tr>
             {% endfor %}
-        </div>
-
-        {% if row.batch.reason %}<p class="entry-reason"><strong>Reason:</strong> {{ row.batch.reason }}</p>{% endif %}
-
-        <div class="entry-footer">
-            <div>
-                <span class="entry-field-label">Payment in this batch</span>
-                <span class="entry-payment">{{ row.payment_made }}</span>
-            </div>
-            <div>
-                <span class="entry-field-label">Balance after batch</span>
-                {% if row.remaining_debt < 0 %}
-                    <span class="entry-credit">Supplier credit {{ row.remaining_debt }}</span>
-                {% else %}
-                    <span class="entry-debt">{{ row.remaining_debt }}</span>
-                {% endif %}
-            </div>
-            {% if row.is_reversible %}
-                {% if row.batch.status == 'reversed' %}
-                    <form method="post" action="{% url 'ledger:restore_batch' row.batch.pk %}" class="batch-action-form">
-                        {% csrf_token %}
-                        <input type="hidden" name="next" value="{{ request.get_full_path }}">
-                        <label for="undo-reason-{{ row.batch.pk }}">Undo reason</label>
-                        <input id="undo-reason-{{ row.batch.pk }}" name="reason" required maxlength="500" placeholder="Why restore this transaction?">
-                        <button class="restore-button" type="submit">Undo</button>
-                    </form>
-                {% else %}
-                    <form method="post" action="{% url 'ledger:reverse_batch' row.batch.pk %}" class="batch-action-form">
-                        {% csrf_token %}
-                        <input type="hidden" name="next" value="{{ request.get_full_path }}">
-                        <label for="reverse-reason-{{ row.batch.pk }}">Correction reason</label>
-                        <input id="reverse-reason-{{ row.batch.pk }}" name="reason" required maxlength="500" placeholder="Why reverse this transaction?">
-                        <button class="archive-button" type="submit">Reverse</button>
-                    </form>
-                {% endif %}
-            {% endif %}
-        </div>
-    </article>
-{% empty %}
-    <div class="panel" style="text-align:center; color:var(--muted); padding:32px;">
-        No ledger history found for this date range.
-    </div>
-{% endfor %}
+        </tbody>
+    </table>
 </div>

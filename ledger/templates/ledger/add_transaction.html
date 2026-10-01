@@ -3,47 +3,47 @@
 {% block title %}Dashboard | Pharmacy Ledger{% endblock %}
 
 {% block content %}
+    <div class="dashboard-grid">
+        <div class="metric-card period-modal-trigger" data-period="today" style="cursor: pointer;">
+            <div class="metric-label">Today Payments</div>
+            <div class="metric-value">{{ today_payment_count }}</div>
+            <div class="metric-subvalue">
+                <span class="metric-sub-label">Amount</span>
+                {{ today_payment_total }}
+            </div>
+        </div>
+
+        <div class="metric-card period-modal-trigger" data-period="week" style="cursor: pointer;">
+            <div class="metric-label">This Week</div>
+            <div class="metric-value">{{ week_payment_count }}</div>
+            <div class="metric-subvalue">
+                <span class="metric-sub-label">Amount</span>
+                {{ week_payment_total }}
+            </div>
+        </div>
+
+        <div class="metric-card period-modal-trigger" data-period="month" style="cursor: pointer;">
+            <div class="metric-label">This Month</div>
+            <div class="metric-value">{{ month_payment_count }}</div>
+            <div class="metric-subvalue">
+                <span class="metric-sub-label">Amount</span>
+                {{ month_payment_total }}
+            </div>
+        </div>
+
+        <div class="metric-card total-debt-card">
+            <div class="metric-label">Total Debt</div>
+            <div class="metric-value debt-hidden" id="total-debt-value">******</div>
+            <div class="metric-subvalue">
+                <span class="metric-sub-label">Supplier Credits</span>
+                {{ supplier_credit_total }}
+                <button type="button" id="toggle-debt-button" class="eye-button">Show</button>
+            </div>
+        </div>
+    </div>
+
     <div class="dashboard-layout">
         <aside class="dashboard-side">
-            <div class="dashboard-grid">
-                <div class="metric-card period-modal-trigger" data-period="today" style="cursor: pointer;">
-                    <div class="metric-label">Today Payments</div>
-                    <div class="metric-value">{{ today_payment_count }}</div>
-                    <div class="metric-subvalue">
-                        <span class="metric-sub-label">Amount</span>
-                        {{ today_payment_total }}
-                    </div>
-                </div>
-
-                <div class="metric-card period-modal-trigger" data-period="week" style="cursor: pointer;">
-                    <div class="metric-label">This Week</div>
-                    <div class="metric-value">{{ week_payment_count }}</div>
-                    <div class="metric-subvalue">
-                        <span class="metric-sub-label">Amount</span>
-                        {{ week_payment_total }}
-                    </div>
-                </div>
-
-                <div class="metric-card period-modal-trigger" data-period="month" style="cursor: pointer;">
-                    <div class="metric-label">This Month</div>
-                    <div class="metric-value">{{ month_payment_count }}</div>
-                    <div class="metric-subvalue">
-                        <span class="metric-sub-label">Amount</span>
-                        {{ month_payment_total }}
-                    </div>
-                </div>
-
-                <div class="metric-card total-debt-card">
-                    <div class="metric-label">Total Debt</div>
-                    <div class="metric-value debt-hidden" id="total-debt-value">******</div>
-                    <div class="metric-subvalue">
-                        <span class="metric-sub-label">Supplier Credits</span>
-                        {{ supplier_credit_total }}
-                        <button type="button" id="toggle-debt-button" class="eye-button">Show</button>
-                    </div>
-                </div>
-            </div>
-
             <div class="panel transaction-card">
                 <h2>Add Ledger Transaction</h2>
 

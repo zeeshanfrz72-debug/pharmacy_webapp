@@ -1,14 +1,13 @@
 {% extends "ledger/base.html" %}
 
-{% block title %}Add Representative | Pharmacy Ledger{% endblock %}
+{% block title %}Representatives | Pharmacy Ledger{% endblock %}
 
 {% block content %}
-
-
     <div class="panel compact-panel filter-inline-panel">
-        <h2>Representative Filters</h2>
+        <div class="ledger-history-header">
+            <h2>Representative Filters</h2>
+        </div>
 
-        <!-- This filter controls which representatives appear below. -->
         <form method="get" class="filter-inline-form">
             <div class="filter-inline-group">
                 <label for="source_type">Source Type</label>
@@ -38,125 +37,111 @@
     </div>
 
     <div class="panel compact-panel ledger-history-panel">
-        <h2>Representatives</h2>
+        <div class="ledger-history-header">
+            <h2>Representatives</h2>
+        </div>
 
-        <div class="ledger-history-list" id="representatives-list">
-            {% for representative in representatives %}
-                <div class="ledger-entry-card" data-rep-id="{{ representative.id }}">
-                    <div class="entry-header">
-                        <div>
-                            <div class="entry-date">{{ representative.name }}</div>
-                            <div class="entry-day">{{ representative.created_at|date:"d M Y" }}</div>
-                        </div>
-                    </div>
-
-                    <div class="entry-body">
-                        <div class="entry-field">
-                            <span class="entry-field-label">Source Type</span>
-                            <span class="entry-field-value">{{ representative.firm.get_source_type_display }}</span>
-                        </div>
-
-                        <div class="entry-field">
-                            <span class="entry-field-label">Firm</span>
-                            <span class="entry-field-value">{{ representative.firm.name }}</span>
-                        </div>
-
-                        <div class="entry-field">
-                            <span class="entry-field-label">Phone</span>
-                            <span class="entry-field-value">{{ representative.phone|default:"—" }}</span>
-                        </div>
-
-                        <div class="entry-field">
-                            <span class="entry-field-label">Status</span>
-                            <span class="entry-field-value rep-status-text">
-                                {% if representative.is_active %}
-                                    Active
-                                {% else %}
-                                    Inactive
-                                {% endif %}
-                            </span>
-                        </div>
-                    </div>
-
-                    <div class="entry-footer">
-                        <!-- Toggle form -->
-                        <form
-                            method="post"
-                            action="{% url 'ledger:toggle_representative_active' representative.id %}"
-                            class="toggle-form"
-                        >
-                            {% csrf_token %}
-
-                            <button
-                                type="submit"
-                                class="status-switch {% if representative.is_active %}is-active{% else %}is-inactive{% endif %}"
-                                aria-label="Toggle representative active status"
-                            >
-                                <span class="switch-knob"></span>
-                            </button>
-                        </form>
-                        
-                        <div class="entity-actions">
-                            <a href="{% url 'ledger:edit_representative' representative.id %}" class="button-link" style="padding:4px 8px; font-size:12px;">Edit</a>
-                            <form method="post" action="{% url 'ledger:archive_representative' representative.id %}">
-                                {% csrf_token %}
-                                <button type="submit" class="archive-button">Archive</button>
-                            </form>
-                        </div>
-                    </div>
-                </div>
-            {% empty %}
-                <div class="panel" style="text-align:center; color:var(--muted); padding:32px;">
-                    No representatives found.
-                </div>
-            {% endfor %}
+        <div class="data-table-wrap">
+            <table class="data-table representative-data-table">
+                <thead>
+                    <tr>
+                        <th scope="col">Representative</th>
+                        <th scope="col">Firm</th>
+                        <th scope="col">Phone</th>
+                        <th scope="col">Status</th>
+                        <th scope="col">Actions</th>
+                    </tr>
+                </thead>
+                <tbody id="representatives-list">
+                    {% for representative in representatives %}
+                        <tr data-rep-id="{{ representative.id }}">
+                            <td data-label="Representative">
+                                <strong class="table-primary">{{ representative.name }}</strong>
+                                <span class="table-secondary">Added {{ representative.created_at|date:"d M Y" }}</span>
+                            </td>
+                            <td data-label="Firm">
+                                <strong class="table-primary">{{ representative.firm.name }}</strong>
+                                <span class="table-secondary">{{ representative.firm.get_source_type_display }}</span>
+                            </td>
+                            <td data-label="Phone">{{ representative.phone|default:"—" }}</td>
+                            <td data-label="Status">
+                                <div class="status-toggle-inline">
+                                    <span class="rep-status-text">{% if representative.is_active %}Active{% else %}Inactive{% endif %}</span>
+                                    <form method="post" action="{% url 'ledger:toggle_representative_active' representative.id %}" class="toggle-form">
+                                        {% csrf_token %}
+                                        <button type="submit" class="status-switch {% if representative.is_active %}is-active{% else %}is-inactive{% endif %}" aria-label="Toggle representative active status">
+                                            <span class="switch-knob"></span>
+                                        </button>
+                                    </form>
+                                </div>
+                            </td>
+                            <td data-label="Actions" class="table-actions">
+                                <div class="entity-actions">
+                                    <a href="{% url 'ledger:edit_representative' representative.id %}" class="button-link">Edit</a>
+                                    <form method="post" action="{% url 'ledger:archive_representative' representative.id %}">
+                                        {% csrf_token %}
+                                        <button type="submit" class="archive-button">Archive</button>
+                                    </form>
+                                </div>
+                            </td>
+                        </tr>
+                    {% empty %}
+                        <tr class="empty-table-row"><td colspan="5">No representatives found.</td></tr>
+                    {% endfor %}
+                </tbody>
+            </table>
         </div>
     </div>
 
     <div class="panel compact-panel ledger-history-panel">
-        <h2>Archived Representatives</h2>
-        <div class="ledger-history-list">
-            {% for representative in archived_representatives %}
-                <div class="ledger-entry-card">
-                    <div class="entry-header">
-                        <strong>{{ representative.name }}</strong>
-                        <span class="archive-badge">Archived{% if representative.firm.is_deleted %} with firm{% endif %}</span>
-                    </div>
-                    <div class="entry-body">
-                        <div class="entry-field"><span class="entry-field-label">Firm</span><span>{{ representative.firm.name }}</span></div>
-                        <div class="entry-field"><span class="entry-field-label">Phone</span><span>{{ representative.phone|default:"—" }}</span></div>
-                    </div>
-                    <div class="entry-footer">
-                        <span>Historical transaction links are retained.</span>
-                        {% if not representative.firm.is_deleted %}
-                            <form method="post" action="{% url 'ledger:restore_representative' representative.id %}">
-                                {% csrf_token %}<button type="submit" class="restore-button">Restore</button>
-                            </form>
-                        {% else %}
-                            <span>Restore the firm first.</span>
-                        {% endif %}
-                    </div>
-                </div>
-            {% empty %}
-                <p>No archived representatives.</p>
-            {% endfor %}
+        <div class="ledger-history-header">
+            <h2>Archived Representatives</h2>
+        </div>
+        <div class="data-table-wrap">
+            <table class="data-table archived-representative-data-table">
+                <thead>
+                    <tr>
+                        <th scope="col">Representative</th>
+                        <th scope="col">Firm</th>
+                        <th scope="col">Phone</th>
+                        <th scope="col">Restore</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for representative in archived_representatives %}
+                        <tr>
+                            <td data-label="Representative">
+                                <strong class="table-primary">{{ representative.name }}</strong>
+                                <span class="archive-badge">Archived{% if representative.firm.is_deleted %} with firm{% endif %}</span>
+                            </td>
+                            <td data-label="Firm">{{ representative.firm.name }}</td>
+                            <td data-label="Phone">{{ representative.phone|default:"—" }}</td>
+                            <td data-label="Restore" class="table-actions">
+                                {% if not representative.firm.is_deleted %}
+                                    <form method="post" action="{% url 'ledger:restore_representative' representative.id %}">
+                                        {% csrf_token %}
+                                        <button type="submit" class="restore-button">Restore</button>
+                                    </form>
+                                {% else %}
+                                    <span class="muted">Restore the firm first.</span>
+                                {% endif %}
+                            </td>
+                        </tr>
+                    {% empty %}
+                        <tr class="empty-table-row"><td colspan="4">No archived representatives.</td></tr>
+                    {% endfor %}
+                </tbody>
+            </table>
         </div>
     </div>
 
     <script nonce="{{ request.csp_nonce }}">
-        /*
-            This script filters the Firm dropdown based on selected Source Type.
-            It uses the same Django JSON endpoint as the transaction page.
-        */
-
         const sourceTypeFilter = document.getElementById("source_type");
         const firmFilter = document.getElementById("firm");
         const firmsUrl = "{% url 'ledger:firms_for_source_type' %}";
-        const repsUrl = "{% url 'ledger:representatives_for_firm' %}";
 
         function clearFirmFilter() {
-            firmFilter.innerHTML = "";
-
+            firmFilter.replaceChildren();
             const emptyOption = document.createElement("option");
             emptyOption.value = "";
             emptyOption.textContent = "All Firms";
@@ -165,15 +150,15 @@
 
         function loadFirmsForSelectedSourceTypeFilter() {
             const sourceType = sourceTypeFilter.value;
-
             clearFirmFilter();
 
-            if (!sourceType) {
-                return;
-            }
+            if (!sourceType) return;
 
-            fetch(`${firmsUrl}?source_type=${sourceType}`)
-                .then(response => response.json())
+            fetch(`${firmsUrl}?source_type=${encodeURIComponent(sourceType)}`)
+                .then(response => {
+                    if (!response.ok) throw new Error("Could not load firms.");
+                    return response.json();
+                })
                 .then(data => {
                     data.firms.forEach(firm => {
                         const option = document.createElement("option");
@@ -181,50 +166,47 @@
                         option.textContent = firm.name;
                         firmFilter.appendChild(option);
                     });
+                })
+                .catch(error => {
+                    if (window.showToast) window.showToast(error.message, "error");
                 });
         }
 
         if (sourceTypeFilter && firmFilter) {
             sourceTypeFilter.addEventListener("change", loadFirmsForSelectedSourceTypeFilter);
         }
-    </script>
-    <script nonce="{{ request.csp_nonce }}">
-        // Intercept toggle forms and perform AJAX POST so page doesn't reload.
-        document.querySelectorAll('.toggle-form').forEach(function(form) {
-            form.addEventListener('submit', function(e) {
-                e.preventDefault();
 
-                const url = form.action;
-                const card = form.closest('.ledger-entry-card');
-                const statusText = card.querySelector('.rep-status-text');
-                const button = form.querySelector('button.status-switch');
+        document.querySelectorAll(".toggle-form").forEach(function(form) {
+            form.addEventListener("submit", function(event) {
+                event.preventDefault();
+                const row = form.closest("tr");
+                const statusText = row.querySelector(".rep-status-text");
+                const button = form.querySelector("button.status-switch");
+                button.disabled = true;
 
-                fetch(url, {
-                    method: 'POST',
+                fetch(form.action, {
+                    method: "POST",
                     headers: {
-                        'X-CSRFToken': window.csrftoken,
-                        'X-Requested-With': 'XMLHttpRequest',
+                        "X-CSRFToken": window.csrftoken,
+                        "X-Requested-With": "XMLHttpRequest",
                     },
                 })
-                .then(r => r.json())
-                .then(data => {
-                    if (data && typeof data.is_active !== 'undefined') {
-                        const isActive = data.is_active;
-                        statusText.textContent = isActive ? 'Active' : 'Inactive';
-                        if (isActive) {
-                            button.classList.remove('is-inactive');
-                            button.classList.add('is-active');
-                        } else {
-                            button.classList.remove('is-active');
-                            button.classList.add('is-inactive');
+                    .then(response => {
+                        if (!response.ok) throw new Error("Could not update representative status.");
+                        return response.json();
+                    })
+                    .then(data => {
+                        if (data && typeof data.is_active !== "undefined") {
+                            const isActive = data.is_active;
+                            statusText.textContent = isActive ? "Active" : "Inactive";
+                            button.classList.toggle("is-active", isActive);
+                            button.classList.toggle("is-inactive", !isActive);
                         }
-                    }
-                })
-                .catch(err => {
-                    console.error('Toggle failed', err);
-                    // fallback to normal form submit on error
-                    form.submit();
-                });
+                    })
+                    .catch(error => {
+                        if (window.showToast) window.showToast(error.message, "error");
+                    })
+                    .finally(() => { button.disabled = false; });
             });
         });
     </script>
