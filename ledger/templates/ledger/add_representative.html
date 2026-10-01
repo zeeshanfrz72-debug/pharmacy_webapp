@@ -41,30 +41,50 @@
             <h2>Representatives</h2>
         </div>
 
+        <div class="table-tools" data-table-tools="representatives">
+            <div class="table-search-field">
+                <label for="representative-table-search">Find a representative</label>
+                <input id="representative-table-search" type="search" autocomplete="off" placeholder="Search name, firm, phone, or status">
+            </div>
+            <div class="table-sort-controls">
+                <label for="representative-table-sort">Sort representatives</label>
+                <select id="representative-table-sort">
+                    <option value="name">Representative</option>
+                    <option value="firm">Firm</option>
+                    <option value="phone">Phone</option>
+                    <option value="date">Date added</option>
+                    <option value="status">Status</option>
+                </select>
+                <button class="table-sort-direction" type="button" aria-label="Sort ascending">Ascending ↑</button>
+            </div>
+            <p class="table-result-count" aria-live="polite"></p>
+        </div>
+
         <div class="data-table-wrap">
-            <table class="data-table representative-data-table">
+            <table class="data-table representative-data-table" aria-label="Active representatives">
                 <thead>
                     <tr>
-                        <th scope="col">Representative</th>
-                        <th scope="col">Firm</th>
-                        <th scope="col">Phone</th>
-                        <th scope="col">Status</th>
+                        <th scope="col" aria-sort="none"><button class="table-sort" type="button" data-sort-key="name">Representative <span class="table-sort-indicator" aria-hidden="true"></span></button></th>
+                        <th scope="col" aria-sort="none"><button class="table-sort" type="button" data-sort-key="firm">Firm <span class="table-sort-indicator" aria-hidden="true"></span></button></th>
+                        <th scope="col" aria-sort="none"><button class="table-sort" type="button" data-sort-key="phone">Phone <span class="table-sort-indicator" aria-hidden="true"></span></button></th>
+                        <th scope="col" aria-sort="none"><button class="table-sort" type="button" data-sort-key="date">Added <span class="table-sort-indicator" aria-hidden="true"></span></button></th>
+                        <th scope="col" aria-sort="none"><button class="table-sort" type="button" data-sort-key="status">Status <span class="table-sort-indicator" aria-hidden="true"></span></button></th>
                         <th scope="col">Actions</th>
                     </tr>
                 </thead>
                 <tbody id="representatives-list">
                     {% for representative in representatives %}
-                        <tr data-rep-id="{{ representative.id }}">
-                            <td data-label="Representative">
+                        <tr data-rep-id="{{ representative.id }}" data-search="{{ representative.name }} {{ representative.firm.name }} {{ representative.phone }} {% if representative.is_active %}Active{% else %}Inactive{% endif %}" data-sort-date="{{ representative.created_at|date:'Y-m-d H:i:s' }}">
+                            <td data-label="Representative" data-sort-value="{{ representative.name }}">
                                 <strong class="table-primary">{{ representative.name }}</strong>
-                                <span class="table-secondary">Added {{ representative.created_at|date:"d M Y" }}</span>
                             </td>
-                            <td data-label="Firm">
+                            <td data-label="Firm" data-sort-value="{{ representative.firm.name }}">
                                 <strong class="table-primary">{{ representative.firm.name }}</strong>
                                 <span class="table-secondary">{{ representative.firm.get_source_type_display }}</span>
                             </td>
-                            <td data-label="Phone">{{ representative.phone|default:"—" }}</td>
-                            <td data-label="Status">
+                            <td data-label="Phone" data-sort-value="{{ representative.phone }}">{{ representative.phone|default:"—" }}</td>
+                            <td data-label="Added" data-sort-value="{{ representative.created_at|date:'Y-m-d H:i:s' }}">{{ representative.created_at|date:"d M Y" }}</td>
+                            <td data-label="Status" data-sort-value="{% if representative.is_active %}active{% else %}inactive{% endif %}">
                                 <div class="status-toggle-inline">
                                     <span class="rep-status-text">{% if representative.is_active %}Active{% else %}Inactive{% endif %}</span>
                                     <form method="post" action="{% url 'ledger:toggle_representative_active' representative.id %}" class="toggle-form">
@@ -86,8 +106,9 @@
                             </td>
                         </tr>
                     {% empty %}
-                        <tr class="empty-table-row"><td colspan="5">No representatives found.</td></tr>
+                        <tr class="empty-table-row"><td colspan="6">No representatives found.</td></tr>
                     {% endfor %}
+                    <tr class="search-empty-row" hidden><td colspan="6">No representatives match your search.</td></tr>
                 </tbody>
             </table>
         </div>
@@ -134,6 +155,63 @@
             </table>
         </div>
     </div>
+
+    <script nonce="{{ request.csp_nonce }}">
+        (function () {
+            const table = document.querySelector(".representative-data-table");
+            const tools = document.querySelector('[data-table-tools="representatives"]');
+            if (!table || !tools) return;
+            const body = table.tBodies[0];
+            const rows = Array.from(body.querySelectorAll("tr[data-rep-id]"));
+            const search = tools.querySelector("#representative-table-search");
+            const sortSelect = tools.querySelector("#representative-table-sort");
+            const directionButton = tools.querySelector(".table-sort-direction");
+            const count = tools.querySelector(".table-result-count");
+            const searchEmpty = body.querySelector(".search-empty-row");
+            const initialEmpty = body.querySelector(".empty-table-row");
+            const sortValue = (row, key) => {
+                if (key === "date") return row.dataset.sortDate || "";
+                const column = {name: 0, firm: 1, phone: 2, date: 3, status: 4}[key];
+                return row.cells[column]?.dataset.sortValue?.toLocaleLowerCase() || "";
+            };
+            let direction = 1;
+            function applyTableState() {
+                const query = search.value.trim().toLocaleLowerCase();
+                const visibleRows = rows.filter(row => row.dataset.search.toLocaleLowerCase().includes(query));
+                visibleRows.sort((a, b) => sortValue(a, sortSelect.value).localeCompare(sortValue(b, sortSelect.value)) * direction);
+                visibleRows.forEach(row => body.insertBefore(row, searchEmpty));
+                rows.filter(row => !visibleRows.includes(row)).forEach(row => {
+                    row.hidden = true;
+                    row.style.display = "none";
+                });
+                visibleRows.forEach(row => {
+                    row.hidden = false;
+                    row.style.display = "";
+                });
+                if (initialEmpty) initialEmpty.hidden = rows.length > 0;
+                searchEmpty.hidden = visibleRows.length > 0 || rows.length === 0;
+                count.textContent = rows.length ? `Showing ${visibleRows.length} of ${rows.length} representatives` : "No representatives to show";
+                const activeKey = sortSelect.value;
+                table.querySelectorAll("thead th").forEach(th => {
+                    const button = th.querySelector(".table-sort");
+                    const active = button?.dataset.sortKey === activeKey;
+                    th.setAttribute("aria-sort", active ? (direction > 0 ? "ascending" : "descending") : "none");
+                    if (button) button.querySelector(".table-sort-indicator").textContent = active ? (direction > 0 ? "↑" : "↓") : "";
+                });
+                directionButton.textContent = direction > 0 ? "Ascending ↑" : "Descending ↓";
+                directionButton.setAttribute("aria-label", direction > 0 ? "Sort ascending" : "Sort descending");
+            }
+            search.addEventListener("input", applyTableState);
+            sortSelect.addEventListener("change", applyTableState);
+            directionButton.addEventListener("click", () => { direction *= -1; applyTableState(); });
+            table.querySelectorAll(".table-sort").forEach(button => button.addEventListener("click", () => {
+                if (sortSelect.value === button.dataset.sortKey) direction *= -1;
+                else { sortSelect.value = button.dataset.sortKey; direction = 1; }
+                applyTableState();
+            }));
+            applyTableState();
+        }());
+    </script>
 
     <script nonce="{{ request.csp_nonce }}">
         const sourceTypeFilter = document.getElementById("source_type");

@@ -216,6 +216,43 @@ class LedgerWorkflowTests(TestCase):
         self.assertContains(undone_page, reverse("ledger:restore_batch", args=[batch.pk]))
         self.assertContains(undone_page, "Undo")
 
+    def test_guest_login_has_centered_shell_without_ledger_navigation(self):
+        response = Client().get(reverse("login"), secure=True)
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, 'class="app-guest"')
+        self.assertContains(response, "Welcome Back")
+        self.assertNotContains(response, '<nav class="bottom-nav"')
+
+    def test_firm_and_representative_tables_render_search_and_accessible_sort_controls(self):
+        firm_page = self.client.get(reverse("ledger:add_firm"), secure=True)
+        self.assertContains(firm_page, 'id="firm-table-search"')
+        self.assertContains(firm_page, "Search name, type, or phone")
+        self.assertContains(firm_page, 'data-sort-key="balance"')
+        self.assertContains(firm_page, 'aria-sort="none"')
+        self.assertContains(firm_page, "No firms match your search.")
+        self.assertContains(firm_page, "Remaining Debt")
+        self.assertContains(firm_page, reverse("ledger:archive_firm", args=[self.firm.pk]))
+
+        representative_page = self.client.get(reverse("ledger:add_representative"), secure=True)
+        self.assertContains(representative_page, 'id="representative-table-search"')
+        self.assertContains(representative_page, "Search name, firm, phone, or status")
+        self.assertContains(representative_page, 'data-sort-key="date"')
+        self.assertContains(representative_page, 'aria-sort="none"')
+        self.assertContains(representative_page, "No representatives match your search.")
+        self.assertContains(representative_page, 'aria-label="Active representatives"')
+        self.assertContains(
+            representative_page,
+            reverse("ledger:toggle_representative_active", args=[self.rep.pk]),
+        )
+
+    def test_desktop_shell_and_short_dashboard_rules_are_present(self):
+        response = self.client.get(reverse("ledger:add_transaction"), secure=True)
+        self.assertContains(response, 'class="app-authenticated"')
+        self.assertContains(response, 'aria-label="Main navigation"')
+        self.assertContains(response, "@media (min-width: 1100px)")
+        self.assertContains(response, "@media (min-width: 1280px) and (min-height: 900px)")
+        self.assertContains(response, ".data-table-wrap")
+
     def test_ajax_added_firms_and_representatives_return_dropdown_cache_data(self):
         firm_response = self.client.post(
             reverse("ledger:ajax_add_firm"),

@@ -799,6 +799,11 @@
             box-shadow: 0 0 0 3px rgba(1, 27, 54, 0.08);
         }
 
+        :focus-visible {
+            outline: 3px solid #16a34a;
+            outline-offset: 3px;
+        }
+
         /* ===== BUTTONS ===== */
         button,
         .button-link,
@@ -960,10 +965,14 @@
 
         tbody tr:hover { background: #f9fafb; }
         tbody tr:last-child td { border-bottom: none; }
+        .data-table tbody tr[hidden] { display: none !important; }
 
         .data-table-wrap {
             width: 100%;
+            min-width: 0;
+            max-width: 100%;
             overflow-x: auto;
+            overscroll-behavior-x: contain;
             border-radius: var(--radius);
         }
 
@@ -973,6 +982,53 @@
         }
 
         .data-table th { top: 64px; }
+        .table-sort {
+            min-height: 0;
+            display: inline-flex;
+            align-items: center;
+            gap: 5px;
+            padding: 4px 2px;
+            border: 0;
+            border-radius: 4px;
+            background: transparent;
+            color: inherit;
+            font: inherit;
+            text-align: left;
+            cursor: pointer;
+        }
+        .table-sort:hover { color: var(--brand); background: transparent; transform: none; }
+        .table-sort-indicator { min-width: 10px; color: var(--accent); }
+        .table-tools {
+            display: grid;
+            grid-template-columns: minmax(220px, 1fr) minmax(280px, auto) auto;
+            align-items: end;
+            gap: 12px 16px;
+            margin: 0 0 14px;
+        }
+        .table-search-field { width: min(100%, 420px); }
+        .table-search-field label { margin: 0 0 6px; }
+        .table-search-field input { background: #fff; }
+        .table-sort-controls {
+            display: grid;
+            grid-template-columns: minmax(150px, 1fr) auto;
+            align-items: end;
+            gap: 6px 8px;
+            min-width: 0;
+        }
+        .table-sort-controls label { grid-column: 1 / -1; }
+        .table-sort-controls select { min-width: 0; }
+        .table-sort-direction { white-space: nowrap; }
+        .table-result-count { margin: 0; color: var(--muted); font-size: 12px; }
+        .search-empty-row[hidden] { display: none; }
+
+        .app-guest .page-main {
+            display: grid;
+            place-items: center;
+            min-height: calc(100vh - 72px);
+            padding-left: 32px;
+        }
+        .app-guest .container { max-width: 560px; }
+        .app-guest .app-shell { min-height: calc(100vh - 72px); }
         table.history-data-table { min-width: 1080px; }
 
         .data-table td { font-size: 13px; }
@@ -1140,6 +1196,9 @@
             .ledger-history-filter-group input { width: 100%; }
 
             .data-table-wrap { overflow: visible; }
+            .table-tools { grid-template-columns: minmax(0, 1fr); align-items: stretch; gap: 10px; }
+            .table-search-field { width: 100%; }
+            .table-result-count { min-height: 1em; }
 
             table.data-table,
             table.data-table tbody,
@@ -1255,6 +1314,7 @@
             .bottom-nav a svg { width: 20px; height: 20px; }
             .page-main { padding: 28px 32px 40px 264px; }
             .container { max-width: 1680px; }
+            .app-guest .page-main { padding-left: 32px; }
 
             .dashboard-grid {
                 grid-template-columns: repeat(4, minmax(0, 1fr));
@@ -1280,14 +1340,18 @@
                 gap: 24px;
             }
 
-            .dashboard-side { position: sticky; top: 92px; }
+            .dashboard-side { position: static; }
             .transaction-card { padding: 20px; }
             .transaction-card h2 { font-size: 20px; }
             .transaction-grid { gap: 14px; }
         }
+
+        @media (min-width: 1280px) and (min-height: 900px) {
+            .dashboard-side { position: sticky; top: 92px; }
+        }
     </style>
 </head>
-<body data-offline-user-id="{% if user.is_authenticated %}{{ user.pk }}{% else %}anonymous{% endif %}">
+<body class="{% if user.is_authenticated %}app-authenticated{% else %}app-guest{% endif %}" data-offline-user-id="{% if user.is_authenticated %}{{ user.pk }}{% else %}anonymous{% endif %}">
     <!-- ===== STICKY TOP HEADER ===== -->
     <header class="app-header">
         <div class="header-left">
@@ -1343,7 +1407,7 @@
     </div>
 
     <!-- ===== BOTTOM NAVIGATION ===== -->
-    <nav class="bottom-nav" aria-label="Main navigation">
+    {% if user.is_authenticated %}<nav class="bottom-nav" aria-label="Main navigation">
         <a href="{% url 'ledger:add_transaction' %}" class="{% if request.resolver_match.url_name == 'add_transaction' or request.resolver_match.url_name == 'add_transaction_cap' %}active{% endif %}" {% if request.resolver_match.url_name == 'add_transaction' or request.resolver_match.url_name == 'add_transaction_cap' %}aria-current="page"{% endif %}>
             <!-- Dashboard icon -->
             <svg viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg>
@@ -1364,7 +1428,7 @@
             <svg viewBox="0 0 24 24"><path d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2"/><rect x="9" y="3" width="6" height="4" rx="1"/><line x1="9" y1="12" x2="15" y2="12"/><line x1="9" y1="16" x2="13" y2="16"/></svg>
             History
         </a>
-    </nav>
+    </nav>{% endif %}
 
     <!-- ===== SCRIPTS ===== -->
     <script nonce="{{ request.csp_nonce }}">
