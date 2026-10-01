@@ -1,8 +1,9 @@
 from decimal import Decimal
+import uuid
 
 from django import forms
 
-from .models import Bill, Firm, Payment, Representative
+from .models import Firm, Representative
 
 
 # Form for adding a new firm/source.
@@ -25,6 +26,14 @@ class RepresentativeForm(forms.ModelForm):
         model = Representative
         fields = ["source_type", "firm", "name", "phone"]
 
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.fields["firm"].queryset = Firm.objects.filter(
+            is_deleted=False,
+        ).exclude(source_type=Firm.SourceType.LOCAL_MARKET).order_by("name")
+        if self.instance.pk and self.instance.firm_id:
+            self.fields["source_type"].initial = self.instance.firm.source_type
+
     def clean(self):
         cleaned_data = super().clean()
 
@@ -43,8 +52,8 @@ class RepresentativeForm(forms.ModelForm):
         # Create the rep object but set extra values before saving.
         representative = super().save(commit=False)
 
-        # New representatives are active by default.
-        representative.is_active = True
+        if not self.instance.pk:
+            representative.is_active = True
 
         if commit:
             representative.save()
@@ -54,6 +63,7 @@ class RepresentativeForm(forms.ModelForm):
 
 # Form for adding a bill/payment transaction.
 class LedgerTransactionForm(forms.Form):
+    request_id = forms.UUIDField(widget=forms.HiddenInput, initial=uuid.uuid4)
     # Source type filters the firm dropdown.
     source_type = forms.ChoiceField(
         choices=[("", "---------")] + list(Firm.SourceType.choices),
@@ -69,7 +79,7 @@ class LedgerTransactionForm(forms.Form):
 
     # Representative is required for non-local-market transactions.
     representative = forms.ModelChoiceField(
-        queryset=Representative.objects.filter(is_deleted=False),
+        queryset=Representative.objects.filter(is_deleted=False, firm__is_deleted=False),
         required=False,
         label="Representative",
     )
@@ -183,6 +193,10 @@ class LedgerTransactionForm(forms.Form):
 
         adding_new_bill = bill_choice == "add_new"
 
+        if firm and bill_choice and not adding_new_bill:
+            if not firm.bills.filter(pk=bill_choice).exists():
+                raise forms.ValidationError("Choose a bill belonging to the selected firm.")
+
         # Add New Bill requires both bill number and bill amount.
         if adding_new_bill:
             if not new_bill_number:
@@ -203,77 +217,13 @@ class LedgerTransactionForm(forms.Form):
                 "Enter a payment amount or choose Add New Bill."
             )
 
-        # Ensure payment amount does not exceed remaining debt
-        if firm and payment_amount and firm.source_type != Firm.SourceType.LOCAL_MARKET:
-            current_debt = firm.current_debt()
-            
-            # If adding a new bill in the same transaction, the debt will increase
-            if adding_new_bill and new_bill_amount:
-                current_debt += new_bill_amount
-                
-            if payment_amount > current_debt:
-                raise forms.ValidationError(
-                    f"Payment amount cannot be higher than the remaining debt."
-                )
-
         return cleaned_data
 
-    def save(self):
-        # Pull final validated values from cleaned_data.
-        firm = self.cleaned_data["firm"]
-        representative = self.cleaned_data.get("representative")
-        bill_choice = self.cleaned_data.get("bill_choice")
-        new_bill_number = self.cleaned_data.get("new_bill_number")
-        new_bill_amount = self.cleaned_data.get("new_bill_amount")
-        payment_amount = self.cleaned_data.get("payment_amount")
+    def save(self, *, user, payload_hash):
+        from .services import create_transaction_batch
 
-        # Capture debt before this transaction.
-        previous_debt = firm.current_debt()
-
-        bill = None
-        payment = None
-
-        # Local market is paid upfront.
-        # So payment amount also becomes the purchase/bill amount.
-        if firm.source_type == Firm.SourceType.LOCAL_MARKET and payment_amount:
-            bill = Bill.objects.create(
-                firm=firm,
-                representative=None,
-                bill_number="Local Market Purchase",
-                bill_amount=payment_amount,
-                previous_debt_at_bill_time=previous_debt,
-            )
-
-        # For non-local-market sources, create a new bill only when Add New Bill is selected.
-        elif bill_choice == "add_new":
-            bill = Bill.objects.create(
-                firm=firm,
-                representative=representative,
-                bill_number=new_bill_number,
-                bill_amount=new_bill_amount,
-                previous_debt_at_bill_time=previous_debt,
-            )
-
-        # Create payment and attach it to the local market bill, new bill, or selected existing bill.
-        if payment_amount:
-            if bill is None and bill_choice:
-                bill = Bill.objects.filter(
-                    firm=firm,
-                    id=bill_choice,
-                ).first()
-
-            payment = Payment.objects.create(
-                firm=firm,
-                representative=representative,
-                bill=bill,
-                amount=payment_amount,
-            )
-
-        # Return summary values for the success message.
-        return {
-            "firm": firm,
-            "bill": bill,
-            "payment": payment,
-            "previous_debt": previous_debt,
-            "remaining_debt": firm.current_debt(),
-        }
+        return create_transaction_batch(
+            self.cleaned_data,
+            user=user,
+            payload_hash=payload_hash,
+        )

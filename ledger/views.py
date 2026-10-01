@@ -1,67 +1,142 @@
+import hashlib
+import json
 from collections import defaultdict
-from datetime import datetime, timedelta
+from datetime import date, timedelta
 from decimal import Decimal
 
-from django.db.models import Count, Sum
-from django.db.models.functions import TruncMonth
-from django.http import JsonResponse, HttpResponse
-from django.template.loader import render_to_string
-from django.shortcuts import redirect, render, get_object_or_404
-from django.utils import timezone
+from django.contrib import messages
 from django.contrib.auth.decorators import login_required
-import json
+from django.core.exceptions import ValidationError
+from django.db.models import Count, Q, Sum
+from django.db.models.functions import TruncMonth
+from django.http import HttpResponse, JsonResponse
+from django.shortcuts import get_object_or_404, redirect, render
+from django.template.loader import render_to_string
+from django.utils import timezone
 
 from .forms import FirmForm, LedgerTransactionForm, RepresentativeForm
-from .models import Bill, Firm, LedgerEntry, Payment, Representative
-from django.contrib.auth.forms import UserCreationForm
-from django.contrib import messages
+from .models import Bill, Firm, LedgerEntry, Representative, TransactionBatch
+from .services import (
+    IdempotencyConflict,
+    create_transaction_batch,
+    restore_transaction_batch,
+    reverse_transaction_batch,
+)
 
 
+def _active_activity_entries():
+    """Source for operational dashboard activity, excluding reversed batches."""
+    return LedgerEntry.objects.filter(is_deleted=False).filter(
+        Q(transaction_batch__isnull=True)
+        | Q(
+            transaction_batch__kind=TransactionBatch.Kind.TRANSACTION,
+            transaction_batch__status=TransactionBatch.Status.ACTIVE,
+        )
+    )
 
-# This page shows the firm balance table.
+
+def _total_net_debt():
+    totals = LedgerEntry.objects.filter(is_deleted=False).aggregate(
+        increase=Sum("increase"), decrease=Sum("decrease")
+    )
+    return (totals["increase"] or Decimal("0.00")) - (totals["decrease"] or Decimal("0.00"))
+
+
+def _supplier_credit_total():
+    credit_total = Decimal("0.00")
+    for firm in Firm.objects.all():
+        balance = Decimal(firm.current_debt())
+        if balance < 0:
+            credit_total += abs(balance)
+    return credit_total
+
+
+def _dashboard_payment_totals(today):
+    week_start = today - timedelta(days=today.weekday())
+    month_start = today.replace(day=1)
+    payment_entries = _active_activity_entries().filter(
+        entry_type=LedgerEntry.EntryType.PAYMENT_MADE
+    )
+
+    def totals(start, end):
+        qs = payment_entries.filter(date__gte=start, date__lte=end)
+        return qs.count(), qs.aggregate(total=Sum("decrease"))["total"] or Decimal("0.00")
+
+    return {
+        "today_payment_count": payment_entries.filter(date=today).count(),
+        "today_payment_total": totals(today, today)[1],
+        "week_payment_count": totals(week_start, today)[0],
+        "week_payment_total": totals(week_start, today)[1],
+        "month_payment_count": totals(month_start, today)[0],
+        "month_payment_total": totals(month_start, today)[1],
+    }
+
+
+def _request_fingerprint(post_data):
+    values = {
+        key: post_data.getlist(key)
+        for key in sorted(post_data.keys())
+        if key not in {"csrfmiddlewaretoken", "request_id"}
+    }
+    return hashlib.sha256(
+        json.dumps(values, sort_keys=True, separators=(",", ":")).encode("utf-8")
+    ).hexdigest()
+
+
+def _transaction_json(summary, totals):
+    return JsonResponse(
+        {
+            "success": True,
+            "status": "created" if summary["created"] else "duplicate",
+            "batch_id": summary["batch"].pk,
+            "firm": summary["firm"].name,
+            "bill_number": summary["bill"].bill_number if summary["bill"] else None,
+            "payment_amount": str(summary["payment"].amount) if summary["payment"] else None,
+            "previous_debt": str(summary["previous_debt"]),
+            "remaining_debt": str(summary["remaining_debt"]),
+            "total_debt": str(_total_net_debt()),
+            **{key: str(value) if key.endswith("_total") else value for key, value in totals.items()},
+        }
+    )
+
+
 @login_required
 def add_firm(request):
     firms = Firm.objects.filter(is_deleted=False).order_by("name")
-    total_debt = sum((firm.current_debt() for firm in firms), 0)
-
+    archived_firms = Firm.objects.filter(is_deleted=True).order_by("name")
     return render(
         request,
         "ledger/add_firm.html",
         {
             "firms": firms,
-            "total_debt": total_debt,
+            "archived_firms": archived_firms,
+            "total_debt": _total_net_debt(),
         },
     )
 
 
-# This page shows representatives with source type and firm filters.
 @login_required
 def add_representative(request):
     selected_source_type = request.GET.get("source_type", "")
     selected_firm_id = request.GET.get("firm", "")
 
-    representatives = Representative.objects.filter(is_deleted=False).select_related("firm").order_by(
-        "firm__source_type",
-        "firm__name",
-        "name",
-    )
+    representatives = Representative.objects.filter(
+        is_deleted=False,
+        firm__is_deleted=False,
+    ).select_related("firm").order_by("firm__source_type", "firm__name", "name")
 
     if selected_source_type:
-        representatives = representatives.filter(
-            firm__source_type=selected_source_type
-        )
-
+        representatives = representatives.filter(firm__source_type=selected_source_type)
     if selected_firm_id:
-        representatives = representatives.filter(
-            firm_id=selected_firm_id
-        )
+        representatives = representatives.filter(firm_id=selected_firm_id)
 
     firm_filter_options = Firm.objects.filter(is_deleted=False).order_by("name")
-
     if selected_source_type:
-        firm_filter_options = firm_filter_options.filter(
-            source_type=selected_source_type
-        )
+        firm_filter_options = firm_filter_options.filter(source_type=selected_source_type)
+
+    archived_representatives = Representative.objects.filter(
+        Q(is_deleted=True) | Q(firm__is_deleted=True)
+    ).select_related("firm").order_by("firm__name", "name")
 
     return render(
         request,
@@ -72,366 +147,235 @@ def add_representative(request):
             "selected_firm_id": selected_firm_id,
             "firm_filter_options": firm_filter_options,
             "representatives": representatives,
+            "archived_representatives": archived_representatives,
         },
     )
 
 
-# This view switches a representative between active and inactive.
 @login_required
 def toggle_representative_active(request, representative_id):
-    if request.method == "POST":
-        representative = Representative.objects.get(id=representative_id)
-        representative.is_active = not representative.is_active
-        representative.save()
-
-        # If the request was made via AJAX, return JSON so the frontend
-        # can update the UI without a full page reload.
-        if request.headers.get("x-requested-with") == "XMLHttpRequest":
-            return JsonResponse({
-                "id": representative.id,
-                "is_active": representative.is_active,
-            })
-
+    if request.method != "POST":
+        return JsonResponse({"success": False, "error": "POST required."}, status=405)
+    representative = get_object_or_404(
+        Representative.objects.select_related("firm"),
+        pk=representative_id,
+        is_deleted=False,
+        firm__is_deleted=False,
+    )
+    representative.is_active = not representative.is_active
+    representative.save(update_fields=["is_active"])
+    if request.headers.get("x-requested-with") == "XMLHttpRequest":
+        return JsonResponse({"id": representative.pk, "is_active": representative.is_active})
     return redirect("ledger:add_representative")
 
 
-# This small view returns firms for one selected source type.
-# JavaScript uses this to filter the Firm dropdown.
 @login_required
 def firms_for_source_type(request):
     source_type = request.GET.get("source_type")
-
-    firms = []
-
+    matching_firms = Firm.objects.filter(is_deleted=False)
     if source_type:
-        matching_firms = Firm.objects.filter(
-            source_type=source_type,
-            is_deleted=False,
-        ).order_by("name")
-
-        firms = [
-            {
-                "id": firm.id,
-                "name": firm.name,
-            }
-            for firm in matching_firms
-        ]
-
-    return JsonResponse(
-        {
-            "firms": firms,
-        }
-    )
+        matching_firms = matching_firms.filter(source_type=source_type)
+    return JsonResponse({
+        "firms": list(matching_firms.order_by("name").values("id", "name")),
+    })
 
 
-# This small view returns representatives and bills for one selected firm.
-# JavaScript uses this after the user selects a firm on the transaction page.
 @login_required
 def representatives_for_firm(request):
     firm_id = request.GET.get("firm_id")
-
+    firm = Firm.objects.filter(pk=firm_id, is_deleted=False).first() if firm_id else None
     representatives = []
-    source_type = ""
     bills = []
-
-    if firm_id:
-        firm = Firm.objects.filter(id=firm_id).first()
-
-        if firm:
-            source_type = firm.source_type
-
-            firm_bills = firm.bills.order_by("-bill_date", "-id")
-
-            for index, bill in enumerate(firm_bills):
-                bills.append(
-                    {
-                        "id": bill.id,
-                        "bill_number": bill.bill_number,
-                        "bill_amount": str(bill.bill_amount),
-                        "bill_date": bill.bill_date.strftime("%d %b %Y"),
-                        "is_latest": index == 0,
-                    }
-                )
-
-        reps = Representative.objects.filter(
-            firm_id=firm_id,
-            is_active=True,
-            is_deleted=False,
-        ).order_by("name")
-
-        representatives = [
+    source_type = ""
+    if firm:
+        source_type = firm.source_type
+        representatives = list(
+            Representative.objects.filter(
+                firm=firm,
+                is_active=True,
+                is_deleted=False,
+            ).order_by("name").values("id", "name")
+        )
+        bills = [
             {
-                "id": rep.id,
-                "name": rep.name,
+                "id": bill.pk,
+                "bill_number": bill.bill_number,
+                "bill_amount": str(bill.bill_amount),
+                "bill_date": bill.bill_date.strftime("%d %b %Y"),
+                "is_latest": index == 0,
             }
-            for rep in reps
+            for index, bill in enumerate(firm.bills.order_by("-bill_date", "-id"))
         ]
-
-    return JsonResponse(
-        {
-            "representatives": representatives,
-            "source_type": source_type,
-            "bills": bills,
-        }
-    )
+    return JsonResponse({
+        "representatives": representatives,
+        "source_type": source_type,
+        "bills": bills,
+    })
 
 
-# This view shows the transaction form and handles saving it.
+@login_required
 def add_transaction(request):
-    # Stores the success summary after saving a transaction.
     saved_summary = None
-
     if request.method == "POST":
         form = LedgerTransactionForm(request.POST)
-
         if form.is_valid():
-            saved_summary = form.save()
-            form = LedgerTransactionForm()
+            try:
+                saved_summary = form.save(
+                    user=request.user,
+                    payload_hash=_request_fingerprint(request.POST),
+                )
+            except (ValidationError, IdempotencyConflict) as exc:
+                form.add_error(None, exc)
+                if request.headers.get("x-requested-with") == "XMLHttpRequest":
+                    return JsonResponse(
+                        {"success": False, "error": str(exc)},
+                        status=409 if isinstance(exc, IdempotencyConflict) else 400,
+                    )
+            else:
+                if request.headers.get("x-requested-with") == "XMLHttpRequest":
+                    today = timezone.localdate()
+                    return _transaction_json(saved_summary, _dashboard_payment_totals(today))
+                form = LedgerTransactionForm()
+        elif request.headers.get("x-requested-with") == "XMLHttpRequest":
+            return JsonResponse(
+                {"success": False, "errors": form.errors.get_json_data()},
+                status=400,
+            )
     else:
         form = LedgerTransactionForm()
 
-    # We need these dates for daily, weekly, and monthly payment stats.
     today = timezone.localdate()
-    week_start = today - timedelta(days=today.weekday())
-    month_start = today.replace(day=1)
-
-    # Today's payments.
-    today_payments = Payment.objects.filter(payment_date=today)
-    today_payment_count = today_payments.count()
-    today_payment_total = today_payments.aggregate(total=Sum("amount"))["total"] or 0
-
-    # This week's payments starting Monday.
-    week_payments = Payment.objects.filter(payment_date__gte=week_start, payment_date__lte=today)
-    week_payment_count = week_payments.count()
-    week_payment_total = week_payments.aggregate(total=Sum("amount"))["total"] or 0
-
-    # This month's payments starting on the 1st.
-    month_payments = Payment.objects.filter(payment_date__gte=month_start, payment_date__lte=today)
-    month_payment_count = month_payments.count()
-    month_payment_total = month_payments.aggregate(total=Sum("amount"))["total"] or 0
-
-    # Total debt across all firms.
-    firms = Firm.objects.filter(is_deleted=False)
-    total_debt = sum((firm.current_debt() for firm in firms), 0)
-
-    # Prepare data for offline mode JS preloading
-    all_firms = Firm.objects.filter(is_deleted=False).order_by("name")
+    totals = _dashboard_payment_totals(today)
     firms_by_source = defaultdict(list)
-    for f in all_firms:
-        firms_by_source[f.source_type].append({"id": f.id, "name": f.name})
-    
-    all_reps = Representative.objects.filter(is_active=True, is_deleted=False).order_by("name")
-    reps_by_firm = defaultdict(list)
-    for r in all_reps:
-        reps_by_firm[r.firm_id].append({"id": r.id, "name": r.name})
+    for firm in Firm.objects.filter(is_deleted=False).order_by("name"):
+        firms_by_source[firm.source_type].append({"id": firm.pk, "name": firm.name})
 
-    all_bills = Bill.objects.select_related('firm').filter(firm__is_deleted=False).order_by("-bill_date", "-id")
+    reps_by_firm = defaultdict(list)
+    for rep in Representative.objects.filter(
+        is_active=True,
+        is_deleted=False,
+        firm__is_deleted=False,
+    ).order_by("name"):
+        reps_by_firm[rep.firm_id].append({"id": rep.pk, "name": rep.name})
+
     bills_by_firm = defaultdict(list)
     firm_bill_counts = defaultdict(int)
-    for b in all_bills:
-        is_latest = (firm_bill_counts[b.firm_id] == 0)
-        bills_by_firm[b.firm_id].append({
-            "id": b.id,
-            "bill_number": b.bill_number,
-            "bill_amount": str(b.bill_amount),
-            "bill_date": b.bill_date.strftime("%d %b %Y"),
-            "is_latest": is_latest
+    for bill in Bill.objects.select_related("firm").filter(
+        firm__is_deleted=False,
+    ).order_by("-bill_date", "-id"):
+        bills_by_firm[bill.firm_id].append({
+            "id": bill.pk,
+            "bill_number": bill.bill_number,
+            "bill_amount": str(bill.bill_amount),
+            "bill_date": bill.bill_date.strftime("%d %b %Y"),
+            "is_latest": firm_bill_counts[bill.firm_id] == 0,
         })
-        firm_bill_counts[b.firm_id] += 1
+        firm_bill_counts[bill.firm_id] += 1
 
-    offline_data_json = json.dumps({
-        "firms_by_source": dict(firms_by_source),
-        "reps_by_firm": dict(reps_by_firm),
-        "bills_by_firm": dict(bills_by_firm)
-    })
+    context = {
+        "form": form,
+        "firm_form": FirmForm(),
+        "rep_form": RepresentativeForm(),
+        "saved_summary": saved_summary,
+        **totals,
+        "total_debt": _total_net_debt(),
+        "supplier_credit_total": _supplier_credit_total(),
+        "today_date": today.isoformat(),
+        "offline_data_json": json.dumps({
+            "user_id": request.user.pk,
+            "firms_by_source": dict(firms_by_source),
+            "reps_by_firm": dict(reps_by_firm),
+            "bills_by_firm": dict(bills_by_firm),
+        }),
+    }
+    return render(request, "ledger/add_transaction.html", context)
 
-    # If the transaction was just saved via AJAX, return JSON summary so the
-    # frontend can update the UI without a full reload.
-    if saved_summary and request.headers.get("x-requested-with") == "XMLHttpRequest":
-        response = {
-            "firm": saved_summary["firm"].name if saved_summary.get("firm") else None,
-            "bill_number": saved_summary.get("bill").bill_number if saved_summary.get("bill") else None,
-            "payment_amount": str(saved_summary.get("payment").amount) if saved_summary.get("payment") else None,
-            "previous_debt": str(saved_summary.get("previous_debt")),
-            "remaining_debt": str(saved_summary.get("remaining_debt")),
-            "today_payment_count": today_payment_count,
-            "today_payment_total": str(today_payment_total),
-            "week_payment_count": week_payment_count,
-            "week_payment_total": str(week_payment_total),
-            "month_payment_count": month_payment_count,
-            "month_payment_total": str(month_payment_total),
-            "total_debt": str(total_debt),
-        }
 
-        return JsonResponse(response)
-
-    return render(
-        request,
-        "ledger/add_transaction.html",
-        {
-            "form": form,
-            "firm_form": FirmForm(),
-            "rep_form": RepresentativeForm(),
-            "saved_summary": saved_summary,
-            "today_payment_count": today_payment_count,
-            "today_payment_total": today_payment_total,
-            "week_payment_count": week_payment_count,
-            "week_payment_total": week_payment_total,
-            "month_payment_count": month_payment_count,
-            "month_payment_total": month_payment_total,
-            "total_debt": total_debt,
-            "offline_data_json": offline_data_json,
-        },
-    )
-# This page shows the ledger history with optional date filtering.
+@login_required
 def ledger_history(request):
-    start_date = request.GET.get("start_date", "")
-    end_date = request.GET.get("end_date", "")
-
-    start_date_obj = None
-    end_date_obj = None
-
-    if start_date:
-        start_date_obj = datetime.strptime(start_date, "%Y-%m-%d").date()
-
-    if end_date:
-        end_date_obj = datetime.strptime(end_date, "%Y-%m-%d").date()
+    try:
+        start_date = date.fromisoformat(request.GET["start_date"]) if request.GET.get("start_date") else None
+        end_date = date.fromisoformat(request.GET["end_date"]) if request.GET.get("end_date") else None
+    except ValueError:
+        return HttpResponse("Invalid date filter.", status=400)
 
     entries = LedgerEntry.objects.filter(is_deleted=False).select_related(
-        "firm",
-        "bill",
-        "bill__representative",
-        "payment",
-        "payment__bill",
-        "payment__representative",
+        "firm", "bill", "bill__representative", "payment", "payment__bill",
+        "payment__representative", "transaction_batch", "transaction_batch__original_batch",
     ).order_by("date", "id")
 
-    balances = {}
+    balances = defaultdict(lambda: Decimal("0.00"))
     grouped_rows = {}
-
     for entry in entries:
-        firm = entry.firm
-        firm_id = firm.id
-        date = entry.date
+        balances[entry.firm_id] += Decimal(entry.increase) - Decimal(entry.decrease)
+        batch = entry.transaction_batch
+        row_key = ("batch", batch.pk) if batch else ("entry", entry.pk)
+        row_date = batch.date if batch else entry.date
+        row = grouped_rows.setdefault(row_key, {
+            "batch": batch,
+            "batch_id": batch.pk if batch else None,
+            "date": row_date,
+            "day": row_date.strftime("%A"),
+            "firm": entry.firm,
+            "source_type": entry.firm.get_source_type_display(),
+            "entries": [],
+            "representative_names": [],
+            "related_bill_numbers": [],
+            "payment_made": Decimal("0.00"),
+            "remaining_debt": Decimal("0.00"),
+        })
+        row["entries"].append(entry)
+        row["remaining_debt"] = balances[entry.firm_id]
+        if entry.entry_type == LedgerEntry.EntryType.PAYMENT_MADE:
+            row["payment_made"] += Decimal(entry.decrease)
+        for source in (entry.bill, entry.payment):
+            if source:
+                rep = getattr(source, "representative", None)
+                if rep and rep.name not in row["representative_names"]:
+                    row["representative_names"].append(rep.name)
+                bill = source if isinstance(source, Bill) else getattr(source, "bill", None)
+                if bill and bill.bill_number not in row["related_bill_numbers"]:
+                    row["related_bill_numbers"].append(bill.bill_number)
 
-        current_balance = balances.get(firm_id, Decimal("0.00"))
-        current_balance = current_balance + entry.increase - entry.decrease
-        balances[firm_id] = current_balance
-
-        entry_date = date
-        if hasattr(entry_date, "date"):
-            entry_date = entry_date.date()
-
-        show_entry = True
-
-        if start_date_obj and entry_date < start_date_obj:
-            show_entry = False
-
-        if end_date_obj and entry_date > end_date_obj:
-            show_entry = False
-
-        if not show_entry:
+    history_rows = []
+    for row in grouped_rows.values():
+        if start_date and row["date"] < start_date:
             continue
-
-        group_key = (firm_id, entry_date)
-
-        if group_key not in grouped_rows:
-            grouped_rows[group_key] = {
-                "date": entry_date,
-                "day": entry_date.strftime("%A"),
-                "firm": firm,
-                "source_type": firm.get_source_type_display(),
-                "representative_names": [],
-                "new_bill_numbers": [],
-                "related_bill_numbers": [],
-                "payment_made": Decimal("0.00"),
-                "remaining_debt": current_balance,
-                "latest_entry_id": entry.id,
-            }
-
-        row = grouped_rows[group_key]
-
-        if entry.id > row["latest_entry_id"]:
-            row["latest_entry_id"] = entry.id
-
-        if entry.bill:
-            bill_number = entry.bill.bill_number
-
-            if bill_number not in row["new_bill_numbers"]:
-                row["new_bill_numbers"].append(bill_number)
-
-            if bill_number not in row["related_bill_numbers"]:
-                row["related_bill_numbers"].append(bill_number)
-
-            if entry.bill.representative:
-                rep_name = entry.bill.representative.name
-                if rep_name not in row["representative_names"]:
-                    row["representative_names"].append(rep_name)
-
-        if entry.payment:
-            row["payment_made"] += entry.decrease
-
-            if entry.payment.bill:
-                bill_number = entry.payment.bill.bill_number
-                if bill_number not in row["related_bill_numbers"]:
-                    row["related_bill_numbers"].append(bill_number)
-
-            if entry.payment.representative:
-                rep_name = entry.payment.representative.name
-                if rep_name not in row["representative_names"]:
-                    row["representative_names"].append(rep_name)
-
-        row["remaining_debt"] = current_balance
-
-    history_rows = list(grouped_rows.values())
-    history_rows.sort(key=lambda row: (row["date"], row["latest_entry_id"]), reverse=True)
-
-    total_debt = sum(balances.values(), Decimal("0.00"))
-
-    # If AJAX request (or ajax=1 query param), return the table fragment only
-    if request.headers.get("x-requested-with") == "XMLHttpRequest" or request.GET.get("ajax"):
-        html = render_to_string(
-            "ledger/_history_table.html",
-            {"history_rows": history_rows, "total_debt": total_debt, "start_date": start_date, "end_date": end_date},
-            request=request,
+        if end_date and row["date"] > end_date:
+            continue
+        row["entries"].sort(key=lambda item: item.pk)
+        row["is_reversible"] = bool(
+            row["batch"] and row["batch"].kind == TransactionBatch.Kind.TRANSACTION
         )
+        history_rows.append(row)
+    history_rows.sort(key=lambda row: (row["date"], row["batch_id"] or 0), reverse=True)
+    total_debt = _total_net_debt()
 
-        return HttpResponse(html)
+    context = {
+        "history_rows": history_rows,
+        "total_debt": total_debt,
+        "start_date": request.GET.get("start_date", ""),
+        "end_date": request.GET.get("end_date", ""),
+    }
+    if request.headers.get("x-requested-with") == "XMLHttpRequest" or request.GET.get("ajax"):
+        return HttpResponse(render_to_string("ledger/_history_table.html", context, request=request))
+    return render(request, "ledger/ledger_history.html", context)
 
-    return render(
-        request,
-        "ledger/ledger_history.html",
-        {
-            "history_rows": history_rows,
-            "total_debt": total_debt,
-            "start_date": start_date,
-            "end_date": end_date,
-        },
-    )
+
 def _period_bounds(period):
-    # Returns the start/end date and whether the chart should be daily or monthly.
     today = timezone.localdate()
-
     if period == "week":
         return today - timedelta(days=today.weekday()), today, "day"
-
     if period == "month":
         return today.replace(day=1), today, "day"
-
     if period == "year":
         return today.replace(month=1, day=1), today, "month"
-
     if period == "5years":
-        try:
-            return today.replace(year=today.year - 4, month=1, day=1), today, "month"
-        except ValueError:
-            return today - timedelta(days=365 * 4), today, "month"
-
+        return today.replace(year=today.year - 4, month=1, day=1), today, "month"
     return today.replace(day=1), today, "day"
 
 
 def _day_series(start, end):
-    # Yields every day in the selected date range.
     current = start
     while current <= end:
         yield current
@@ -439,301 +383,247 @@ def _day_series(start, end):
 
 
 def _month_series(start, end):
-    # Yields the first day of every month in the selected range.
     current = start.replace(day=1)
     end_month = end.replace(day=1)
-
     while current <= end_month:
         yield current
-        if current.month == 12:
-            current = current.replace(year=current.year + 1, month=1)
-        else:
-            current = current.replace(month=current.month + 1)
+        current = current.replace(year=current.year + (current.month == 12), month=1 if current.month == 12 else current.month + 1)
 
 
+@login_required
 def dashboard_payments_trend(request):
-    # Returns total payment amount over time.
-    period = request.GET.get("period", "month")
-    start, end, grain = _period_bounds(period)
-
-    qs = Payment.objects.filter(payment_date__gte=start, payment_date__lte=end)
-
-    labels = []
-    values = []
-
+    start, end, grain = _period_bounds(request.GET.get("period", "month"))
+    qs = _active_activity_entries().filter(
+        entry_type=LedgerEntry.EntryType.PAYMENT_MADE,
+        date__gte=start,
+        date__lte=end,
+    )
+    labels, values = [], []
     if grain == "day":
         grouped = {
-            row["payment_date"]: float(row["total"] or 0)
-            for row in qs.values("payment_date").annotate(total=Sum("amount")).order_by("payment_date")
+            row["date"]: float(row["total"] or 0)
+            for row in qs.values("date").annotate(total=Sum("decrease")).order_by("date")
         }
-
         for day in _day_series(start, end):
             labels.append(day.strftime("%d %b"))
             values.append(grouped.get(day, 0))
     else:
         grouped = {}
-        for row in qs.annotate(bucket=TruncMonth("payment_date")).values("bucket").annotate(total=Sum("amount")).order_by("bucket"):
-            bucket = row["bucket"]
-            if hasattr(bucket, "date"):
-                bucket = bucket.date()
-            bucket = bucket.replace(day=1)
-            grouped[bucket] = float(row["total"] or 0)
-
+        for row in qs.annotate(bucket=TruncMonth("date")).values("bucket").annotate(total=Sum("decrease")):
+            bucket = row["bucket"].date() if hasattr(row["bucket"], "date") else row["bucket"]
+            grouped[bucket.replace(day=1)] = float(row["total"] or 0)
         for month in _month_series(start, end):
             labels.append(month.strftime("%b %Y"))
             values.append(grouped.get(month, 0))
-
     return JsonResponse({"labels": labels, "values": values})
 
 
+@login_required
 def dashboard_business_trend(request):
-    # Returns bill count and bill amount over time, so the chart can toggle between them.
-    period = request.GET.get("period", "month")
-    start, end, grain = _period_bounds(period)
-
-    qs = Bill.objects.filter(bill_date__gte=start, bill_date__lte=end)
-
-    labels = []
-    count_values = []
-    amount_values = []
-
+    start, end, grain = _period_bounds(request.GET.get("period", "month"))
+    qs = _active_activity_entries().filter(
+        entry_type=LedgerEntry.EntryType.BILL_CREATED,
+        date__gte=start,
+        date__lte=end,
+    )
+    labels, count_values, amount_values = [], [], []
     if grain == "day":
         grouped = {
-            row["bill_date"]: {
-                "count": int(row["count"] or 0),
-                "amount": float(row["total"] or 0),
-            }
-            for row in qs.values("bill_date").annotate(count=Count("id"), total=Sum("bill_amount")).order_by("bill_date")
+            row["date"]: {"count": row["count"], "amount": float(row["total"] or 0)}
+            for row in qs.values("date").annotate(count=Count("bill_id", distinct=True), total=Sum("increase"))
         }
-
         for day in _day_series(start, end):
-            labels.append(day.strftime("%d %b"))
             data = grouped.get(day, {"count": 0, "amount": 0})
+            labels.append(day.strftime("%d %b"))
             count_values.append(data["count"])
             amount_values.append(data["amount"])
     else:
         grouped = {}
-        for row in qs.annotate(bucket=TruncMonth("bill_date")).values("bucket").annotate(count=Count("id"), total=Sum("bill_amount")).order_by("bucket"):
-            bucket = row["bucket"]
-            if hasattr(bucket, "date"):
-                bucket = bucket.date()
-            bucket = bucket.replace(day=1)
-            grouped[bucket] = {
-                "count": int(row["count"] or 0),
-                "amount": float(row["total"] or 0),
-            }
-
+        for row in qs.annotate(bucket=TruncMonth("date")).values("bucket").annotate(
+            count=Count("bill_id", distinct=True), total=Sum("increase")
+        ):
+            bucket = row["bucket"].date() if hasattr(row["bucket"], "date") else row["bucket"]
+            grouped[bucket.replace(day=1)] = {"count": row["count"], "amount": float(row["total"] or 0)}
         for month in _month_series(start, end):
-            labels.append(month.strftime("%b %Y"))
             data = grouped.get(month, {"count": 0, "amount": 0})
+            labels.append(month.strftime("%b %Y"))
             count_values.append(data["count"])
             amount_values.append(data["amount"])
-
-    return JsonResponse(
-        {
-            "labels": labels,
-            "count_values": count_values,
-            "amount_values": amount_values,
-        }
-    )
+    return JsonResponse({"labels": labels, "count_values": count_values, "amount_values": amount_values})
 
 
+@login_required
 def dashboard_debt_over_time(request):
-    # Returns running total debt across all firms over time.
-    period = request.GET.get("period", "year")
-    start, end, grain = _period_bounds(period)
-
-    balances = defaultdict(Decimal)
-
-    # Carry-forward balance from before the selected window.
-    for entry in LedgerEntry.objects.filter(date__lt=start).order_by("date", "id"):
-        balances[entry.firm_id] += entry.increase - entry.decrease
-
+    start, end, grain = _period_bounds(request.GET.get("period", "year"))
+    balances = defaultdict(lambda: Decimal("0.00"))
+    before = LedgerEntry.objects.filter(is_deleted=False, date__lt=start).order_by("date", "id")
+    for entry in before:
+        balances[entry.firm_id] += Decimal(entry.increase) - Decimal(entry.decrease)
     current_total = sum(balances.values(), Decimal("0.00"))
-    labels = []
-    values = []
-
-    entries = LedgerEntry.objects.filter(date__gte=start, date__lte=end).order_by("date", "id")
-
+    entries = LedgerEntry.objects.filter(is_deleted=False, date__gte=start, date__lte=end).order_by("date", "id")
+    labels, values = [], []
     if grain == "day":
-        entries_by_day = defaultdict(list)
+        by_day = defaultdict(list)
         for entry in entries:
-            entries_by_day[entry.date].append(entry)
-
+            by_day[entry.date].append(entry)
         for day in _day_series(start, end):
-            for entry in entries_by_day.get(day, []):
-                balances[entry.firm_id] += entry.increase - entry.decrease
-                current_total = sum(balances.values(), Decimal("0.00"))
-
+            for entry in by_day[day]:
+                balances[entry.firm_id] += Decimal(entry.increase) - Decimal(entry.decrease)
+            current_total = sum(balances.values(), Decimal("0.00"))
             labels.append(day.strftime("%d %b"))
             values.append(float(current_total))
     else:
-        entries_by_month = defaultdict(list)
+        by_month = defaultdict(list)
         for entry in entries:
-            month_key = entry.date.replace(day=1)
-            entries_by_month[month_key].append(entry)
-
+            by_month[entry.date.replace(day=1)].append(entry)
         for month in _month_series(start, end):
-            for entry in entries_by_month.get(month, []):
-                balances[entry.firm_id] += entry.increase - entry.decrease
-                current_total = sum(balances.values(), Decimal("0.00"))
-
+            for entry in by_month[month]:
+                balances[entry.firm_id] += Decimal(entry.increase) - Decimal(entry.decrease)
+            current_total = sum(balances.values(), Decimal("0.00"))
             labels.append(month.strftime("%b %Y"))
             values.append(float(current_total))
-
     return JsonResponse({"labels": labels, "values": values})
 
-def soft_delete_ledger_entry(request, entry_id):
-    if request.method == "POST":
-        entry = get_object_or_404(LedgerEntry, id=entry_id)
 
-        entry.is_deleted = True
-        entry.deleted_at = timezone.now()
-
-        reason = request.POST.get("reason", "")
-        if reason:
-            entry.description = f"{entry.description} [DELETED: {reason}]"
-        else:
-            entry.description = f"{entry.description} [DELETED]"
-
-        entry.save()
-
-        # Compute updated total debt after deletion.
-        total_debt = sum((f.current_debt() for f in Firm.objects.filter(is_deleted=False)), Decimal("0.00"))
-
-        # If AJAX, return a JSON response so the frontend can remove the row
-        if request.headers.get("x-requested-with") == "XMLHttpRequest":
-            return JsonResponse({"id": entry_id, "status": "deleted", "total_debt": str(total_debt)})
-
-        next_url = request.POST.get("next", "ledger:ledger_history")
-        return redirect(next_url)
-
-    return redirect("ledger:ledger_history")
+def _batch_action_response(request, batch_id, operation):
+    if request.method != "POST":
+        return JsonResponse({"success": False, "error": "POST required."}, status=405)
+    reason = request.POST.get("reason", "").strip()
+    if not reason:
+        return JsonResponse({"success": False, "error": "A reason is required."}, status=400)
+    try:
+        result = operation(batch_id, user=request.user, reason=reason)
+    except ValidationError as exc:
+        return JsonResponse({"success": False, "error": str(exc)}, status=400)
+    if request.headers.get("x-requested-with") == "XMLHttpRequest":
+        return JsonResponse({
+            "success": True,
+            "status": "reversed" if operation is reverse_transaction_batch else "restored",
+            "changed": result["changed"],
+            "total_debt": str(_total_net_debt()),
+        })
+    messages.success(request, "Transaction reversed." if operation is reverse_transaction_batch else "Transaction restored.")
+    return redirect(request.POST.get("next") or "ledger:ledger_history")
 
 
+@login_required
+def reverse_batch(request, batch_id):
+    return _batch_action_response(request, batch_id, reverse_transaction_batch)
+
+
+@login_required
+def restore_batch(request, batch_id):
+    return _batch_action_response(request, batch_id, restore_transaction_batch)
+
+
+@login_required
 def dashboard_debt_breakdown(request):
-    # Returns debt grouped by firm and source type.
-    firms = Firm.objects.filter(is_deleted=False).order_by("name")
-
-    firm_rows = []
+    firm_rows, credit_rows = [], []
     source_totals = defaultdict(Decimal)
-
-    for firm in firms:
-        debt = firm.current_debt()
-
-        if debt > 0:
-            firm_rows.append(
-                {
-                    "label": firm.name,
-                    "value": float(debt),
-                }
-            )
-
-        source_totals[firm.source_type] += debt
-
+    for firm in Firm.objects.all().order_by("name"):
+        balance = Decimal(firm.current_debt())
+        if balance > 0:
+            firm_rows.append({"label": firm.name, "value": float(balance)})
+        elif balance < 0:
+            credit_rows.append({"label": firm.name, "value": float(abs(balance))})
+        source_totals[firm.source_type] += balance
     firm_rows.sort(key=lambda row: row["value"], reverse=True)
+    credit_rows.sort(key=lambda row: row["value"], reverse=True)
+    source_rows = [
+        {"label": label, "value": float(source_totals[source])}
+        for source, label in Firm.SourceType.choices
+        if source_totals[source] > 0
+    ]
+    return JsonResponse({"firms": firm_rows, "credits": credit_rows, "source_types": source_rows})
 
-    source_rows = []
-    for source_value, source_label in Firm.SourceType.choices:
-        value = float(source_totals.get(source_value, Decimal("0.00")))
-        if value > 0:
-            source_rows.append(
-                {
-                    "label": source_label,
-                    "value": value,
-                }
-            )
-
-    return JsonResponse(
-        {
-            "firms": firm_rows,
-            "source_types": source_rows,
-        }
-    )
-
-
-def signup(request):
-    if request.method == 'POST':
-        form = UserCreationForm(request.POST)
-        if form.is_valid():
-            form.save()
-            messages.success(request, 'Account created. You can now sign in.')
-            return redirect('login')
-    else:
-        form = UserCreationForm()
-
-    return render(request, 'registration/signup.html', {'form': form})
 
 @login_required
 def ajax_add_firm(request):
-    if request.method == "POST":
-        form = FirmForm(request.POST)
-        if form.is_valid():
-            firm = form.save()
-            return JsonResponse({"success": True, "id": firm.id, "name": firm.name})
-        else:
-            return JsonResponse({"success": False, "errors": form.errors})
-    return JsonResponse({"success": False, "error": "Invalid method"})
+    if request.method != "POST":
+        return JsonResponse({"success": False, "error": "POST required."}, status=405)
+    form = FirmForm(request.POST)
+    if form.is_valid():
+        firm = form.save()
+        return JsonResponse({"success": True, "id": firm.pk, "name": firm.name})
+    return JsonResponse({"success": False, "errors": form.errors.get_json_data()}, status=400)
+
 
 @login_required
 def ajax_add_representative(request):
-    if request.method == "POST":
-        form = RepresentativeForm(request.POST)
-        if form.is_valid():
-            rep = form.save()
-            deactivate_previous = request.POST.get("deactivate_previous") == "yes"
-            if deactivate_previous:
-                Representative.objects.filter(
-                    firm=rep.firm,
-                    is_active=True,
-                ).exclude(
-                    id=rep.id
-                ).update(
-                    is_active=False
-                )
-            return JsonResponse({"success": True, "id": rep.id, "name": rep.name})
-        else:
-            return JsonResponse({"success": False, "errors": form.errors})
-    return JsonResponse({"success": False, "error": "Invalid method"})
+    if request.method != "POST":
+        return JsonResponse({"success": False, "error": "POST required."}, status=405)
+    form = RepresentativeForm(request.POST)
+    if form.is_valid():
+        rep = form.save()
+        if request.POST.get("deactivate_previous") == "yes":
+            Representative.objects.filter(firm=rep.firm, is_active=True).exclude(pk=rep.pk).update(is_active=False)
+        return JsonResponse({"success": True, "id": rep.pk, "name": rep.name})
+    return JsonResponse({"success": False, "errors": form.errors.get_json_data()}, status=400)
+
 
 @login_required
 def edit_firm(request, firm_id):
-    firm = get_object_or_404(Firm, id=firm_id, is_deleted=False)
-    if request.method == "POST":
-        form = FirmForm(request.POST, instance=firm)
-        if form.is_valid():
-            form.save()
-            return redirect("ledger:add_firm")
-    else:
-        form = FirmForm(instance=firm)
+    firm = get_object_or_404(Firm, pk=firm_id, is_deleted=False)
+    form = FirmForm(request.POST or None, instance=firm)
+    if request.method == "POST" and form.is_valid():
+        form.save()
+        return redirect("ledger:add_firm")
     return render(request, "ledger/edit_firm.html", {"form": form, "firm": firm})
 
+
 @login_required
-def soft_delete_firm(request, firm_id):
-    if request.method == "POST":
-        firm = get_object_or_404(Firm, id=firm_id)
-        firm.is_deleted = True
-        firm.deleted_at = timezone.now()
-        firm.save()
+def archive_firm(request, firm_id):
+    if request.method != "POST":
+        return HttpResponse("POST required.", status=405)
+    firm = get_object_or_404(Firm, pk=firm_id, is_deleted=False)
+    firm.is_deleted = True
+    firm.deleted_at = timezone.now()
+    firm.save(update_fields=["is_deleted", "deleted_at"])
+    messages.success(request, "Firm archived. Its balance and transaction history are retained.")
     return redirect("ledger:add_firm")
+
+
+@login_required
+def restore_firm(request, firm_id):
+    if request.method != "POST":
+        return HttpResponse("POST required.", status=405)
+    firm = get_object_or_404(Firm, pk=firm_id, is_deleted=True)
+    firm.is_deleted = False
+    firm.deleted_at = None
+    firm.save(update_fields=["is_deleted", "deleted_at"])
+    messages.success(request, "Firm restored.")
+    return redirect("ledger:add_firm")
+
 
 @login_required
 def edit_representative(request, rep_id):
-    rep = get_object_or_404(Representative, id=rep_id, is_deleted=False)
-    if request.method == "POST":
-        form = RepresentativeForm(request.POST, instance=rep)
-        if form.is_valid():
-            form.save()
-            return redirect("ledger:add_representative")
-    else:
-        form = RepresentativeForm(instance=rep)
+    rep = get_object_or_404(Representative, pk=rep_id, is_deleted=False, firm__is_deleted=False)
+    form = RepresentativeForm(request.POST or None, instance=rep)
+    if request.method == "POST" and form.is_valid():
+        form.save()
+        return redirect("ledger:add_representative")
     return render(request, "ledger/edit_representative.html", {"form": form, "representative": rep})
 
+
 @login_required
-def soft_delete_representative(request, rep_id):
-    if request.method == "POST":
-        rep = get_object_or_404(Representative, id=rep_id)
-        rep.is_deleted = True
-        rep.deleted_at = timezone.now()
-        rep.save()
+def archive_representative(request, rep_id):
+    if request.method != "POST":
+        return HttpResponse("POST required.", status=405)
+    rep = get_object_or_404(Representative, pk=rep_id, is_deleted=False)
+    rep.is_deleted = True
+    rep.deleted_at = timezone.now()
+    rep.save(update_fields=["is_deleted", "deleted_at"])
+    messages.success(request, "Representative archived. Historical transaction links are retained.")
+    return redirect("ledger:add_representative")
+
+
+@login_required
+def restore_representative(request, rep_id):
+    if request.method != "POST":
+        return HttpResponse("POST required.", status=405)
+    rep = get_object_or_404(Representative, pk=rep_id, is_deleted=True)
+    rep.is_deleted = False
+    rep.deleted_at = None
+    rep.save(update_fields=["is_deleted", "deleted_at"])
+    messages.success(request, "Representative restored.")
     return redirect("ledger:add_representative")

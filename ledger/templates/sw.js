@@ -1,53 +1,35 @@
-const CACHE_NAME = 'pharmacy-ledger-v1';
-const ASSETS_TO_CACHE = [
-  '/manifest.json',
-  '/accounts/login/',
-  // Other static assets will be cached dynamically as the user browses
-];
+const CACHE_NAME = 'pharmacy-ledger-static-v2';
 
-// Install Event - Caching core assets
 self.addEventListener('install', event => {
-  event.waitUntil(
-    caches.open(CACHE_NAME).then(cache => {
-      console.log('Opened cache');
-      return cache.addAll(ASSETS_TO_CACHE);
-    })
-  );
+  event.waitUntil(self.skipWaiting());
 });
 
-// Activate Event - Clean up old caches
 self.addEventListener('activate', event => {
   event.waitUntil(
-    caches.keys().then(cacheNames => {
-      return Promise.all(
-        cacheNames.map(cacheName => {
-          if (cacheName !== CACHE_NAME) {
-            return caches.delete(cacheName);
-          }
-        })
-      );
-    })
+    caches.keys().then(names => Promise.all(
+      names.filter(name => name.startsWith('pharmacy-ledger-') && name !== CACHE_NAME)
+        .map(name => caches.delete(name))
+    )).then(() => self.clients.claim())
   );
 });
 
-// Fetch Event - Network First, falling back to cache
 self.addEventListener('fetch', event => {
-  // Only intercept GET requests
-  if (event.request.method !== 'GET') return;
+  const request = event.request;
+  if (request.method !== 'GET' || request.mode === 'navigate') return;
+
+  const url = new URL(request.url);
+  if (url.origin !== self.location.origin || !url.pathname.startsWith('/static/')) return;
 
   event.respondWith(
-    fetch(event.request)
-      .then(response => {
-        // Clone the response and save it to the cache
-        const resClone = response.clone();
-        caches.open(CACHE_NAME).then(cache => {
-          cache.put(event.request, resClone);
-        });
-        return response;
-      })
-      .catch(() => {
-        // Network failed, serve from cache
-        return caches.match(event.request);
-      })
+    caches.open(CACHE_NAME).then(async cache => {
+      const cached = await cache.match(request);
+      if (cached) return cached;
+
+      const response = await fetch(request);
+      if (response.ok && response.type === 'basic') {
+        await cache.put(request, response.clone());
+      }
+      return response;
+    })
   );
 });

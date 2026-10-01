@@ -190,6 +190,17 @@
             color: #ef4444;
         }
 
+        .header-dropdown-menu button.danger {
+            width: 100%;
+            justify-content: flex-start;
+            background: transparent;
+            color: #ef4444;
+            border: 0;
+            border-radius: 0;
+            padding: 12px 16px;
+            font-size: 13px;
+        }
+
         /* ===== BOTTOM NAVIGATION ===== */
         .bottom-nav {
             position: fixed;
@@ -462,6 +473,54 @@
             color: var(--accent);
             font-weight: 800;
         }
+
+        .entity-actions {
+            display: flex;
+            flex: 0 0 auto;
+            align-items: center;
+            gap: 8px;
+            flex-wrap: wrap;
+            visibility: visible;
+            opacity: 1;
+        }
+
+        .entity-actions form,
+        .ledger-entry-card .entry-footer form { margin: 0; }
+
+        .entity-actions .archive-button,
+        .restore-button {
+            min-height: 40px;
+            padding: 7px 12px;
+            font-size: 12px;
+        }
+
+        .entity-actions .archive-button {
+            color: #fff;
+            background: #b42318;
+            border: 1px solid #b42318;
+        }
+
+        .restore-button { background: #166534; }
+        .archive-badge {
+            display: inline-flex;
+            padding: 3px 8px;
+            border-radius: 999px;
+            background: #fff7ed;
+            color: #9a3412;
+            font-size: 11px;
+            font-weight: 800;
+        }
+
+        .entry-credit { color: #166534; font-weight: 800; }
+
+        .entry-batch-details { display: grid; gap: 8px; margin: 10px 0; }
+        .entry-batch-line { display:flex; justify-content:space-between; align-items:flex-start; gap:12px; }
+        .entry-batch-amounts { display:flex; gap:8px; white-space:nowrap; }
+        .entry-reason { margin: 8px 0; color:#475569; font-size:12px; }
+        .batch-action-form { display:flex; align-items:center; gap:8px; flex-wrap:wrap; }
+        .batch-action-form label { font-size:10px; }
+        .batch-action-form input { width:220px; max-width:100%; height:38px; min-height:38px; }
+        .batch-action-form button { min-height:40px; }
 
         .ledger-total-card {
             background: var(--brand);
@@ -984,6 +1043,17 @@
         @media (max-width: 768px) {
             .page-main { padding: 14px 12px; }
 
+            .ledger-entry-card .entry-footer { flex-wrap: wrap; }
+            .entry-batch-line { flex-direction:column; gap:2px; }
+            .batch-action-form { width:100%; }
+            .batch-action-form input { flex:1 1 100%; width:100%; }
+            .batch-action-form button { width:100%; }
+            .entity-actions { width: 100%; justify-content: flex-start; }
+            .entity-actions > a,
+            .entity-actions > form { flex: 1 1 42%; }
+            .entity-actions .button-link,
+            .entity-actions .archive-button { width: 100%; min-height: 42px; }
+
             /* Stack dashboard: transaction form first, then charts */
             .dashboard-layout {
                 display: flex;
@@ -1036,7 +1106,7 @@
         }
     </style>
 </head>
-<body>
+<body data-offline-user-id="{% if user.is_authenticated %}{{ user.pk }}{% else %}anonymous{% endif %}">
     <!-- ===== STICKY TOP HEADER ===== -->
     <header class="app-header">
         <div class="header-left">
@@ -1064,10 +1134,10 @@
                         <svg viewBox="0 0 24 24"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0110 0v4"/></svg>
                         Change Password
                     </a>
-                    <a href="#" onclick="document.getElementById('logoutForm').submit(); return false;" class="danger">
+                    <button type="button" id="logoutButton" class="danger">
                         <svg viewBox="0 0 24 24"><path d="M17 16l4-4-4-4M21 12H9M13 21H5a2 2 0 01-2-2V5a2 2 0 012-2h8"/></svg>
                         Sign Out
-                    </a>
+                    </button>
                 </div>
             </div>
             <form id="logoutForm" method="post" action="{% url 'logout' %}" style="display:none;">
@@ -1081,6 +1151,11 @@
     <div class="app-shell">
         <main class="page-main">
             <div class="container">
+                {% if messages %}
+                    <div class="app-messages" role="status">
+                        {% for message in messages %}<div class="app-message">{{ message }}</div>{% endfor %}
+                    </div>
+                {% endif %}
                 {% block content %}{% endblock %}
             </div>
         </main>
@@ -1111,7 +1186,7 @@
     </nav>
 
     <!-- ===== SCRIPTS ===== -->
-    <script>
+    <script nonce="{{ request.csp_nonce }}">
         // CSRF helper for AJAX requests.
         function getCookie(name) {
             let cookieValue = null;
@@ -1143,6 +1218,29 @@
                 }
             });
         }
+
+        const logoutButton = document.getElementById('logoutButton');
+        if (logoutButton) {
+            logoutButton.addEventListener('click', () => document.getElementById('logoutForm').submit());
+        }
+
+        document.addEventListener('click', function(event) {
+            const periodCard = event.target.closest('.period-modal-trigger');
+            if (periodCard && typeof window.openPeriodModal === 'function') {
+                window.openPeriodModal(periodCard.dataset.period);
+            }
+
+            const closeButton = event.target.closest('[data-close-modal]');
+            if (closeButton) {
+                const modal = document.getElementById(closeButton.dataset.closeModal);
+                if (modal) modal.style.display = 'none';
+                const dashboard = document.querySelector('.dashboard-layout');
+                if (dashboard) {
+                    dashboard.style.pointerEvents = 'auto';
+                    dashboard.style.filter = 'none';
+                }
+            }
+        });
     </script>
 
     <style>
@@ -1177,11 +1275,14 @@
 
         .toast.success { background: var(--accent); }
         .toast.error { background: var(--danger); }
+        .toast.warning { background: #b45309; }
+        .app-message { margin: 8px 0; padding: 10px 14px; border-radius: 8px; background: #ecfdf5; color: #14532d; font-weight: 700; }
+        .form-errors { margin: 0 0 12px; padding: 10px 14px; border-radius: 8px; background: #fef2f2; color: #991b1b; }
     </style>
 
     <div id="toast-container" aria-live="polite" aria-atomic="true"></div>
 
-    <script>
+    <script nonce="{{ request.csp_nonce }}">
         // Simple toast helper used across the app.
         window.showToast = function(message, type='success', timeout=3500) {
             const container = document.getElementById('toast-container');

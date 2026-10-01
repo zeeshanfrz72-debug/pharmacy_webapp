@@ -1,3 +1,6 @@
+import uuid
+
+from django.conf import settings
 from django.core.exceptions import ValidationError
 from django.db import models
 from django.db.models import Sum
@@ -28,6 +31,10 @@ class Firm(models.Model):
     address = models.TextField(blank=True)
     notes = models.TextField(blank=True)
 
+    # Incremented inside each financial write to serialize balance checks on
+    # SQLite (which does not implement SELECT ... FOR UPDATE).
+    balance_version = models.PositiveBigIntegerField(default=0, editable=False)
+
     # Soft delete fields
     is_deleted = models.BooleanField(default=False, help_text="Soft delete flag")
     deleted_at = models.DateTimeField(null=True, blank=True, help_text="When this firm was soft deleted")
@@ -45,6 +52,11 @@ class Firm(models.Model):
         decrease = totals["total_decrease"] or 0
 
         return increase - decrease
+
+    @property
+    def current_credit(self):
+        balance = self.current_debt()
+        return abs(balance) if balance < 0 else 0
 
     # Controls how this firm appears in Django admin/dropdowns.
     def __str__(self):
@@ -215,6 +227,54 @@ class Payment(models.Model):
         return f"{self.firm.name} payment - {self.amount}"
 
 
+class TransactionBatch(models.Model):
+    """One user action and its append-only reversal/restoration events."""
+
+    class Kind(models.TextChoices):
+        TRANSACTION = "transaction", "Transaction"
+        REVERSAL = "reversal", "Reversal"
+        RESTORATION = "restoration", "Restoration"
+
+    class Status(models.TextChoices):
+        ACTIVE = "active", "Active"
+        REVERSED = "reversed", "Reversed"
+
+    request_id = models.UUIDField(default=uuid.uuid4, unique=True, editable=False)
+    payload_hash = models.CharField(max_length=64, blank=True, default="")
+    firm = models.ForeignKey(
+        Firm,
+        on_delete=models.PROTECT,
+        related_name="transaction_batches",
+    )
+    created_by = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="pharmacy_transaction_batches",
+    )
+    date = models.DateField(default=timezone.localdate)
+    previous_balance = models.DecimalField(max_digits=12, decimal_places=2, default=0)
+    balance_after = models.DecimalField(max_digits=12, decimal_places=2, default=0)
+    kind = models.CharField(max_length=20, choices=Kind.choices, default=Kind.TRANSACTION)
+    status = models.CharField(max_length=20, choices=Status.choices, default=Status.ACTIVE)
+    original_batch = models.ForeignKey(
+        "self",
+        on_delete=models.PROTECT,
+        null=True,
+        blank=True,
+        related_name="audit_events",
+    )
+    reason = models.TextField(blank=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ["date", "id"]
+
+    def __str__(self):
+        return f"{self.get_kind_display()} #{self.pk} - {self.firm.name}"
+
+
 # LedgerEntry is the financial history table.
 # It records every increase and decrease in debt.
 class LedgerEntry(models.Model):
@@ -224,6 +284,8 @@ class LedgerEntry(models.Model):
         BILL_CREATED = "bill_created", "Bill Created"
         PAYMENT_MADE = "payment_made", "Payment Made"
         ADJUSTMENT = "adjustment", "Adjustment"
+        REVERSAL = "reversal", "Reversal"
+        RESTORATION = "restoration", "Restoration"
 
     # Every ledger entry belongs to one firm.
     firm = models.ForeignKey(
@@ -251,6 +313,14 @@ class LedgerEntry(models.Model):
         null=True,
         blank=True,
         related_name="ledger_entries",
+    )
+
+    transaction_batch = models.ForeignKey(
+        TransactionBatch,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="entries",
     )
 
     # increase means debt went up.

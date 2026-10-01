@@ -2,9 +2,19 @@
 env/
 venv/
 .env
+.env.*
+!.env.example
 
 # Database
 db.sqlite3
+*.sqlite3
+*.db
+
+# Local credentials and backup tokens
+client_secrets.json
+mycreds.txt
+credentials.json
+token.json
 
 # Python Cache
 __pycache__/

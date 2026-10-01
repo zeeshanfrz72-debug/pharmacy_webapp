@@ -96,11 +96,11 @@
                             </button>
                         </form>
                         
-                        <div style="display:flex; gap:8px;">
+                        <div class="entity-actions">
                             <a href="{% url 'ledger:edit_representative' representative.id %}" class="button-link" style="padding:4px 8px; font-size:12px;">Edit</a>
-                            <form method="post" action="{% url 'ledger:soft_delete_representative' representative.id %}" onsubmit="return confirm('Are you sure you want to delete this representative? Transactions will remain.');">
+                            <form method="post" action="{% url 'ledger:archive_representative' representative.id %}">
                                 {% csrf_token %}
-                                <button type="submit" style="background:var(--error); padding:4px 8px; font-size:12px; color:white; border:none; border-radius:4px; cursor:pointer;">Delete</button>
+                                <button type="submit" class="archive-button">Archive</button>
                             </form>
                         </div>
                     </div>
@@ -113,7 +113,37 @@
         </div>
     </div>
 
-    <script>
+    <div class="panel compact-panel ledger-history-panel">
+        <h2>Archived Representatives</h2>
+        <div class="ledger-history-list">
+            {% for representative in archived_representatives %}
+                <div class="ledger-entry-card">
+                    <div class="entry-header">
+                        <strong>{{ representative.name }}</strong>
+                        <span class="archive-badge">Archived{% if representative.firm.is_deleted %} with firm{% endif %}</span>
+                    </div>
+                    <div class="entry-body">
+                        <div class="entry-field"><span class="entry-field-label">Firm</span><span>{{ representative.firm.name }}</span></div>
+                        <div class="entry-field"><span class="entry-field-label">Phone</span><span>{{ representative.phone|default:"—" }}</span></div>
+                    </div>
+                    <div class="entry-footer">
+                        <span>Historical transaction links are retained.</span>
+                        {% if not representative.firm.is_deleted %}
+                            <form method="post" action="{% url 'ledger:restore_representative' representative.id %}">
+                                {% csrf_token %}<button type="submit" class="restore-button">Restore</button>
+                            </form>
+                        {% else %}
+                            <span>Restore the firm first.</span>
+                        {% endif %}
+                    </div>
+                </div>
+            {% empty %}
+                <p>No archived representatives.</p>
+            {% endfor %}
+        </div>
+    </div>
+
+    <script nonce="{{ request.csp_nonce }}">
         /*
             This script filters the Firm dropdown based on selected Source Type.
             It uses the same Django JSON endpoint as the transaction page.
@@ -156,9 +186,9 @@
 
         if (sourceTypeFilter && firmFilter) {
             sourceTypeFilter.addEventListener("change", loadFirmsForSelectedSourceTypeFilter);
-
+        }
     </script>
-    <script>
+    <script nonce="{{ request.csp_nonce }}">
         // Intercept toggle forms and perform AJAX POST so page doesn't reload.
         document.querySelectorAll('.toggle-form').forEach(function(form) {
             form.addEventListener('submit', function(e) {

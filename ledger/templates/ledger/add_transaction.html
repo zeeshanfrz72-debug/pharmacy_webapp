@@ -6,7 +6,7 @@
     <div class="dashboard-layout">
         <aside class="dashboard-side">
             <div class="dashboard-grid">
-                <div class="metric-card" onclick="openPeriodModal('today')" style="cursor: pointer;">
+                <div class="metric-card period-modal-trigger" data-period="today" style="cursor: pointer;">
                     <div class="metric-label">Today Payments</div>
                     <div class="metric-value">{{ today_payment_count }}</div>
                     <div class="metric-subvalue">
@@ -15,7 +15,7 @@
                     </div>
                 </div>
 
-                <div class="metric-card" onclick="openPeriodModal('week')" style="cursor: pointer;">
+                <div class="metric-card period-modal-trigger" data-period="week" style="cursor: pointer;">
                     <div class="metric-label">This Week</div>
                     <div class="metric-value">{{ week_payment_count }}</div>
                     <div class="metric-subvalue">
@@ -24,7 +24,7 @@
                     </div>
                 </div>
 
-                <div class="metric-card" onclick="openPeriodModal('month')" style="cursor: pointer;">
+                <div class="metric-card period-modal-trigger" data-period="month" style="cursor: pointer;">
                     <div class="metric-label">This Month</div>
                     <div class="metric-value">{{ month_payment_count }}</div>
                     <div class="metric-subvalue">
@@ -37,6 +37,8 @@
                     <div class="metric-label">Total Debt</div>
                     <div class="metric-value debt-hidden" id="total-debt-value">******</div>
                     <div class="metric-subvalue">
+                        <span class="metric-sub-label">Supplier Credits</span>
+                        {{ supplier_credit_total }}
                         <button type="button" id="toggle-debt-button" class="eye-button">Show</button>
                     </div>
                 </div>
@@ -47,6 +49,9 @@
 
                 <form method="post" id="transaction-form">
                     {% csrf_token %}
+                    {{ form.request_id }}
+                    <span id="dashboard-date-context" data-today="{{ today_date }}" hidden></span>
+                    {% if form.errors %}<div class="form-errors" role="alert">{{ form.errors }}</div>{% endif %}
 
                     <div class="transaction-grid">
                         <div class="transaction-field">
@@ -177,7 +182,7 @@
         <div style="background:white; border-radius:16px; padding:24px; max-width:800px; width:90%; max-height:80vh; display:flex; flex-direction:column; box-shadow:0 20px 60px rgba(0,0,0,0.3);">
             <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:16px;">
                 <h3 style="margin:0; font-size:20px; color:#111827;" id="historyModalTitle">Period Transactions</h3>
-                <button type="button" onclick="closeHistoryModal()" style="background:transparent; border:none; font-size:24px; cursor:pointer; color:#6b7280;">&times;</button>
+                <button type="button" data-close-modal="historyModal" style="background:transparent; border:none; font-size:24px; cursor:pointer; color:#6b7280;">&times;</button>
             </div>
             <div id="historyModalContent" style="overflow-y:auto; flex:1; padding-right:8px;">
                 <!-- content goes here -->
@@ -190,7 +195,7 @@
         <div style="background:white; border-radius:16px; padding:24px; max-width:500px; width:90%; box-shadow:0 20px 60px rgba(0,0,0,0.3);">
             <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:16px;">
                 <h3 style="margin:0; font-size:20px; color:#111827;">Add New Firm</h3>
-                <button type="button" onclick="closeAddFirmModal()" style="background:transparent; border:none; font-size:24px; cursor:pointer; color:#6b7280;">&times;</button>
+                <button type="button" data-close-modal="addFirmModal" style="background:transparent; border:none; font-size:24px; cursor:pointer; color:#6b7280;">&times;</button>
             </div>
             <form id="ajax-add-firm-form" method="post">
                 {% csrf_token %}
@@ -198,7 +203,7 @@
                     {{ firm_form.as_p }}
                 </div>
                 <div style="margin-top:16px; text-align:right;">
-                    <button type="button" class="button-link" onclick="closeAddFirmModal()">Cancel</button>
+                    <button type="button" class="button-link" data-close-modal="addFirmModal">Cancel</button>
                     <button type="submit">Save Firm</button>
                 </div>
             </form>
@@ -210,7 +215,7 @@
         <div style="background:white; border-radius:16px; padding:24px; max-width:500px; width:90%; box-shadow:0 20px 60px rgba(0,0,0,0.3);">
             <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:16px;">
                 <h3 style="margin:0; font-size:20px; color:#111827;">Add New Representative</h3>
-                <button type="button" onclick="closeAddRepModal()" style="background:transparent; border:none; font-size:24px; cursor:pointer; color:#6b7280;">&times;</button>
+                <button type="button" data-close-modal="addRepModal" style="background:transparent; border:none; font-size:24px; cursor:pointer; color:#6b7280;">&times;</button>
             </div>
             <form id="ajax-add-rep-form" method="post">
                 {% csrf_token %}
@@ -219,7 +224,7 @@
                     {{ rep_form.as_p }}
                 </div>
                 <div style="margin-top:16px; text-align:right;">
-                    <button type="button" class="button-link" onclick="closeAddRepModal()">Cancel</button>
+                    <button type="button" class="button-link" data-close-modal="addRepModal">Cancel</button>
                     <button type="submit">Save Representative</button>
                 </div>
             </form>
@@ -227,7 +232,7 @@
     </div>
 
 
-    <script>
+    <script nonce="{{ request.csp_nonce }}">
         function getFormattedDate(d) {
             let month = '' + (d.getMonth() + 1),
                 day = '' + d.getDate(),
@@ -238,24 +243,29 @@
         }
 
         function getTodayDates() {
-            const today = new Date();
+            const today = getAppToday();
             const formatted = getFormattedDate(today);
             return { start: formatted, end: formatted };
         }
 
+        function getAppToday() {
+            const [year, month, day] = document.getElementById('dashboard-date-context').dataset.today.split('-').map(Number);
+            return new Date(year, month - 1, day, 12);
+        }
+
         function getThisWeekDates() {
-            const today = new Date();
+            const today = getAppToday();
             const day = today.getDay();
             const diff = today.getDate() - day + (day === 0 ? -6 : 1);
-            const start = new Date(today.setDate(diff));
-            const end = new Date();
+            const start = new Date(today.getFullYear(), today.getMonth(), diff, 12);
+            const end = getAppToday();
             return { start: getFormattedDate(start), end: getFormattedDate(end) };
         }
 
         function getThisMonthDates() {
-            const today = new Date();
-            const start = new Date(today.getFullYear(), today.getMonth(), 1);
-            const end = new Date();
+            const today = getAppToday();
+            const start = new Date(today.getFullYear(), today.getMonth(), 1, 12);
+            const end = getAppToday();
             return { start: getFormattedDate(start), end: getFormattedDate(end) };
         }
 
@@ -312,7 +322,7 @@
         }
     </script>
 
-    <script>
+    <script nonce="{{ request.csp_nonce }}">
         // AJAX submit for transaction form to avoid page reload.
         (function () {
             const form = document.getElementById('transaction-form');
@@ -321,6 +331,7 @@
 
             function resetForm() {
                 form.reset();
+                document.getElementById('id_request_id').value = crypto.randomUUID();
                 // Reset JS-driven bill fields
                 const evt = new Event('change');
                 document.getElementById('id_source_type').dispatchEvent(evt);
@@ -328,7 +339,7 @@
 
             if (!form) return;
 
-            form.addEventListener('submit', function (e) {
+            form.addEventListener('submit', async function (e) {
                 e.preventDefault();
 
                 saveButton.disabled = true;
@@ -338,7 +349,7 @@
 
                 if (!navigator.onLine) {
                     if (typeof saveToOfflineQueue === 'function') {
-                        saveToOfflineQueue(url, fd);
+                        await saveToOfflineQueue(url, fd);
                         if (window.showToast) window.showToast('You are offline. Saved locally. Will sync when online.', 'warning');
                         resetForm();
                     } else {
@@ -348,45 +359,57 @@
                     return;
                 }
 
-                fetch(url, {
-                    method: 'POST',
-                    headers: {
-                        'X-CSRFToken': window.csrftoken,
-                        'X-Requested-With': 'XMLHttpRequest',
-                    },
-                    body: fd,
-                })
-                .then(r => r.json())
-                .then(data => {
-                    if (data && (data.previous_debt || data.remaining_debt)) {
-                        // update total debt
-                        if (data.total_debt !== undefined && totalDebtElem) {
-                            window.rawTotalDebt = data.total_debt;
-                            if (!totalDebtElem.classList.contains('debt-hidden')) {
-                                totalDebtElem.textContent = window.rawTotalDebt;
-                            }
-                        }
+                try {
+                    const response = await fetch(url, {
+                        method: 'POST',
+                        headers: {
+                            'X-CSRFToken': window.csrftoken || '',
+                            'X-Requested-With': 'XMLHttpRequest',
+                        },
+                        body: fd,
+                    });
+                    const contentType = response.headers.get('content-type') || '';
+                    const data = contentType.includes('application/json') ? await response.json() : null;
 
-                        // show toast
-                        if (window.showToast) {
-                            window.showToast('Transaction saved', 'success');
-                        }
-
-                        resetForm();
+                    if (response.status === 401 || response.status === 403) {
+                        await saveToOfflineQueue(url, fd);
+                        if (window.showToast) window.showToast('Please sign in again. This transaction is queued on this device.', 'warning', 7000);
+                        window.location.assign('/accounts/login/?next=/ledger/add-transaction/');
+                        return;
                     }
-                })
-                .catch(err => {
+                    if (!response.ok || !data || data.success !== true) {
+                        const detail = data?.error || (data?.errors ? JSON.stringify(data.errors) : `HTTP ${response.status}`);
+                        if (window.showToast) window.showToast(`Transaction was not saved: ${detail}`, 'error', 7000);
+                        return;
+                    }
+
+                    if (data.total_debt !== undefined && totalDebtElem) {
+                        window.rawTotalDebt = data.total_debt;
+                        if (!totalDebtElem.classList.contains('debt-hidden')) {
+                            totalDebtElem.textContent = window.rawTotalDebt;
+                        }
+                    }
+                    if (window.showToast) {
+                        window.showToast(data.status === 'duplicate' ? 'Transaction was already saved' : 'Transaction saved', 'success');
+                    }
+                    resetForm();
+                } catch (err) {
                     console.error('Save transaction failed', err);
-                    if (window.showToast) window.showToast('Failed to save transaction', 'error');
-                })
-                .finally(() => {
+                    if (err instanceof TypeError && typeof saveToOfflineQueue === 'function') {
+                        await saveToOfflineQueue(url, fd);
+                        if (window.showToast) window.showToast('Connection lost. Transaction queued on this device.', 'warning', 7000);
+                        resetForm();
+                    } else if (window.showToast) {
+                        window.showToast('Failed to save transaction. The form is still available to retry.', 'error');
+                    }
+                } finally {
                     saveButton.disabled = false;
-                });
+                }
             });
         })();
     </script>
 
-    <script>
+    <script nonce="{{ request.csp_nonce }}">
         const paymentChoiceSelect = document.getElementById("id_payment_choice");
         const customPaymentAmountInput = document.getElementById("id_custom_payment_amount");
         const sourceTypeSelect = document.getElementById("id_source_type");
@@ -728,8 +751,11 @@
                 modalSourceSelect.value = sourceTypeSelect.value;
             }
             if(modalFirmSelect && firmSelect.value) {
-                // Populate firm dropdown temporarily if needed or just set value
-                modalFirmSelect.innerHTML = `<option value="${firmSelect.value}">${firmSelect.options[firmSelect.selectedIndex].text}</option>`;
+                modalFirmSelect.replaceChildren();
+                const selectedFirm = document.createElement('option');
+                selectedFirm.value = firmSelect.value;
+                selectedFirm.textContent = firmSelect.options[firmSelect.selectedIndex].text;
+                modalFirmSelect.appendChild(selectedFirm);
                 modalFirmSelect.value = firmSelect.value;
             }
             document.getElementById("addRepModal").style.display = "flex";
@@ -815,7 +841,7 @@
         }
     </script>
 
-    <script>
+    <script nonce="{{ request.csp_nonce }}">
         const paymentsTrendUrl = "{% url 'ledger:dashboard_payments_trend' %}";
         const businessTrendUrl = "{% url 'ledger:dashboard_business_trend' %}";
         const debtOverTimeUrl = "{% url 'ledger:dashboard_debt_over_time' %}";
