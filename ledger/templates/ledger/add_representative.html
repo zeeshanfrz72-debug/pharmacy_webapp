@@ -65,16 +65,14 @@
                 <colgroup>
                     <col class="representative-column">
                     <col class="firm-column">
-                    <col class="phone-column">
                     <col class="added-column">
                     <col class="status-column">
                     <col class="actions-column">
                 </colgroup>
                 <thead>
                     <tr>
-                        <th scope="col" aria-sort="none"><button class="table-sort" type="button" data-sort-key="name">Representative <span class="table-sort-indicator" aria-hidden="true"></span></button></th>
+                        <th scope="col" aria-sort="none"><button class="table-sort" type="button" data-sort-key="name" data-sort-also="phone">Representative <span class="table-sort-indicator" aria-hidden="true"></span></button></th>
                         <th scope="col" aria-sort="none"><button class="table-sort" type="button" data-sort-key="firm">Firm <span class="table-sort-indicator" aria-hidden="true"></span></button></th>
-                        <th scope="col" aria-sort="none"><button class="table-sort" type="button" data-sort-key="phone">Phone <span class="table-sort-indicator" aria-hidden="true"></span></button></th>
                         <th scope="col" aria-sort="none"><button class="table-sort" type="button" data-sort-key="date">Added <span class="table-sort-indicator" aria-hidden="true"></span></button></th>
                         <th scope="col" aria-sort="none"><button class="table-sort" type="button" data-sort-key="status">Status <span class="table-sort-indicator" aria-hidden="true"></span></button></th>
                         <th scope="col">Actions</th>
@@ -85,12 +83,12 @@
                         <tr data-rep-id="{{ representative.id }}" data-search="{{ representative.name }} {{ representative.firm.name }} {{ representative.phone }} {% if representative.is_active %}Active{% else %}Inactive{% endif %}" data-sort-date="{{ representative.created_at|date:'Y-m-d H:i:s' }}">
                             <td data-label="Representative" data-sort-value="{{ representative.name }}">
                                 <strong class="table-primary">{{ representative.name }}</strong>
+                                <span class="table-secondary" data-sort-value="{{ representative.phone }}">{{ representative.phone|default:"—" }}</span>
                             </td>
                             <td data-label="Firm" data-sort-value="{{ representative.firm.name }}">
                                 <strong class="table-primary">{{ representative.firm.name }}</strong>
                                 <span class="table-secondary">{{ representative.firm.get_source_type_display }}</span>
                             </td>
-                            <td data-label="Phone" data-sort-value="{{ representative.phone }}">{{ representative.phone|default:"—" }}</td>
                             <td data-label="Added" data-sort-value="{{ representative.created_at|date:'Y-m-d H:i:s' }}">{{ representative.created_at|date:"d M Y" }}</td>
                             <td data-label="Status" data-sort-value="{% if representative.is_active %}active{% else %}inactive{% endif %}">
                                 <div class="status-toggle-inline">
@@ -114,9 +112,9 @@
                             </td>
                         </tr>
                     {% empty %}
-                        <tr class="empty-table-row"><td colspan="6">No representatives found.</td></tr>
+                        <tr class="empty-table-row"><td colspan="5">No representatives found.</td></tr>
                     {% endfor %}
-                    <tr class="search-empty-row" hidden><td colspan="6">No representatives match your search.</td></tr>
+                    <tr class="search-empty-row" hidden><td colspan="5">No representatives match your search.</td></tr>
                 </tbody>
             </table>
         </div>
@@ -179,7 +177,8 @@
             const initialEmpty = body.querySelector(".empty-table-row");
             const sortValue = (row, key) => {
                 if (key === "date") return row.dataset.sortDate || "";
-                const column = {name: 0, firm: 1, phone: 2, date: 3, status: 4}[key];
+                if (key === "phone") return row.cells[0]?.querySelector(".table-secondary")?.dataset.sortValue?.toLocaleLowerCase() || "";
+                const column = {name: 0, firm: 1, date: 2, status: 3}[key];
                 return row.cells[column]?.dataset.sortValue?.toLocaleLowerCase() || "";
             };
             let direction = 1;
@@ -202,7 +201,7 @@
                 const activeKey = sortSelect.value;
                 table.querySelectorAll("thead th").forEach(th => {
                     const button = th.querySelector(".table-sort");
-                    const active = button?.dataset.sortKey === activeKey;
+                    const active = button?.dataset.sortKey === activeKey || button?.dataset.sortAlso === activeKey;
                     th.setAttribute("aria-sort", active ? (direction > 0 ? "ascending" : "descending") : "none");
                     if (button) button.querySelector(".table-sort-indicator").textContent = active ? (direction > 0 ? "↑" : "↓") : "";
                 });

@@ -1065,18 +1065,17 @@
         .record-table .status-toggle-inline .status-switch { flex-basis: 46px; }
         .record-table .status-switch .switch-knob { width: 20px; height: 20px; flex-basis: 20px; }
         .record-table .empty-table-row td { padding: 12px; color: var(--muted); text-align: center; }
-        table.firm-data-table { min-width: 780px; }
-        table.representative-data-table { min-width: 860px; }
+        table.firm-data-table { min-width: 720px; }
+        table.representative-data-table { min-width: 760px; }
         .firm-data-table .firm-column { width: 35%; }
         .firm-data-table .phone-column { width: 18%; }
         .firm-data-table .balance-column { width: 24%; }
         .firm-data-table .actions-column { width: 23%; }
-        .representative-data-table .representative-column { width: 21%; }
-        .representative-data-table .firm-column { width: 22%; }
-        .representative-data-table .phone-column { width: 15%; }
-        .representative-data-table .added-column { width: 12%; }
-        .representative-data-table .status-column { width: 12%; }
-        .representative-data-table .actions-column { width: 18%; }
+        .representative-data-table .representative-column { width: 27%; }
+        .representative-data-table .firm-column { width: 25%; }
+        .representative-data-table .added-column { width: 14%; }
+        .representative-data-table .status-column { width: 15%; }
+        .representative-data-table .actions-column { width: 19%; }
 
         .app-guest .page-main {
             display: grid;
@@ -1204,7 +1203,7 @@
             .entity-actions .archive-button { width: 100%; min-height: 42px; }
             .record-table .entity-actions .button-link,
             .record-table .entity-actions .archive-button,
-            .record-table .restore-button { min-height: 42px; }
+            .record-table .restore-button { min-height: 34px; }
 
             /* Stack dashboard: transaction form first, then charts */
             .dashboard-layout {
@@ -1256,11 +1255,19 @@
 
             .ledger-history-filter-group input { width: 100%; }
 
-            .data-table-wrap { overflow: visible; }
             .table-tools { grid-template-columns: minmax(0, 1fr); align-items: stretch; gap: 10px; }
             .table-search-field { width: 100%; }
             .table-sort-controls { grid-template-columns: minmax(0, 1fr) auto; }
             .table-result-count { min-height: 1em; }
+        }
+
+        /* Turn tables into labeled cards only on narrow phones. Tablet and preview panes
+           keep real table headers and contain horizontal scrolling inside the wrapper. */
+        @media (max-width: 480px) {
+            .data-table-wrap { overflow: visible; }
+            .record-table .entity-actions .button-link,
+            .record-table .entity-actions .archive-button,
+            .record-table .restore-button { min-height: 42px; }
 
             table.data-table,
             table.data-table tbody,
