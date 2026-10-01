@@ -3,7 +3,7 @@
 {% block title %}Representatives | Pharmacy Ledger{% endblock %}
 
 {% block content %}
-    <div class="panel compact-panel filter-inline-panel">
+    <div class="panel compact-panel filter-inline-panel record-filter-panel">
         <div class="ledger-history-header">
             <h2>Representative Filters</h2>
         </div>
@@ -36,7 +36,7 @@
         </form>
     </div>
 
-    <div class="panel compact-panel ledger-history-panel">
+    <div class="panel compact-panel ledger-history-panel record-list-panel">
         <div class="ledger-history-header">
             <h2>Representatives</h2>
         </div>
@@ -61,7 +61,15 @@
         </div>
 
         <div class="data-table-wrap">
-            <table class="data-table representative-data-table" aria-label="Active representatives">
+            <table class="data-table record-table representative-data-table" aria-label="Active representatives">
+                <colgroup>
+                    <col class="representative-column">
+                    <col class="firm-column">
+                    <col class="phone-column">
+                    <col class="added-column">
+                    <col class="status-column">
+                    <col class="actions-column">
+                </colgroup>
                 <thead>
                     <tr>
                         <th scope="col" aria-sort="none"><button class="table-sort" type="button" data-sort-key="name">Representative <span class="table-sort-indicator" aria-hidden="true"></span></button></th>
@@ -114,12 +122,12 @@
         </div>
     </div>
 
-    <div class="panel compact-panel ledger-history-panel">
+    <div class="panel compact-panel ledger-history-panel record-list-panel">
         <div class="ledger-history-header">
             <h2>Archived Representatives</h2>
         </div>
         <div class="data-table-wrap">
-            <table class="data-table archived-representative-data-table">
+            <table class="data-table record-table archived-representative-data-table">
                 <thead>
                     <tr>
                         <th scope="col">Representative</th>

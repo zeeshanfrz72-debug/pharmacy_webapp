@@ -544,6 +544,18 @@
             font-weight: 800;
         }
 
+        .record-total {
+            gap: 12px;
+            padding: 5px 11px;
+            margin: 0;
+            border: 1px solid var(--line);
+            border-radius: 999px;
+            background: #f8fafc;
+            color: var(--ink);
+        }
+        .record-total .total-label { font-size: 10px; opacity: 1; color: var(--muted); }
+        .record-total .total-value { font-size: 15px; }
+
         /* ===== FILTER PANELS ===== */
         .filter-inline-panel { padding-bottom: 12px; }
 
@@ -1000,14 +1012,16 @@
         .table-sort-indicator { min-width: 10px; color: var(--accent); }
         .table-tools {
             display: grid;
-            grid-template-columns: minmax(220px, 1fr) minmax(280px, auto) auto;
+            grid-template-columns: minmax(210px, 320px) minmax(245px, 320px) minmax(0, 1fr);
             align-items: end;
-            gap: 12px 16px;
-            margin: 0 0 14px;
+            gap: 8px 14px;
+            margin: 0 0 10px;
         }
-        .table-search-field { width: min(100%, 420px); }
-        .table-search-field label { margin: 0 0 6px; }
+        .table-search-field { width: 100%; }
+        .table-search-field label { margin: 0 0 3px; font-size: 9px; }
         .table-search-field input { background: #fff; }
+        .table-search-field input,
+        .table-sort-controls select { height: 34px; min-height: 34px; border-radius: 8px; padding-top: 6px; padding-bottom: 6px; }
         .table-sort-controls {
             display: grid;
             grid-template-columns: minmax(150px, 1fr) auto;
@@ -1015,11 +1029,54 @@
             gap: 6px 8px;
             min-width: 0;
         }
-        .table-sort-controls label { grid-column: 1 / -1; }
+        .table-sort-controls label { grid-column: 1 / -1; margin-bottom: -3px; font-size: 9px; }
         .table-sort-controls select { min-width: 0; }
-        .table-sort-direction { white-space: nowrap; }
-        .table-result-count { margin: 0; color: var(--muted); font-size: 12px; }
+        .table-sort-direction { min-height: 34px; padding: 6px 10px; font-size: 11px; white-space: nowrap; }
+        .table-result-count { justify-self: end; margin: 0; color: var(--muted); font-size: 11px; }
         .search-empty-row[hidden] { display: none; }
+
+        .record-list-panel {
+            width: 100%;
+            max-width: 1360px;
+            margin-right: auto;
+            margin-left: auto;
+        }
+        .record-filter-panel {
+            width: 100%;
+            max-width: 1360px;
+            margin-right: auto;
+            margin-left: auto;
+        }
+        .record-list-panel .ledger-history-header { margin-bottom: 8px; padding-bottom: 8px; }
+        .record-list-panel .ledger-history-header h2 { margin: 0; font-size: 16px; }
+        table.record-table { table-layout: fixed; }
+        .record-table th, .record-table td { padding: 8px 10px; }
+        .record-table th { font-size: 9px; }
+        .record-table td { font-size: 12px; line-height: 1.35; }
+        .record-table .table-primary { font-size: 12px; }
+        .record-table .table-secondary { margin-top: 1px; font-size: 10px; }
+        .record-table .table-actions { min-width: 0; }
+        .record-table .table-actions .entity-actions { justify-content: flex-start; gap: 6px; }
+        .record-table .entity-actions .button-link,
+        .record-table .entity-actions .archive-button,
+        .record-table .restore-button { min-height: 32px; padding: 5px 9px; font-size: 11px; }
+        .record-table .status-toggle-inline { gap: 6px; }
+        .record-table .status-switch { width: 46px; min-width: 46px; height: 26px; min-height: 26px; }
+        .record-table .status-toggle-inline .status-switch { flex-basis: 46px; }
+        .record-table .status-switch .switch-knob { width: 20px; height: 20px; flex-basis: 20px; }
+        .record-table .empty-table-row td { padding: 12px; color: var(--muted); text-align: center; }
+        table.firm-data-table { min-width: 780px; }
+        table.representative-data-table { min-width: 860px; }
+        .firm-data-table .firm-column { width: 35%; }
+        .firm-data-table .phone-column { width: 18%; }
+        .firm-data-table .balance-column { width: 24%; }
+        .firm-data-table .actions-column { width: 23%; }
+        .representative-data-table .representative-column { width: 21%; }
+        .representative-data-table .firm-column { width: 22%; }
+        .representative-data-table .phone-column { width: 15%; }
+        .representative-data-table .added-column { width: 12%; }
+        .representative-data-table .status-column { width: 12%; }
+        .representative-data-table .actions-column { width: 18%; }
 
         .app-guest .page-main {
             display: grid;
@@ -1035,6 +1092,7 @@
         .data-table .table-primary { font-weight: 800; color: var(--ink); }
         .data-table .table-secondary { display: block; margin-top: 3px; color: var(--muted); font-size: 11px; }
         .data-table .table-actions { min-width: 174px; }
+        .data-table.record-table .table-actions { min-width: 0; }
         .data-table .table-actions .entity-actions { flex-wrap: nowrap; }
         .data-table .entry-batch-details { min-width: 240px; }
         .data-table .entry-batch-line { padding: 5px 0; border-bottom: 1px solid #f1f5f9; }
@@ -1144,6 +1202,9 @@
             .entity-actions > form { flex: 1 1 42%; }
             .entity-actions .button-link,
             .entity-actions .archive-button { width: 100%; min-height: 42px; }
+            .record-table .entity-actions .button-link,
+            .record-table .entity-actions .archive-button,
+            .record-table .restore-button { min-height: 42px; }
 
             /* Stack dashboard: transaction form first, then charts */
             .dashboard-layout {
@@ -1198,6 +1259,7 @@
             .data-table-wrap { overflow: visible; }
             .table-tools { grid-template-columns: minmax(0, 1fr); align-items: stretch; gap: 10px; }
             .table-search-field { width: 100%; }
+            .table-sort-controls { grid-template-columns: minmax(0, 1fr) auto; }
             .table-result-count { min-height: 1em; }
 
             table.data-table,
@@ -1270,6 +1332,28 @@
             .data-table tbody .empty-table-row td::before { display: none; }
         }
 
+        @media (min-width: 900px) {
+            .record-filter-panel {
+                display: flex;
+                align-items: center;
+                gap: 18px;
+                padding: 10px 14px;
+            }
+            .record-filter-panel .ledger-history-header {
+                flex: 0 0 auto;
+                margin: 0;
+                padding: 0;
+                border: 0;
+            }
+            .record-filter-panel .ledger-history-header h2 { margin: 0; font-size: 14px; }
+            .record-filter-panel .filter-inline-form { flex: 1 1 auto; gap: 8px; }
+            .record-filter-panel .filter-inline-group { min-width: 150px; flex: 0 1 210px; }
+            .record-filter-panel .filter-inline-group select { height: 34px; }
+            .record-filter-panel .filter-inline-actions { flex: 0 0 auto; gap: 6px; }
+            .record-filter-panel .filter-inline-actions button,
+            .record-filter-panel .filter-inline-actions .button-link { min-height: 34px; padding: 6px 10px; font-size: 11px; }
+        }
+
         /* ===== DESKTOP APP SHELL ===== */
         @media (min-width: 1100px) {
             body { padding-top: 72px; padding-bottom: 0; }
@@ -1332,6 +1416,11 @@
             .compact-top-chart-grid .chart-canvas-wrap { height: 230px; }
             .data-table th, .data-table td { padding: 13px 15px; }
             .data-table th { top: 72px; }
+            .record-table th, .record-table td { padding: 8px 10px; }
+            .record-table th { font-size: 9px; }
+            .record-table td { font-size: 12px; }
+            .data-table.record-table .table-secondary { margin-top: 1px; font-size: 10px; }
+            .data-table.record-table .table-actions { min-width: 0; }
         }
 
         @media (min-width: 1280px) {

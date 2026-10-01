@@ -3,14 +3,13 @@
 {% block title %}Firms | Pharmacy Ledger{% endblock %}
 
 {% block content %}
-    <div class="panel compact-panel ledger-history-panel">
+    <div class="panel compact-panel ledger-history-panel record-list-panel">
         <div class="ledger-history-header">
             <h2>Firm Balances</h2>
-        </div>
-
-        <div class="ledger-total-card">
-            <span class="total-label">Net Balance Across Active and Archived Firms</span>
-            <strong class="total-value">{{ total_debt }}</strong>
+            <div class="ledger-total-card record-total">
+                <span class="total-label">Net balance · all firms</span>
+                <strong class="total-value">{{ total_debt }}</strong>
+            </div>
         </div>
 
         <div class="table-tools" data-table-tools="firms">
@@ -32,11 +31,16 @@
         </div>
 
         <div class="data-table-wrap">
-            <table class="data-table firm-data-table" aria-label="Active firms">
+            <table class="data-table record-table firm-data-table" aria-label="Active firms">
+                <colgroup>
+                    <col class="firm-column">
+                    <col class="phone-column">
+                    <col class="balance-column">
+                    <col class="actions-column">
+                </colgroup>
                 <thead>
                     <tr>
-                        <th scope="col" aria-sort="none"><button class="table-sort" type="button" data-sort-key="name">Firm <span class="table-sort-indicator" aria-hidden="true"></span></button></th>
-                        <th scope="col" aria-sort="none"><button class="table-sort" type="button" data-sort-key="type">Source Type <span class="table-sort-indicator" aria-hidden="true"></span></button></th>
+                        <th scope="col" aria-sort="none"><button class="table-sort" type="button" data-sort-key="name" data-sort-also="type">Firm <span class="table-sort-indicator" aria-hidden="true"></span></button></th>
                         <th scope="col" aria-sort="none"><button class="table-sort" type="button" data-sort-key="phone">Phone <span class="table-sort-indicator" aria-hidden="true"></span></button></th>
                         <th scope="col" aria-sort="none"><button class="table-sort" type="button" data-sort-key="balance">Balance <span class="table-sort-indicator" aria-hidden="true"></span></button></th>
                         <th scope="col">Actions</th>
@@ -44,9 +48,11 @@
                 </thead>
                 <tbody>
                     {% for firm in firms %}
-                        <tr data-search="{{ firm.name }} {{ firm.get_source_type_display }} {{ firm.phone }}" data-sort-balance="{{ firm.current_debt }}">
-                            <td data-label="Firm" data-sort-value="{{ firm.name }}"><strong class="table-primary">{{ firm.name }}</strong></td>
-                            <td data-label="Source Type" data-sort-value="{{ firm.get_source_type_display }}">{{ firm.get_source_type_display }}</td>
+                        <tr data-search="{{ firm.name }} {{ firm.get_source_type_display }} {{ firm.phone }}" data-sort-balance="{{ firm.current_debt }}" data-sort-type="{{ firm.get_source_type_display }}">
+                            <td data-label="Firm" data-sort-value="{{ firm.name }}">
+                                <strong class="table-primary">{{ firm.name }}</strong>
+                                <span class="table-secondary">{{ firm.get_source_type_display }}</span>
+                            </td>
                             <td data-label="Phone" data-sort-value="{{ firm.phone }}">{{ firm.phone|default:"—" }}</td>
                             <td data-label="Balance">
                                 {% if firm.current_debt < 0 %}
@@ -66,20 +72,20 @@
                             </td>
                         </tr>
                     {% empty %}
-                        <tr class="empty-table-row"><td colspan="5">No firms added yet.</td></tr>
+                        <tr class="empty-table-row"><td colspan="4">No firms added yet.</td></tr>
                     {% endfor %}
-                    <tr class="search-empty-row" hidden><td colspan="5">No firms match your search.</td></tr>
+                    <tr class="search-empty-row" hidden><td colspan="4">No firms match your search.</td></tr>
                 </tbody>
             </table>
         </div>
     </div>
 
-    <div class="panel compact-panel ledger-history-panel">
+    <div class="panel compact-panel ledger-history-panel record-list-panel">
         <div class="ledger-history-header">
             <h2>Archived Firms</h2>
         </div>
         <div class="data-table-wrap">
-            <table class="data-table archived-firm-data-table">
+            <table class="data-table record-table archived-firm-data-table">
                 <thead>
                     <tr>
                         <th scope="col">Firm</th>
@@ -133,7 +139,8 @@
             const initialEmpty = body.querySelector(".empty-table-row");
             const sortValue = (row, key) => {
                 if (key === "balance") return Number(row.dataset.sortBalance || 0);
-                const column = {name: 0, type: 1, phone: 2}[key];
+                if (key === "type") return row.dataset.sortType.toLocaleLowerCase();
+                const column = {name: 0, phone: 1}[key];
                 return row.cells[column]?.dataset.sortValue?.toLocaleLowerCase() || "";
             };
             let direction = 1;
@@ -160,7 +167,7 @@
                 const activeKey = sortSelect.value;
                 table.querySelectorAll("thead th").forEach(th => {
                     const button = th.querySelector(".table-sort");
-                    const active = button?.dataset.sortKey === activeKey;
+                    const active = button?.dataset.sortKey === activeKey || button?.dataset.sortAlso === activeKey;
                     th.setAttribute("aria-sort", active ? (direction > 0 ? "ascending" : "descending") : "none");
                     if (button) button.querySelector(".table-sort-indicator").textContent = active ? (direction > 0 ? "↑" : "↓") : "";
                 });
