@@ -216,6 +216,51 @@ class LedgerWorkflowTests(TestCase):
         self.assertContains(undone_page, reverse("ledger:restore_batch", args=[batch.pk]))
         self.assertContains(undone_page, "Undo")
 
+    def test_ajax_added_firms_and_representatives_return_dropdown_cache_data(self):
+        firm_response = self.client.post(
+            reverse("ledger:ajax_add_firm"),
+            {
+                "name": "Dynamic Dropdown Firm",
+                "source_type": Firm.SourceType.STOCKIST,
+                "phone": "",
+            },
+            secure=True,
+            HTTP_X_REQUESTED_WITH="XMLHttpRequest",
+        )
+        self.assertEqual(firm_response.status_code, 200, firm_response.content)
+        firm_data = firm_response.json()
+        self.assertTrue(firm_data["success"])
+        self.assertEqual(firm_data["source_type"], Firm.SourceType.STOCKIST)
+
+        representative_response = self.client.post(
+            reverse("ledger:ajax_add_representative"),
+            {
+                "source_type": Firm.SourceType.STOCKIST,
+                "firm": firm_data["id"],
+                "name": "Dynamic Dropdown Rep",
+                "phone": "",
+                "deactivate_previous": "no",
+            },
+            secure=True,
+            HTTP_X_REQUESTED_WITH="XMLHttpRequest",
+        )
+        self.assertEqual(representative_response.status_code, 200, representative_response.content)
+        representative_data = representative_response.json()
+        self.assertTrue(representative_data["success"])
+        self.assertEqual(representative_data["firm_id"], firm_data["id"])
+        self.assertEqual(representative_data["source_type"], Firm.SourceType.STOCKIST)
+        self.assertIn(
+            {"id": representative_data["id"], "name": "Dynamic Dropdown Rep"},
+            representative_data["representatives"],
+        )
+
+    def test_transaction_form_updates_entity_caches_without_delayed_reload(self):
+        response = self.client.get(reverse("ledger:add_transaction"), secure=True)
+        self.assertContains(response, "upsertFirmInCache(data.source_type, data)")
+        self.assertContains(response, "replaceRepresentativesInCache(resp.firm_id, resp.representatives)")
+        self.assertNotContains(response, "firmSelect.value = data.id;")
+        self.assertNotContains(response, "representativeSelect.value = resp.id;")
+
     def test_same_day_bill_and_payment_render_as_one_history_action(self):
         batch, _ = self.create_batch(bill_choice="add_new", bill_amount="4000", payment_amount="1000")
         response = self.client.get(reverse("ledger:ledger_history"), secure=True)

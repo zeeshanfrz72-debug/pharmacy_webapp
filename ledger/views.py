@@ -544,7 +544,12 @@ def ajax_add_firm(request):
     form = FirmForm(request.POST)
     if form.is_valid():
         firm = form.save()
-        return JsonResponse({"success": True, "id": firm.pk, "name": firm.name})
+        return JsonResponse({
+            "success": True,
+            "id": firm.pk,
+            "name": firm.name,
+            "source_type": firm.source_type,
+        })
     return JsonResponse({"success": False, "errors": form.errors.get_json_data()}, status=400)
 
 
@@ -557,7 +562,20 @@ def ajax_add_representative(request):
         rep = form.save()
         if request.POST.get("deactivate_previous") == "yes":
             Representative.objects.filter(firm=rep.firm, is_active=True).exclude(pk=rep.pk).update(is_active=False)
-        return JsonResponse({"success": True, "id": rep.pk, "name": rep.name})
+        active_representatives = list(
+            rep.firm.representatives.filter(is_active=True, is_deleted=False)
+            .order_by("name")
+            .values("id", "name")
+        )
+        return JsonResponse({
+            "success": True,
+            "id": rep.pk,
+            "name": rep.name,
+            "firm_id": rep.firm_id,
+            "firm_name": rep.firm.name,
+            "source_type": rep.firm.source_type,
+            "representatives": active_representatives,
+        })
     return JsonResponse({"success": False, "errors": form.errors.get_json_data()}, status=400)
 
 

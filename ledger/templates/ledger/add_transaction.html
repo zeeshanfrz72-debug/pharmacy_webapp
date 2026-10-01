@@ -428,6 +428,41 @@
         const repsByFirm = offlineData.reps_by_firm || {};
         const billsByFirm = offlineData.bills_by_firm || {};
 
+        function upsertFirmInCache(sourceType, firm) {
+            if (!Array.isArray(firmsBySource[sourceType])) {
+                firmsBySource[sourceType] = [];
+            }
+            const id = String(firm.id);
+            const existingIndex = firmsBySource[sourceType].findIndex(item => String(item.id) === id);
+            if (existingIndex === -1) {
+                firmsBySource[sourceType].push({ id, name: firm.name });
+            } else {
+                firmsBySource[sourceType][existingIndex] = { id, name: firm.name };
+            }
+        }
+
+        function replaceRepresentativesInCache(firmId, representatives) {
+            repsByFirm[String(firmId)] = (representatives || []).map(rep => ({
+                id: String(rep.id),
+                name: rep.name
+            }));
+        }
+
+        function selectFirmInTransactionForm(firmId, sourceType) {
+            sourceTypeSelect.value = sourceType;
+            loadFirmsForSelectedSourceType();
+            firmSelect.value = String(firmId);
+            loadRepresentativesAndBillsForSelectedFirm();
+        }
+
+        function showAjaxError(message) {
+            if (window.showToast) {
+                window.showToast(message, 'error');
+            } else {
+                alert(message);
+            }
+        }
+
         const billSelect = document.createElement("select");
         billSelect.id = "bill-choice-select";
 
@@ -771,27 +806,29 @@
             ajaxFirmForm.addEventListener('submit', function(e) {
                 e.preventDefault();
                 const fd = new FormData(ajaxFirmForm);
+                const submitButton = ajaxFirmForm.querySelector('[type="submit"]');
+                if (submitButton) submitButton.disabled = true;
                 fetch("{% url 'ledger:ajax_add_firm' %}", {
                     method: 'POST',
                     headers: { 'X-Requested-With': 'XMLHttpRequest' },
                     body: fd
                 })
-                .then(r => r.json())
-                .then(data => {
+                .then(async response => ({ response, data: await response.json() }))
+                .then(({ response, data }) => {
+                    if (!response.ok || !data.success) {
+                        throw new Error(data.error || JSON.stringify(data.errors || 'Could not add firm.'));
+                    }
                     if (data.success) {
+                        upsertFirmInCache(data.source_type, data);
                         closeAddFirmModal();
                         if (window.showToast) window.showToast('Firm added', 'success');
                         ajaxFirmForm.reset();
-                        // reload firms dropdown
-                        loadFirmsForSelectedSourceType();
-                        // wait a bit then select it
-                        setTimeout(() => {
-                            firmSelect.value = data.id;
-                            loadRepresentativesAndBillsForSelectedFirm();
-                        }, 500);
-                    } else {
-                        alert("Error adding firm: " + JSON.stringify(data.errors));
+                        selectFirmInTransactionForm(data.id, data.source_type);
                     }
+                })
+                .catch(error => showAjaxError(`Could not add firm: ${error.message}`))
+                .finally(() => {
+                    if (submitButton) submitButton.disabled = false;
                 });
             });
         }
@@ -805,38 +842,50 @@
                 // Check if firm already has active reps
                 const firmId = document.querySelector('#ajax-add-rep-form select[name="firm"]').value;
                 if (!firmId) return;
+                document.getElementById("ajax_deactivate_previous").value = "no";
 
                 fetch(`${repsUrl}?firm_id=${firmId}`)
-                    .then(r => r.json())
-                    .then(data => {
+                    .then(async response => ({ response, data: await response.json() }))
+                    .then(({ response, data }) => {
+                        if (!response.ok) {
+                            throw new Error(data.error || 'Could not check existing representatives.');
+                        }
                         if (data.representatives && data.representatives.length > 0) {
                             const shouldDeactivate = confirm("This firm already has active representative(s). Do you want to deactivate the previous representative(s)?");
                             document.getElementById("ajax_deactivate_previous").value = shouldDeactivate ? "yes" : "no";
                         }
                         
                         const fd = new FormData(ajaxRepForm);
+                        const submitButton = ajaxRepForm.querySelector('[type="submit"]');
+                        if (submitButton) submitButton.disabled = true;
                         fetch("{% url 'ledger:ajax_add_representative' %}", {
                             method: 'POST',
                             headers: { 'X-Requested-With': 'XMLHttpRequest' },
                             body: fd
                         })
-                        .then(r => r.json())
-                        .then(resp => {
+                        .then(async response => ({ response, data: await response.json() }))
+                        .then(({ response, data: resp }) => {
+                            if (!response.ok || !resp.success) {
+                                throw new Error(resp.error || JSON.stringify(resp.errors || 'Could not add representative.'));
+                            }
                             if (resp.success) {
+                                upsertFirmInCache(resp.source_type, { id: resp.firm_id, name: resp.firm_name });
+                                replaceRepresentativesInCache(resp.firm_id, resp.representatives);
                                 closeAddRepModal();
                                 if (window.showToast) window.showToast('Representative added', 'success');
                                 ajaxRepForm.reset();
-                                // reload rep dropdown
-                                loadRepresentativesAndBillsForSelectedFirm();
-                                setTimeout(() => {
-                                    representativeSelect.value = resp.id;
-                                    updateSaveButtonState();
-                                }, 500);
-                            } else {
-                                alert("Error adding representative: " + JSON.stringify(resp.errors));
+                                selectFirmInTransactionForm(resp.firm_id, resp.source_type);
+                                representativeSelect.value = String(resp.id);
+                                updateSaveButtonState();
                             }
+                        })
+                        .catch(error => showAjaxError(`Could not add representative: ${error.message}`))
+                        .finally(() => {
+                            const submitButton = ajaxRepForm.querySelector('[type="submit"]');
+                            if (submitButton) submitButton.disabled = false;
                         });
-                    });
+                    })
+                    .catch(error => showAjaxError(`Could not check representatives: ${error.message}`));
             });
         }
     </script>
