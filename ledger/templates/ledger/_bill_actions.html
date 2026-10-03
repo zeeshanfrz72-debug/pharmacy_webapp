@@ -1,0 +1,17 @@
+{% load bilingual %}
+<details class="row-actions">
+    <summary aria-label="{{ 'Actions'|bilingual_plain }}" title="{{ 'Actions'|bilingual_plain }}"><span aria-hidden="true">⋯</span></summary>
+    <div class="row-action-menu">
+        <a class="button-link" href="{% url 'ledger:edit_bill' bill.pk %}">{% bi 'Edit' %}</a>
+        <details class="row-detail-toggle"><summary>{% bi 'Details' %}</summary><div class="row-detail-panel">
+            <p>{% bi 'Bill Number' %}: <bdi>{{ bill.bill_number }}</bdi></p>
+            <p>{% bi 'Firm' %}: <bdi>{{ bill.firm.name }}</bdi></p>
+            <p>{{ bill.firm.get_source_type_display|bilingual }}</p>
+            <p>{% bi 'Representative' %}: <bdi>{{ bill.representative.name|default:"—" }}</bdi></p>
+            <p>{% bi 'Bill Date' %}: {{ bill.bill_date|date:"d-m-Y" }}</p>
+            <p>{% bi 'Bill Amount' %}: {{ bill.bill_amount }}</p>
+            {% if bill.notes %}<p>{% bi 'Notes' %}: <bdi>{{ bill.notes }}</bdi></p>{% endif %}
+        </div></details>
+        {% include 'ledger/_bill_delete.html' %}
+    </div>
+</details>

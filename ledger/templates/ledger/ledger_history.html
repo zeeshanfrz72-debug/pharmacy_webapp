@@ -1,28 +1,19 @@
 {% extends "ledger/base.html" %}
+{% load bilingual %}
 
-{% block title %}Ledger History | Pharmacy Ledger{% endblock %}
+{% block title %}Ledger History | Pharmacy Ledger
+{% endblock %}
 
 {% block content %}
+{% include "ledger/_page_trash_link.html" with page_heading="Transaction History" trash_heading="Transaction Trash" trash_count=transaction_trash_groups|length date_filters=True %}
+{% if not is_trash %}
 <div class="panel compact-panel ledger-history-panel">
-    <div class="ledger-history-header">
-        <h2>Transaction History</h2>
-        <form method="get" class="ledger-history-filter-form">
-            <div class="ledger-history-filter-group">
-                <label for="start_date">From</label>
-                <input type="date" id="start_date" name="start_date" value="{{ start_date }}">
-            </div>
-            <div class="ledger-history-filter-group">
-                <label for="end_date">To</label>
-                <input type="date" id="end_date" name="end_date" value="{{ end_date }}">
-            </div>
-            <div class="ledger-history-filter-actions">
-                <button type="submit">Apply</button>
-                <a class="button-link" href="{% url 'ledger:ledger_history' %}">Clear</a>
-            </div>
-        </form>
-    </div>
+    {% if selected_firm %}<p class="history-firm-context"><strong>{{ selected_firm.name }}</strong></p>{% endif %}
     <div id="history-card-container">
         {% include 'ledger/_history_table.html' %}
     </div>
 </div>
+{% else %}
+{% include "ledger/_deletion_groups_table.html" with deletion_groups=transaction_trash_groups deletion_group_heading="Transaction Trash" return_url="ledger:ledger_history" empty_trash_message="No deleted transactions." records_link=records_link %}
+{% endif %}
 {% endblock %}

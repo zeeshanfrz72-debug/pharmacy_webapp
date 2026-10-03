@@ -1,188 +1,117 @@
 {% extends "ledger/base.html" %}
+{% load bilingual %}
 
-{% block title %}Firms | Pharmacy Ledger{% endblock %}
+{% block title %}Firms | Pharmacy Ledger
+{% endblock %}
 
 {% block content %}
+    {% include "ledger/_page_trash_link.html" with page_heading="Firms" trash_heading="Firms Trash" trash_count=trashed_firms|length %}
+    {% if not is_trash %}
+    <div class="panel compact-panel">
+        <h2>{% bi 'Add Firm' %}</h2>
+        <form method="post" class="record-entry-form firm-entry-form">
+            {% csrf_token %}{% include 'ledger/_bilingual_form.html' %}
+            <div class="form-submit"><button type="submit">{% bi 'Save Firm' %}</button></div>
+        </form>
+    </div>
     <div class="panel compact-panel ledger-history-panel record-list-panel">
         <div class="ledger-history-header">
-            <h2>Firm Balances</h2>
             <div class="ledger-total-card record-total">
-                <span class="total-label">Net balance · all firms</span>
+                <span class="total-label">{% bi 'Net balance · all firms' %}</span>
                 <strong class="total-value">{{ total_debt }}</strong>
             </div>
         </div>
 
-        <div class="table-tools" data-table-tools="firms">
-            <div class="table-search-field">
-                <label for="firm-table-search">Find a firm</label>
-                <input id="firm-table-search" type="search" autocomplete="off" placeholder="Search name, type, or phone">
-            </div>
-            <div class="table-sort-controls">
-                <label for="firm-table-sort">Sort firms</label>
-                <select id="firm-table-sort">
-                    <option value="name">Firm name</option>
-                    <option value="type">Source type</option>
-                    <option value="phone">Phone</option>
-                    <option value="balance">Balance</option>
-                </select>
-                <button class="table-sort-direction" type="button" aria-label="Sort ascending">Ascending ↑</button>
-            </div>
-            <p class="table-result-count" aria-live="polite"></p>
-        </div>
-
-        <div class="data-table-wrap">
+        <div class="data-table-wrap" tabindex="0" role="region" aria-label="Scrollable records">
             <table class="data-table record-table firm-data-table" aria-label="Active firms">
-                <colgroup>
-                    <col class="firm-column">
-                    <col class="phone-column">
-                    <col class="balance-column">
-                    <col class="actions-column">
-                </colgroup>
                 <thead>
                     <tr>
-                        <th scope="col" aria-sort="none"><button class="table-sort" type="button" data-sort-key="name" data-sort-also="type">Firm <span class="table-sort-indicator" aria-hidden="true"></span></button></th>
-                        <th scope="col" aria-sort="none"><button class="table-sort" type="button" data-sort-key="phone">Phone <span class="table-sort-indicator" aria-hidden="true"></span></button></th>
-                        <th scope="col" aria-sort="none"><button class="table-sort" type="button" data-sort-key="balance">Balance <span class="table-sort-indicator" aria-hidden="true"></span></button></th>
-                        <th scope="col">Actions</th>
+                        <th scope="col">{% table_heading 'Firm' %}</th>
+                        <th scope="col">{% table_heading 'Source' %}</th>
+                        <th scope="col">{% table_heading 'Phone' %}</th>
+                        <th scope="col" class="amount-heading">{% table_heading 'Balance' %}</th>
+                        <th scope="col">{% table_heading 'Actions' %}</th>
                     </tr>
                 </thead>
                 <tbody>
                     {% for firm in firms %}
-                        <tr data-search="{{ firm.name }} {{ firm.get_source_type_display }} {{ firm.phone }}" data-sort-balance="{{ firm.current_debt }}" data-sort-type="{{ firm.get_source_type_display }}">
-                            <td data-label="Firm" data-sort-value="{{ firm.name }}">
-                                <strong class="table-primary">{{ firm.name }}</strong>
-                                <span class="table-secondary">{{ firm.get_source_type_display }}</span>
+                        <tr>
+                            <td data-label="Firm">
+                                <a class="firm-disclosure" data-firm-details href="{% url 'ledger:firm_details' firm.pk %}" aria-expanded="false" aria-controls="firm-detail-{{ firm.pk }}"><span aria-hidden="true" class="disclosure-arrow">›</span> {{ firm.name }}</a>
                             </td>
-                            <td data-label="Phone" data-sort-value="{{ firm.phone }}">{{ firm.phone|default:"—" }}</td>
-                            <td data-label="Balance">
-                                {% if firm.current_debt < 0 %}
-                                    <span class="entry-credit">Supplier Credit {{ firm.current_credit }}</span>
+                            <td data-label="Source">{{ firm.get_source_type_display|bilingual }}</td>
+                            <td data-label="Phone">{{ firm.phone|default:"—" }}</td>
+                            <td data-label="Balance" class="amount-cell">
+                                {% if firm.display_balance < 0 %}
+                                    <span class="entry-credit" title="{{ 'Supplier Credits'|bilingual_plain }}">{{ firm.display_balance }}</span>
                                 {% else %}
-                                    <span class="entry-debt">Remaining Debt {{ firm.current_debt }}</span>
+                                    <span class="entry-debt">{{ firm.display_balance }}</span>
                                 {% endif %}
                             </td>
                             <td data-label="Actions" class="table-actions">
-                                <div class="entity-actions">
-                                    <a href="{% url 'ledger:edit_firm' firm.id %}" class="button-link">Edit</a>
-                                    <form method="post" action="{% url 'ledger:archive_firm' firm.id %}">
+                                <details class="row-actions"><summary aria-label="{{ 'Actions'|bilingual_plain }}" title="{{ 'Actions'|bilingual_plain }}"><span aria-hidden="true">⋯</span></summary><div class="row-action-menu">
+                                    <a href="{% url 'ledger:edit_firm' firm.id %}" class="button-link">{% bi 'Edit' %}</a>
+                                    <form method="post" action="{% url 'ledger:delete_firm' firm.id %}">
                                         {% csrf_token %}
-                                        <button type="submit" class="archive-button">Archive</button>
+                                        <button type="submit" class="delete-action">{% bi 'Delete' %}</button>
                                     </form>
-                                </div>
+                                </div></details>
                             </td>
                         </tr>
+                        <tr id="firm-detail-{{ firm.pk }}" class="firm-detail-row" hidden><td colspan="5"><div data-firm-content></div></td></tr>
                     {% empty %}
-                        <tr class="empty-table-row"><td colspan="4">No firms added yet.</td></tr>
+                        <tr class="empty-table-row"><td colspan="5">{% bi 'No firms added yet.' %}</td></tr>
                     {% endfor %}
-                    <tr class="search-empty-row" hidden><td colspan="4">No firms match your search.</td></tr>
                 </tbody>
             </table>
         </div>
     </div>
 
-    <div class="panel compact-panel ledger-history-panel record-list-panel">
-        <div class="ledger-history-header">
-            <h2>Archived Firms</h2>
-        </div>
-        <div class="data-table-wrap">
-            <table class="data-table record-table archived-firm-data-table">
+    {% else %}
+    <div class="panel compact-panel ledger-history-panel record-list-panel" id="page-trash" aria-labelledby="page-view-heading">
+
+        <div class="data-table-wrap" tabindex="0" role="region" aria-label="Scrollable records">
+            <table class="data-table record-table firm-trash-data-table">
                 <thead>
                     <tr>
-                        <th scope="col">Firm</th>
-                        <th scope="col">Source Type</th>
-                        <th scope="col">Balance</th>
-                        <th scope="col">Restore</th>
+                        <th scope="col">{% table_heading 'Firm' %}</th>
+                        <th scope="col">{% table_heading 'Source Type' %}</th>
+                        <th scope="col" class="amount-heading">{% table_heading 'Balance' %}</th>
+                        <th scope="col">{% table_heading 'Actions' %}</th>
                     </tr>
                 </thead>
                 <tbody>
-                    {% for firm in archived_firms %}
+                    {% for firm in trashed_firms %}
                         <tr>
                             <td data-label="Firm">
                                 <strong class="table-primary">{{ firm.name }}</strong>
-                                <span class="archive-badge">Archived</span>
+                                <span class="deleted-badge">{% bi 'In Trash' %}</span>
                             </td>
-                            <td data-label="Source Type">{{ firm.get_source_type_display }}</td>
-                            <td data-label="Balance">
-                                {% if firm.current_debt < 0 %}
-                                    <span class="entry-credit">Supplier Credit {{ firm.current_credit }}</span>
+                            <td data-label="Source Type">{{ firm.get_source_type_display|bilingual }}</td>
+                            <td data-label="Balance" class="amount-cell">
+                                {% if firm.display_balance < 0 %}
+                                    <span class="entry-credit" title="{{ 'Supplier Credits'|bilingual_plain }}">{{ firm.display_balance }}</span>
                                 {% else %}
-                                    <span class="entry-debt">Remaining Debt {{ firm.current_debt }}</span>
+                                    <span class="entry-debt">{{ firm.display_balance }}</span>
                                 {% endif %}
                             </td>
-                            <td data-label="Restore" class="table-actions">
+                            <td data-label="Actions" class="table-actions">
+                                <details class="row-actions"><summary aria-label="{{ 'Actions'|bilingual_plain }}"><span aria-hidden="true">⋯</span></summary><div class="row-action-menu">
+                                <p>{{ firm.get_source_type_display|bilingual }} · {% bi 'Phone Number' %}: {{ firm.phone|default:"—" }}</p>
                                 <form method="post" action="{% url 'ledger:restore_firm' firm.id %}">
                                     {% csrf_token %}
-                                    <button type="submit" class="restore-button">Restore</button>
+                                    <input type="hidden" name="next" value="{{ trash_link }}">
+                                    <button type="submit" class="restore-button">{% bi 'Recover' %}</button>
                                 </form>
+                                </div></details>
                             </td>
                         </tr>
                     {% empty %}
-                        <tr class="empty-table-row"><td colspan="4">No archived firms.</td></tr>
+                        <tr class="empty-table-row"><td colspan="4">{% bi 'Firms Trash is empty.' %}</td></tr>
                     {% endfor %}
                 </tbody>
             </table>
         </div>
     </div>
-
-    <script nonce="{{ request.csp_nonce }}">
-        (function () {
-            const table = document.querySelector(".firm-data-table");
-            const tools = document.querySelector('[data-table-tools="firms"]');
-            if (!table || !tools) return;
-            const body = table.tBodies[0];
-            const rows = Array.from(body.querySelectorAll("tr[data-search]"));
-            const search = tools.querySelector("#firm-table-search");
-            const sortSelect = tools.querySelector("#firm-table-sort");
-            const directionButton = tools.querySelector(".table-sort-direction");
-            const count = tools.querySelector(".table-result-count");
-            const searchEmpty = body.querySelector(".search-empty-row");
-            const initialEmpty = body.querySelector(".empty-table-row");
-            const sortValue = (row, key) => {
-                if (key === "balance") return Number(row.dataset.sortBalance || 0);
-                if (key === "type") return row.dataset.sortType.toLocaleLowerCase();
-                const column = {name: 0, phone: 1}[key];
-                return row.cells[column]?.dataset.sortValue?.toLocaleLowerCase() || "";
-            };
-            let direction = 1;
-            function applyTableState() {
-                const query = search.value.trim().toLocaleLowerCase();
-                const visibleRows = rows.filter(row => row.dataset.search.toLocaleLowerCase().includes(query));
-                visibleRows.sort((a, b) => {
-                    const left = sortValue(a, sortSelect.value);
-                    const right = sortValue(b, sortSelect.value);
-                    return (typeof left === "number" ? left - right : left.localeCompare(right)) * direction;
-                });
-                visibleRows.forEach(row => body.insertBefore(row, searchEmpty));
-                rows.filter(row => !visibleRows.includes(row)).forEach(row => {
-                    row.hidden = true;
-                    row.style.display = "none";
-                });
-                visibleRows.forEach(row => {
-                    row.hidden = false;
-                    row.style.display = "";
-                });
-                if (initialEmpty) initialEmpty.hidden = rows.length > 0;
-                searchEmpty.hidden = visibleRows.length > 0 || rows.length === 0;
-                count.textContent = rows.length ? `Showing ${visibleRows.length} of ${rows.length} firms` : "No firms to show";
-                const activeKey = sortSelect.value;
-                table.querySelectorAll("thead th").forEach(th => {
-                    const button = th.querySelector(".table-sort");
-                    const active = button?.dataset.sortKey === activeKey || button?.dataset.sortAlso === activeKey;
-                    th.setAttribute("aria-sort", active ? (direction > 0 ? "ascending" : "descending") : "none");
-                    if (button) button.querySelector(".table-sort-indicator").textContent = active ? (direction > 0 ? "↑" : "↓") : "";
-                });
-                directionButton.textContent = direction > 0 ? "Ascending ↑" : "Descending ↓";
-                directionButton.setAttribute("aria-label", direction > 0 ? "Sort ascending" : "Sort descending");
-            }
-            search.addEventListener("input", applyTableState);
-            sortSelect.addEventListener("change", applyTableState);
-            directionButton.addEventListener("click", () => { direction *= -1; applyTableState(); });
-            table.querySelectorAll(".table-sort").forEach(button => button.addEventListener("click", () => {
-                if (sortSelect.value === button.dataset.sortKey) direction *= -1;
-                else { sortSelect.value = button.dataset.sortKey; direction = 1; }
-                applyTableState();
-            }));
-            applyTableState();
-        }());
-    </script>
+    {% endif %}
 {% endblock %}

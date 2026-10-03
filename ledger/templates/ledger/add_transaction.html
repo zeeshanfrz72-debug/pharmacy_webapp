@@ -1,101 +1,101 @@
 {% extends "ledger/base.html" %}
+{% load bilingual %}
+{% load static %}
 
 {% block title %}Dashboard | Pharmacy Ledger{% endblock %}
 
 {% block content %}
     <div class="dashboard-grid">
-        <div class="metric-card period-modal-trigger" data-period="today" style="cursor: pointer;">
-            <div class="metric-label">Today Payments</div>
-            <div class="metric-value">{{ today_payment_count }}</div>
+        <button type="button" class="metric-card period-modal-trigger" data-period="today" aria-label="{{ "Today's Payments"|bilingual_plain }}">
+            <div class="metric-label">{% bi 'Today Payments' %}</div>
+            <div class="metric-value"><span class="visually-hidden">{% bi "Transaction Count" %}</span><span data-summary="today_payment_count">{{ today_payment_count }}</span></div>
             <div class="metric-subvalue">
-                <span class="metric-sub-label">Amount</span>
-                {{ today_payment_total }}
+                <span class="metric-sub-label visually-hidden">{% bi 'Amount' %}</span><span aria-hidden="true">Rs </span>
+                <span data-summary="today_payment_total">{{ today_payment_total }}</span>
             </div>
-        </div>
+        </button>
 
-        <div class="metric-card period-modal-trigger" data-period="week" style="cursor: pointer;">
-            <div class="metric-label">This Week</div>
-            <div class="metric-value">{{ week_payment_count }}</div>
+        <button type="button" class="metric-card period-modal-trigger" data-period="week" aria-label="{{ "This Week's Payments"|bilingual_plain }}">
+            <div class="metric-label">{% bi "This Week's Payments" %}</div>
+            <div class="metric-value"><span class="visually-hidden">{% bi "Transaction Count" %}</span><span data-summary="week_payment_count">{{ week_payment_count }}</span></div>
             <div class="metric-subvalue">
-                <span class="metric-sub-label">Amount</span>
-                {{ week_payment_total }}
+                <span class="metric-sub-label visually-hidden">{% bi 'Amount' %}</span><span aria-hidden="true">Rs </span>
+                <span data-summary="week_payment_total">{{ week_payment_total }}</span>
             </div>
-        </div>
+        </button>
 
-        <div class="metric-card period-modal-trigger" data-period="month" style="cursor: pointer;">
-            <div class="metric-label">This Month</div>
-            <div class="metric-value">{{ month_payment_count }}</div>
+        <button type="button" class="metric-card period-modal-trigger" data-period="month" aria-label="{{ "This Month's Payments"|bilingual_plain }}">
+            <div class="metric-label">{% bi "This Month's Payments" %}</div>
+            <div class="metric-value"><span class="visually-hidden">{% bi "Transaction Count" %}</span><span data-summary="month_payment_count">{{ month_payment_count }}</span></div>
             <div class="metric-subvalue">
-                <span class="metric-sub-label">Amount</span>
-                {{ month_payment_total }}
+                <span class="metric-sub-label visually-hidden">{% bi 'Amount' %}</span><span aria-hidden="true">Rs </span>
+                <span data-summary="month_payment_total">{{ month_payment_total }}</span>
             </div>
-        </div>
+        </button>
 
         <div class="metric-card total-debt-card">
-            <div class="metric-label">Total Debt</div>
+            <div class="metric-label">{% bi 'Net Balance' %}</div>
             <div class="metric-value debt-hidden" id="total-debt-value">******</div>
-            <div class="metric-subvalue">
-                <span class="metric-sub-label">Supplier Credits</span>
-                {{ supplier_credit_total }}
-                <button type="button" id="toggle-debt-button" class="eye-button">Show</button>
-            </div>
+            <button type="button" id="toggle-debt-button" class="eye-button">{% bi 'Show' %}</button>
         </div>
     </div>
 
     <div class="dashboard-layout">
         <aside class="dashboard-side">
             <div class="panel transaction-card">
-                <h2>Add Ledger Transaction</h2>
+                <h2>{% bi 'Add Ledger Transaction' %}</h2>
 
                 <form method="post" id="transaction-form">
                     {% csrf_token %}
                     {{ form.request_id }}
                     <span id="dashboard-date-context" data-today="{{ today_date }}" hidden></span>
-                    {% if form.errors %}<div class="form-errors" role="alert">{{ form.errors }}</div>{% endif %}
+                    {% if form.errors %}<div class="form-errors" role="alert">{{ form.errors|bilingual_errors }}</div>{% endif %}
 
-                    <div class="transaction-grid">
+                    <div class="transaction-grid transaction-identity-grid">
                         <div class="transaction-field">
-                            <label for="{{ form.source_type.id_for_label }}">{{ form.source_type.label }}</label>
-                            {{ form.source_type }}
+                            <label for="{{ form.source_type.id_for_label }}">{{ form.source_type.label|bilingual }}</label>
+                            {% bilingual_select form.source_type %}
                         </div>
 
                         <div class="transaction-field">
-                            <label for="{{ form.firm.id_for_label }}">{{ form.firm.label }}</label>
-                            {{ form.firm }}
+                            <label for="{{ form.firm.id_for_label }}">{{ form.firm.label|bilingual }}</label>
+                            {% bilingual_select form.firm %}
                         </div>
 
                         <div class="transaction-field">
-                            <label for="{{ form.representative.id_for_label }}">{{ form.representative.label }}</label>
-                            {{ form.representative }}
+                            <label for="{{ form.representative.id_for_label }}">{{ form.representative.label|bilingual }}</label>
+                            {% bilingual_select form.representative %}
+                        </div>
+
+                    </div>
+                    <div class="transaction-grid transaction-financial-grid">
+                        <div class="transaction-field">
+                            <label for="{{ form.bill_choice.id_for_label }}">{{ form.bill_choice.label|bilingual }}</label>
+                            {% bilingual_select form.bill_choice %}
                         </div>
 
                         <div class="transaction-field">
-                            <label for="{{ form.bill_choice.id_for_label }}">{{ form.bill_choice.label }}</label>
-                            {{ form.bill_choice }}
+                            <label for="{{ form.new_bill_number.id_for_label }}">{{ form.new_bill_number.label|bilingual }}</label>
+                            {% bilingual_select form.new_bill_number %}
                         </div>
 
                         <div class="transaction-field">
-                            <label for="{{ form.new_bill_number.id_for_label }}">{{ form.new_bill_number.label }}</label>
-                            {{ form.new_bill_number }}
+                            <label for="{{ form.new_bill_amount.id_for_label }}">{{ form.new_bill_amount.label|bilingual }}</label>
+                            {% bilingual_select form.new_bill_amount %}
                         </div>
 
                         <div class="transaction-field">
-                            <label for="{{ form.new_bill_amount.id_for_label }}">{{ form.new_bill_amount.label }}</label>
-                            {{ form.new_bill_amount }}
+                            <label for="{{ form.payment_choice.id_for_label }}">{{ form.payment_choice.label|bilingual }}</label>
+                            {% bilingual_select form.payment_choice %}
                         </div>
 
                         <div class="transaction-field">
-                            <label for="{{ form.payment_choice.id_for_label }}">{{ form.payment_choice.label }}</label>
-                            {{ form.payment_choice }}
+                            <label for="{{ form.custom_payment_amount.id_for_label }}">{% bi 'Custom payment amount' %}</label>
+                            {% bilingual_select form.custom_payment_amount %}
                         </div>
 
-                        <div class="transaction-field">
-                            <label for="{{ form.custom_payment_amount.id_for_label }}">{{ form.custom_payment_amount.label }}</label>
-                            {{ form.custom_payment_amount }}
-                        </div>
-
-                        <div class="transaction-field full transaction-actions">
-                            <button type="submit" id="save-transaction-button">Save Transaction</button>
+                        <div class="transaction-field transaction-actions">
+                            <button type="submit" id="save-transaction-button">{% bi 'Save Transaction' %}</button>
                         </div>
                     </div>
                 </form>
@@ -103,24 +103,24 @@
         </aside>
 
         <section class="dashboard-main">
-            {% if saved_summary %}
-                <div class="success-box">
-                    <strong>Saved.</strong>
-                    <p>Firm: {{ saved_summary.firm.name }}</p>
-                    <p>Previous debt: {{ saved_summary.previous_debt }}</p>
-                    <p>Remaining debt: {{ saved_summary.remaining_debt }}</p>
-                </div>
-            {% endif %}
-
+            <div id="transaction-receipt" class="transaction-receipt" role="status" {% if not saved_summary %}hidden{% endif %}>{% if saved_summary %}{% bi_format 'receipt' status='Saved' status_ur='محفوظ ہو گیا' firm=saved_summary.firm.name previous=saved_summary.previous_debt remaining=saved_summary.remaining_debt %}{% endif %}</div>
+            <section class="panel recent-transactions" aria-labelledby="recent-heading">
+                <div class="ledger-history-header"><h2 id="recent-heading" tabindex="-1">{% bi 'Recent transactions' %}</h2><a class="button-link" href="{% url 'ledger:ledger_history' %}">{% bi 'Full History' %}</a></div>
+                <p id="dashboard-refresh-error" role="alert" hidden></p>
+                <div id="dashboard-recent" data-url="{% url 'ledger:dashboard_recent' %}">{% include "ledger/_history_table.html" %}</div>
+            </section>
+            <details class="dashboard-analytics panel" id="dashboard-analytics">
+                <summary>{% bi 'Analytics and record review' %} <span class="muted">{% bi 'Expand to inspect records and trends' %}</span></summary>
+                <div id="dashboard-review" data-url="{% url 'ledger:dashboard_review' %}"><a class="button-link" href="{% url 'ledger:dashboard_review' %}">{% bi 'Open record review' %}</a></div>
             <div class="chart-grid-2 compact-top-chart-grid">
                 <div class="panel chart-panel">
                     <div class="chart-header">
-                        <h2>Payments Over Time</h2>
+                        <h2>{% bi 'Payments Over Time' %}</h2>
                         <div class="chart-toolbar" id="payments-period-toolbar">
-                            <button type="button" class="chart-chip active" data-period="week">Week</button>
-                            <button type="button" class="chart-chip" data-period="month">Month</button>
-                            <button type="button" class="chart-chip" data-period="year">Year</button>
-                            <button type="button" class="chart-chip" data-period="5years">5 Yrs</button>
+                            <button type="button" class="chart-chip active" data-period="week">{% bi 'Week' %}</button>
+                            <button type="button" class="chart-chip" data-period="month">{% bi 'Month' %}</button>
+                            <button type="button" class="chart-chip" data-period="year">{% bi 'Year' %}</button>
+                            <button type="button" class="chart-chip" data-period="5years">{% bi '5 Yrs' %}</button>
                         </div>
                     </div>
                     <div class="chart-canvas-wrap">
@@ -130,12 +130,12 @@
 
                 <div class="panel chart-panel">
                     <div class="chart-header">
-                        <h2>Business Over Time</h2>
+                        <h2>{% bi 'Business Over Time' %}</h2>
                         <div class="chart-toolbar" id="business-toolbar">
-                            <button type="button" class="chart-chip active" data-period="month">Month</button>
-                            <button type="button" class="chart-chip" data-period="year">Year</button>
-                            <button type="button" class="chart-chip active" data-metric="amount">Amount</button>
-                            <button type="button" class="chart-chip" data-metric="count">Count</button>
+                            <button type="button" class="chart-chip active" data-period="month">{% bi 'Month' %}</button>
+                            <button type="button" class="chart-chip" data-period="year">{% bi 'Year' %}</button>
+                            <button type="button" class="chart-chip active" data-metric="amount">{% bi 'Amount' %}</button>
+                            <button type="button" class="chart-chip" data-metric="count">{% bi 'Count' %}</button>
                         </div>
                     </div>
                     <div class="chart-canvas-wrap">
@@ -146,18 +146,18 @@
 
             <div class="panel chart-panel">
                 <div class="chart-header">
-                    <h2>Debt Overview</h2>
+                    <h2>{% bi 'Debt Overview' %}</h2>
                 </div>
                 <div class="chart-grid-2">
                     <div class="chart-card chart-blurred" id="debt-over-time-card">
                         <div class="chart-header">
-                            <h3>Debt Over Time</h3>
-                            <button type="button" class="eye-button" id="debt-chart-eye">Show</button>
+                            <h3>{% bi 'Debt Over Time' %}</h3>
+                            <button type="button" class="eye-button" id="debt-chart-eye">{% bi 'Show' %}</button>
                         </div>
                         <div class="chart-toolbar" id="debt-period-toolbar">
-                            <button type="button" class="chart-chip active" data-period="week">Week</button>
-                            <button type="button" class="chart-chip" data-period="month">Month</button>
-                            <button type="button" class="chart-chip" data-period="year">Year</button>
+                            <button type="button" class="chart-chip active" data-period="week">{% bi 'Week' %}</button>
+                            <button type="button" class="chart-chip" data-period="month">{% bi 'Month' %}</button>
+                            <button type="button" class="chart-chip" data-period="year">{% bi 'Year' %}</button>
                         </div>
                         <div class="chart-canvas-wrap">
                             <canvas id="debt-over-time-chart"></canvas>
@@ -166,7 +166,7 @@
 
                     <div class="chart-card">
                         <div class="chart-header">
-                            <h3>Debt by Firm</h3>
+                            <h3>{% bi 'Debt by Firm' %}</h3>
                         </div>
                         <div class="chart-canvas-wrap">
                             <canvas id="debt-by-firm-chart"></canvas>
@@ -174,15 +174,16 @@
                     </div>
                 </div>
             </div>
+            </details>
         </section>
     </div>
 
     <!-- History Modal -->
-    <div id="historyModal" class="history-modal" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.5); z-index:2000; align-items:center; justify-content:center;">
+    <div id="historyModal" class="history-modal" role="dialog" aria-modal="true" aria-labelledby="historyModalTitle" tabindex="-1" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.5); z-index:2000; align-items:center; justify-content:center;">
         <div style="background:white; border-radius:16px; padding:24px; max-width:800px; width:90%; max-height:80vh; display:flex; flex-direction:column; box-shadow:0 20px 60px rgba(0,0,0,0.3);">
             <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:16px;">
-                <h3 style="margin:0; font-size:20px; color:#111827;" id="historyModalTitle">Period Transactions</h3>
-                <button type="button" data-close-modal="historyModal" style="background:transparent; border:none; font-size:24px; cursor:pointer; color:#6b7280;">&times;</button>
+                <h3 style="margin:0; font-size:20px; color:#111827;" id="historyModalTitle">{% bi 'Period Transactions' %}</h3>
+                <button type="button" data-close-modal="historyModal" aria-label="{{ 'Close'|bilingual_plain }}" style="background:transparent; border:none; font-size:24px; cursor:pointer; color:#6b7280;">&times;</button>
             </div>
             <div id="historyModalContent" style="overflow-y:auto; flex:1; padding-right:8px;">
                 <!-- content goes here -->
@@ -194,17 +195,17 @@
     <div id="addFirmModal" class="history-modal" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.5); z-index:2000; align-items:center; justify-content:center;">
         <div style="background:white; border-radius:16px; padding:24px; max-width:500px; width:90%; box-shadow:0 20px 60px rgba(0,0,0,0.3);">
             <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:16px;">
-                <h3 style="margin:0; font-size:20px; color:#111827;">Add New Firm</h3>
-                <button type="button" data-close-modal="addFirmModal" style="background:transparent; border:none; font-size:24px; cursor:pointer; color:#6b7280;">&times;</button>
+                <h3 style="margin:0; font-size:20px; color:#111827;">{% bi 'Add New Firm' %}</h3>
+                <button type="button" data-close-modal="addFirmModal" aria-label="{{ 'Close'|bilingual_plain }}" style="background:transparent; border:none; font-size:24px; cursor:pointer; color:#6b7280;">&times;</button>
             </div>
             <form id="ajax-add-firm-form" method="post">
                 {% csrf_token %}
                 <div class="transaction-grid" style="display:block;">
-                    {{ firm_form.as_p }}
+                    {% include "ledger/_bilingual_form.html" with form=firm_form %}
                 </div>
                 <div style="margin-top:16px; text-align:right;">
-                    <button type="button" class="button-link" data-close-modal="addFirmModal">Cancel</button>
-                    <button type="submit">Save Firm</button>
+                    <button type="button" class="button-link" data-close-modal="addFirmModal">{% bi 'Cancel' %}</button>
+                    <button type="submit">{% bi 'Save Firm' %}</button>
                 </div>
             </form>
         </div>
@@ -214,18 +215,18 @@
     <div id="addRepModal" class="history-modal" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.5); z-index:2000; align-items:center; justify-content:center;">
         <div style="background:white; border-radius:16px; padding:24px; max-width:500px; width:90%; box-shadow:0 20px 60px rgba(0,0,0,0.3);">
             <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:16px;">
-                <h3 style="margin:0; font-size:20px; color:#111827;">Add New Representative</h3>
-                <button type="button" data-close-modal="addRepModal" style="background:transparent; border:none; font-size:24px; cursor:pointer; color:#6b7280;">&times;</button>
+                <h3 style="margin:0; font-size:20px; color:#111827;">{% bi 'Add New Representative' %}</h3>
+                <button type="button" data-close-modal="addRepModal" aria-label="{{ 'Close'|bilingual_plain }}" style="background:transparent; border:none; font-size:24px; cursor:pointer; color:#6b7280;">&times;</button>
             </div>
             <form id="ajax-add-rep-form" method="post">
                 {% csrf_token %}
                 <input type="hidden" name="deactivate_previous" id="ajax_deactivate_previous" value="no">
                 <div class="transaction-grid" style="display:block;">
-                    {{ rep_form.as_p }}
+                    {% include "ledger/_bilingual_form.html" with form=rep_form %}
                 </div>
                 <div style="margin-top:16px; text-align:right;">
-                    <button type="button" class="button-link" data-close-modal="addRepModal">Cancel</button>
-                    <button type="submit">Save Representative</button>
+                    <button type="button" class="button-link" data-close-modal="addRepModal">{% bi 'Cancel' %}</button>
+                    <button type="submit">{% bi 'Save Representative' %}</button>
                 </div>
             </form>
         </div>
@@ -284,11 +285,13 @@
             }
 
             const modal = document.getElementById("historyModal");
+            if (modal.style.display === 'none') window.historyModalOpener = document.activeElement;
+            modal.dataset.period = period;
             const content = document.getElementById("historyModalContent");
             const titleElem = document.getElementById("historyModalTitle");
             
-            titleElem.textContent = title;
-            content.innerHTML = "<p style='text-align:center; color:#6b7280;'>Loading...</p>";
+            ledgerUI.set(titleElem, title);
+            content.replaceChildren(document.createElement('p')); ledgerUI.set(content.firstChild, 'Loading...');
             
             const mainDashboard = document.querySelector(".dashboard-layout");
             if (mainDashboard) {
@@ -297,6 +300,7 @@
             }
             
             modal.style.display = "flex";
+            modal.querySelector('[data-close-modal]').focus();
             
             const url = `/ledger/history/?ajax=1&start_date=${dates.start}&end_date=${dates.end}`;
             fetch(url)
@@ -306,13 +310,15 @@
                 })
                 .catch(err => {
                     console.error('Failed to load history', err);
-                    content.innerHTML = "<p style='text-align:center; color:#ef4444;'>Error loading transactions.</p>";
+                    content.replaceChildren(document.createElement('p')); ledgerUI.set(content.firstChild, 'Error loading transactions.');
                 });
         }
 
         function closeHistoryModal() {
             const modal = document.getElementById("historyModal");
             modal.style.display = "none";
+            delete modal.dataset.period;
+            window.historyModalOpener?.focus();
             
             const mainDashboard = document.querySelector(".dashboard-layout");
             if (mainDashboard) {
@@ -320,6 +326,15 @@
                 mainDashboard.style.filter = "none";
             }
         }
+        document.getElementById('historyModal').addEventListener('keydown', event => {
+            if (event.key === 'Escape') { event.preventDefault(); closeHistoryModal(); }
+            if (event.key === 'Tab') {
+                const elements = [...event.currentTarget.querySelectorAll('a, button, input, select, summary, [tabindex="0"]')].filter(element => !element.disabled && element.getClientRects().length);
+                const first = elements[0], last = elements[elements.length - 1];
+                if (event.shiftKey && document.activeElement === first) { event.preventDefault(); last.focus(); }
+                if (!event.shiftKey && document.activeElement === last) { event.preventDefault(); first.focus(); }
+            }
+        });
     </script>
 
     <script nonce="{{ request.csp_nonce }}">
@@ -335,6 +350,8 @@
                 // Reset JS-driven bill fields
                 const evt = new Event('change');
                 document.getElementById('id_source_type').dispatchEvent(evt);
+                document.getElementById('id_payment_choice').dispatchEvent(new Event('change'));
+                document.getElementById('id_source_type').focus();
             }
 
             if (!form) return;
@@ -347,6 +364,7 @@
                 const url = form.action || window.location.pathname;
                 const fd = new FormData(form);
 
+                try {
                 if (!navigator.onLine) {
                     if (typeof saveToOfflineQueue === 'function') {
                         await saveToOfflineQueue(url, fd);
@@ -355,11 +373,10 @@
                     } else {
                         if (window.showToast) window.showToast('Offline, but sync script not loaded.', 'error');
                     }
-                    saveButton.disabled = false;
+                    updateSaveButtonState();
                     return;
                 }
 
-                try {
                     const response = await fetch(url, {
                         method: 'POST',
                         headers: {
@@ -378,8 +395,8 @@
                         return;
                     }
                     if (!response.ok || !data || data.success !== true) {
-                        const detail = data?.error || (data?.errors ? JSON.stringify(data.errors) : `HTTP ${response.status}`);
-                        if (window.showToast) window.showToast(`Transaction was not saved: ${detail}`, 'error', 7000);
+                        const detail = data?.error || (data?.errors ? ledgerUI.errorDetail(data.errors) : `HTTP ${response.status}`);
+                        if (window.showToast) window.showToast(ledgerUI.format('not_saved', {detail}), 'error', 7000);
                         return;
                     }
 
@@ -392,18 +409,26 @@
                     if (window.showToast) {
                         window.showToast(data.status === 'duplicate' ? 'Transaction was already saved' : 'Transaction saved', 'success');
                     }
+                    const receipt = document.getElementById('transaction-receipt');
+                    ledgerUI.set(receipt, ledgerUI.format('receipt', {status: data.status === 'duplicate' ? 'Already saved' : 'Saved', status_ur: ledgerUI.pair(data.status === 'duplicate' ? 'Already saved' : 'Saved')[1], firm: data.firm, previous: data.previous_debt, remaining: data.remaining_debt}));
+                    receipt.hidden = false;
+                    window.dispatchEvent(new Event('ledger-records-changed'));
+                    try { localStorage.setItem('ledger-records-changed', Date.now().toString()); } catch (_) {}
                     resetForm();
                 } catch (err) {
                     console.error('Save transaction failed', err);
                     if (err instanceof TypeError && typeof saveToOfflineQueue === 'function') {
-                        await saveToOfflineQueue(url, fd);
+                        try { await saveToOfflineQueue(url, fd); } catch (storageError) {
+                            if (window.showToast) window.showToast('Offline storage failed. The form is retained; retry or copy it before closing.', 'error', 7000);
+                            return;
+                        }
                         if (window.showToast) window.showToast('Connection lost. Transaction queued on this device.', 'warning', 7000);
                         resetForm();
                     } else if (window.showToast) {
                         window.showToast('Failed to save transaction. The form is still available to retry.', 'error');
                     }
                 } finally {
-                    saveButton.disabled = false;
+                    updateSaveButtonState();
                 }
             });
         })();
@@ -459,7 +484,7 @@
             if (window.showToast) {
                 window.showToast(message, 'error');
             } else {
-                alert(message);
+                alert(ledgerUI.text(message));
             }
         }
 
@@ -493,6 +518,15 @@
             const addingNewBill = billSelect.value === "add_new";
             const sourceType = sourceTypeSelect.value;
             const repRequired = sourceType && sourceType !== "local_market";
+
+            if (!sourceType || !firmSelect.value || firmSelect.value === 'add_new_firm') {
+                saveTransactionButton.disabled = true;
+                return;
+            }
+            if (paymentChoiceSelect.value === 'other' && !(Number(customPaymentAmountInput.value) > 0)) {
+                saveTransactionButton.disabled = true;
+                return;
+            }
 
             if (repRequired && !representativeSelect.value) {
                 saveTransactionButton.disabled = true;
@@ -538,6 +572,7 @@
 
             billChoiceInput.type = "hidden";
             billChoiceRow.appendChild(billSelect);
+            billChoiceRow.querySelector('label').htmlFor = billSelect.id;
 
             billSelect.addEventListener("change", function () {
                 billChoiceInput.value = billSelect.value;
@@ -567,13 +602,15 @@
 
             customPaymentRow.style.display = "none";
             paymentChoiceSelect.addEventListener("change", updatePaymentField);
+            paymentChoiceSelect.addEventListener("change", updateSaveButtonState);
+            customPaymentAmountInput.addEventListener("input", updateSaveButtonState);
         }
 
         function clearFirms() {
             firmSelect.innerHTML = "";
             const emptyOption = document.createElement("option");
             emptyOption.value = "";
-            emptyOption.textContent = "---------";
+            emptyOption.textContent = ledgerUI.text('---------');
             firmSelect.appendChild(emptyOption);
         }
 
@@ -581,7 +618,7 @@
             representativeSelect.innerHTML = "";
             const emptyOption = document.createElement("option");
             emptyOption.value = "";
-            emptyOption.textContent = "---------";
+            emptyOption.textContent = ledgerUI.text('---------');
             representativeSelect.appendChild(emptyOption);
         }
 
@@ -589,7 +626,7 @@
             billSelect.innerHTML = "";
             const emptyOption = document.createElement("option");
             emptyOption.value = "";
-            emptyOption.textContent = "Select a firm first";
+            emptyOption.textContent = ledgerUI.text('Select a firm first');
             billSelect.appendChild(emptyOption);
             billChoiceInput.value = "";
             hideNewBillFields();
@@ -626,13 +663,17 @@
             
             const addFirmOption = document.createElement("option");
             addFirmOption.value = "add_new_firm";
-            addFirmOption.textContent = "+ Add Firm";
+            addFirmOption.textContent = ledgerUI.text('+ Add Firm');
             firmSelect.appendChild(addFirmOption);
 
             updateSaveButtonState();
         }
 
-        function loadRepresentativesAndBillsForSelectedFirm() {
+        let lookupVersion = 0;
+        async function loadRepresentativesAndBillsForSelectedFirm() {
+            const version = ++lookupVersion;
+            const selectedRep = representativeSelect.value;
+            const selectedBill = billChoiceInput.value;
             const firmId = firmSelect.value;
             const sourceType = sourceTypeSelect.value;
 
@@ -644,6 +685,22 @@
                 return;
             }
 
+            if (navigator.onLine) {
+                saveTransactionButton.disabled = true;
+                try {
+                    const response = await fetch(`${repsUrl}?firm_id=${encodeURIComponent(firmId)}`, {cache: 'no-store'});
+                    if (!response.ok) throw new Error('Could not refresh bills and representatives. Refresh the page and try again.');
+                    const data = await response.json();
+                    if (version !== lookupVersion || firmSelect.value !== firmId) return;
+                    replaceRepresentativesInCache(firmId, data.representatives);
+                    billsByFirm[firmId] = data.bills || [];
+                } catch (failure) {
+                    if (version !== lookupVersion) return;
+                    billsByFirm[firmId] = [];
+                    showAjaxError(failure.message);
+                    return;
+                }
+            }
             const reps = repsByFirm[firmId] || [];
             reps.forEach(rep => {
                 const option = document.createElement("option");
@@ -654,14 +711,14 @@
 
             const addRepOption = document.createElement("option");
             addRepOption.value = "add_new_rep";
-            addRepOption.textContent = "+ Add Representative";
+            addRepOption.textContent = ledgerUI.text('+ Add Representative');
             representativeSelect.appendChild(addRepOption);
 
             billSelect.innerHTML = "";
 
             const addNewOption = document.createElement("option");
             addNewOption.value = "add_new";
-            addNewOption.textContent = "Add New Bill";
+            addNewOption.textContent = ledgerUI.text('Add New Bill');
             billSelect.appendChild(addNewOption);
 
             const bills = billsByFirm[firmId] || [];
@@ -670,9 +727,9 @@
                 option.value = bill.id;
 
                 if (bill.is_latest) {
-                    option.textContent = `Latest: ${bill.bill_number} | ${bill.bill_amount} | ${bill.bill_date}`;
+                    option.textContent = `${ledgerUI.text('Latest')}: ${ledgerUI.isolate(bill.bill_number)} | ${ledgerUI.isolate(bill.bill_amount)} | ${ledgerUI.isolate(bill.bill_date)}`;
                 } else {
-                    option.textContent = `Previous: ${bill.bill_number} | ${bill.bill_amount} | ${bill.bill_date}`;
+                    option.textContent = `${ledgerUI.text('Previous')}: ${ledgerUI.isolate(bill.bill_number)} | ${ledgerUI.isolate(bill.bill_amount)} | ${ledgerUI.isolate(bill.bill_date)}`;
                     option.disabled = true;
                 }
 
@@ -689,8 +746,22 @@
                 showNewBillFields();
             }
 
+            if ([...representativeSelect.options].some(option => option.value === selectedRep)) representativeSelect.value = selectedRep;
+            if (selectedBill !== 'add_new' && [...billSelect.options].some(option => option.value === selectedBill && !option.disabled)) {
+                billSelect.value = selectedBill;
+                billChoiceInput.value = selectedBill;
+            }
             updateSaveButtonState();
         }
+        window.addEventListener('storage', event => {
+            if (event.key !== 'ledger-records-changed') return;
+            Object.keys(billsByFirm).forEach(key => { billsByFirm[key] = []; });
+            loadRepresentativesAndBillsForSelectedFirm();
+        });
+        window.addEventListener('online', loadRepresentativesAndBillsForSelectedFirm);
+        document.addEventListener('visibilitychange', () => {
+            if (!document.hidden && firmSelect.value) loadRepresentativesAndBillsForSelectedFirm();
+        });
 
         const totalDebtValue = document.getElementById("total-debt-value");
         const toggleDebtButton = document.getElementById("toggle-debt-button");
@@ -699,13 +770,13 @@
         function hideTotalDebt() {
             totalDebtValue.classList.add("debt-hidden");
             totalDebtValue.textContent = "******";
-            toggleDebtButton.textContent = "Show";
+            ledgerUI.set(toggleDebtButton, "Show");
         }
 
         function showTotalDebtTemporarily() {
             totalDebtValue.classList.remove("debt-hidden");
             totalDebtValue.textContent = window.rawTotalDebt;
-            toggleDebtButton.textContent = "Hide";
+            ledgerUI.set(toggleDebtButton, "Hide");
 
             window.clearTimeout(window.totalDebtTimer);
             window.totalDebtTimer = window.setTimeout(() => {
@@ -816,7 +887,7 @@
                 .then(async response => ({ response, data: await response.json() }))
                 .then(({ response, data }) => {
                     if (!response.ok || !data.success) {
-                        throw new Error(data.error || JSON.stringify(data.errors || 'Could not add firm.'));
+                        throw new Error(data.error || ledgerUI.errorDetail(data.errors || 'Could not add firm.'));
                     }
                     if (data.success) {
                         upsertFirmInCache(data.source_type, data);
@@ -826,7 +897,7 @@
                         selectFirmInTransactionForm(data.id, data.source_type);
                     }
                 })
-                .catch(error => showAjaxError(`Could not add firm: ${error.message}`))
+                .catch(error => showAjaxError(ledgerUI.format('could_not_add_firm', {detail: ledgerUI.errorDetail(error.message)})))
                 .finally(() => {
                     if (submitButton) submitButton.disabled = false;
                 });
@@ -851,7 +922,7 @@
                             throw new Error(data.error || 'Could not check existing representatives.');
                         }
                         if (data.representatives && data.representatives.length > 0) {
-                            const shouldDeactivate = confirm("This firm already has active representative(s). Do you want to deactivate the previous representative(s)?");
+                            const shouldDeactivate = confirm(ledgerUI.text("This firm already has active representative(s). Do you want to deactivate the previous representative(s)?"));
                             document.getElementById("ajax_deactivate_previous").value = shouldDeactivate ? "yes" : "no";
                         }
                         
@@ -866,7 +937,7 @@
                         .then(async response => ({ response, data: await response.json() }))
                         .then(({ response, data: resp }) => {
                             if (!response.ok || !resp.success) {
-                                throw new Error(resp.error || JSON.stringify(resp.errors || 'Could not add representative.'));
+                                throw new Error(resp.error || ledgerUI.errorDetail(resp.errors || 'Could not add representative.'));
                             }
                             if (resp.success) {
                                 upsertFirmInCache(resp.source_type, { id: resp.firm_id, name: resp.firm_name });
@@ -879,7 +950,7 @@
                                 updateSaveButtonState();
                             }
                         })
-                        .catch(error => showAjaxError(`Could not add representative: ${error.message}`))
+                        .catch(error => showAjaxError(ledgerUI.format('could_not_add_rep', {detail: ledgerUI.errorDetail(error.message)})))
                         .finally(() => {
                             const submitButton = ajaxRepForm.querySelector('[type="submit"]');
                             if (submitButton) submitButton.disabled = false;
@@ -906,8 +977,7 @@
         let businessMetric = "amount";
         let debtPeriod = "week";
 
-        Chart.defaults.font.family = "Inter, Arial, sans-serif";
-        Chart.defaults.color = "#6b7280";
+
 
         function destroyChart(chartInstance) {
             if (chartInstance) {
@@ -930,7 +1000,7 @@
                     labels,
                     datasets: [
                         {
-                            label,
+                            label: ledgerUI.text(label),
                             data: values,
                             borderColor: color,
                             backgroundColor: fillColor,
@@ -989,7 +1059,7 @@
                     labels,
                     datasets: [
                         {
-                            label,
+                            label: ledgerUI.text(label),
                             data: values,
                             backgroundColor: color,
                             borderRadius: 8,
@@ -1186,24 +1256,30 @@
 
                 if (debtChartVisible) {
                     debtCard.classList.remove("chart-blurred");
-                    debtEyeButton.textContent = "Hide";
+                    ledgerUI.set(debtEyeButton, "Hide");
 
                     window.clearTimeout(window.debtChartTimer);
                     window.debtChartTimer = window.setTimeout(() => {
                         debtChartVisible = false;
                         debtCard.classList.add("chart-blurred");
-                        debtEyeButton.textContent = "Show";
+                        ledgerUI.set(debtEyeButton, "Show");
                     }, 10000);
                 } else {
                     debtCard.classList.add("chart-blurred");
-                    debtEyeButton.textContent = "Show";
+                    ledgerUI.set(debtEyeButton, "Show");
                 }
             });
         }
 
-        loadPaymentsChart();
-        loadBusinessChart();
-        loadDebtChart();
-        loadDebtBreakdownCharts();
+        window.refreshDashboardCharts = function () {
+            if (!document.getElementById('dashboard-analytics').open || !window.Chart) return;
+            Chart.defaults.font.family = "Inter, 'Jameel Noori Nastaleeq', Arial, sans-serif";
+            Chart.defaults.color = "#6b7280";
+            loadPaymentsChart();
+            loadBusinessChart();
+            loadDebtChart();
+            loadDebtBreakdownCharts();
+        };
     </script>
+    <script src="{% static 'ledger/dashboard.js' %}?v=3" defer></script>
 {% endblock %}

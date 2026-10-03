@@ -1,0 +1,34 @@
+{
+  "backend": "actual disposable Django application",
+  "browser": "154.0.8037.93",
+  "cases": [
+    {
+      "name": "aborted_storage_keeps_form_then_committed_queue_syncs",
+      "status": "passed"
+    },
+    {
+      "name": "lost_django_commit_response_replays_original_request",
+      "status": "passed"
+    },
+    {
+      "name": "expired_session_preserves_queue_and_resumes_after_signin",
+      "status": "passed"
+    }
+  ],
+  "uncaught_errors": [],
+  "persisted_bills": [
+    [
+      "BROWSER-EXPIRED",
+      "100.00"
+    ],
+    [
+      "BROWSER-LOST",
+      "100.00"
+    ],
+    [
+      "BROWSER-STORAGE",
+      "100.00"
+    ]
+  ],
+  "persisted_balance": "270.00"
+}

@@ -1,0 +1,15 @@
+Jameel Noori Nastaleeq Regular
+Original font name: Jameel Noori Nastaleeq
+Version: Version 1; 2008
+Designer: Urdu Lover
+Copyright and license notice embedded in the original font:
+This Font Is Free Of Charge For Urdu Lovers
+
+Source: https://github.com/mrafsarnoori/Urdu-Nastaleeq-Font/blob/main/Jameel-Noori-Nastaleeq-Regular.ttf
+SHA-256: 39c54f1646a6a4f68408f3a26400e457cb1e52226c284d8c4ab36a3363520e0f
+The original TTF is distributed unchanged. No conversion or subsetting was done.
+OS/2 fsType: 4 (Preview & Print embedding). The app uses it for display labels.
+The repository's separate MIT license is not represented as the font's license.
+The free-use notice and embedding flags have been inspected for this local preview.
+They are not an express commercial web-redistribution license. Obtain an express
+grant from the rights holder before a public/commercial redistribution release.

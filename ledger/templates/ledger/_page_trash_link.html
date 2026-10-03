@@ -1,0 +1,13 @@
+{% load bilingual %}
+<div class="page-trash-toolbar{% if date_filters and not is_trash %} history-toolbar{% endif %}" id="page-records" data-page-trash-url="{{ trash_link }}">
+    <h1 id="page-view-heading">{% if is_trash %}{{ trash_heading|bilingual }}{% else %}{{ page_heading|bilingual }}{% endif %}</h1>
+    {% if date_filters and not is_trash %}{% include "ledger/_history_filters.html" %}{% endif %}
+    {% if is_trash %}
+    <a class="button-link" href="{{ records_link }}">{% bi 'Back to records' %}</a>
+    {% else %}
+    <a class="button-link page-trash-link" href="{{ trash_link }}" aria-label="Open {{ trash_heading|bilingual_plain }}">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 6h18M9 6V3h6v3M5 6l1 15h12l1-15M10 10v7M14 10v7"/></svg>
+        {% bi 'Trash' %} <span class="trash-count">{{ trash_count }}</span>
+    </a>
+    {% endif %}
+</div>

@@ -1,0 +1,4 @@
+{% extends "ledger/base.html" %}
+{% load bilingual %}
+{% block title %}Record review | Pharmacy Ledger{% endblock %}
+{% block content %}<div class="panel"><div class="ledger-history-header"><h2>{% bi 'Record review' %}</h2><a class="button-link" href="{% url 'ledger:add_transaction' %}">{% bi 'Back to dashboard' %}</a></div>{% include "ledger/_record_review.html" %}</div>{% endblock %}

@@ -1,0 +1,24 @@
+{% load bilingual %}
+<div class="firm-detail-content">
+    <p>{{ firm.get_source_type_display|bilingual }} · {% bi 'Phone Number' %}: <bdi>{{ firm.phone|default:"—" }}</bdi></p>
+    <div class="firm-activity-strip" aria-label="{{ firm.name }} transaction counts">
+        <a href="{% url 'ledger:ledger_history' %}?firm_id={{ firm.pk }}&amp;start_date={{ today|date:'Y-m-d' }}&amp;end_date={{ today|date:'Y-m-d' }}">{% bi 'Today' %} <strong>{{ counts.today }}</strong></a>
+        <a href="{% url 'ledger:ledger_history' %}?firm_id={{ firm.pk }}&amp;start_date={{ week_start|date:'Y-m-d' }}&amp;end_date={{ today|date:'Y-m-d' }}">{% bi 'This Week' %} <strong>{{ counts.week }}</strong></a>
+        <a href="{% url 'ledger:ledger_history' %}?firm_id={{ firm.pk }}&amp;start_date={{ month_start|date:'Y-m-d' }}&amp;end_date={{ today|date:'Y-m-d' }}">{% bi 'This Month' %} <strong>{{ counts.month }}</strong></a>
+        <a href="{% url 'ledger:ledger_history' %}?firm_id={{ firm.pk }}">{% bi 'All transactions' %}</a>
+    </div>
+    <p class="muted detail-caption">{% bi 'Active bill/payment saves; combined bill and payment count once. Karachi calendar dates, weeks start Monday.' %}</p>
+    <div class="data-table-wrap" tabindex="0" role="region" aria-label="Bills for {{ firm.name }}">
+        <table class="data-table firm-bills-table">
+            <thead><tr><th scope="col">{% table_heading 'Bill' %}</th><th scope="col">{% table_heading 'Date' %}</th><th scope="col">{% table_heading 'Representative' %}</th><th scope="col" class="amount-heading">{% table_heading 'Amount' %}</th><th scope="col">{% table_heading 'Actions' %}</th></tr></thead>
+            <tbody>{% for bill in bills_page %}
+                <tr id="bill-{{ bill.pk }}"><td>{{ bill.bill_number }}</td><td>{{ bill.bill_date|date:"d-m-Y" }}</td><td>{{ bill.representative.name|default:"—" }}</td><td class="amount-cell">{{ bill.bill_amount }}</td><td class="table-actions">{% include 'ledger/_bill_actions.html' %}</td></tr>
+            {% empty %}<tr class="empty-table-row"><td colspan="5">{% bi 'No available bills for this firm.' %}</td></tr>{% endfor %}</tbody>
+        </table>
+    </div>
+    <nav tabindex="-1" class="table-pagination" aria-label="{{ firm.name }} bill pages">
+        <span>{% bi_format 'pagination' count=bills_page.paginator.count page=bills_page.number pages=bills_page.paginator.num_pages %}</span>
+        {% if bills_page.has_previous %}<a data-firm-page href="{% url 'ledger:firm_details' firm.pk %}?page={{ bills_page.previous_page_number }}">{% bi 'Previous' %}</a>{% endif %}
+        {% if bills_page.has_next %}<a data-firm-page href="{% url 'ledger:firm_details' firm.pk %}?page={{ bills_page.next_page_number }}">{% bi 'Next' %}</a>{% endif %}
+    </nav>
+</div>

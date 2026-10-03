@@ -1,0 +1,7 @@
+{% extends "ledger/base.html" %}
+{% load bilingual %}
+{% block title %}{{ firm.name }} | Pharmacy Ledger{% endblock %}
+{% block content %}
+<div class="panel record-list-panel"><div class="ledger-history-header"><h2>{{ firm.name }} · Bills and activity</h2><a href="{% url 'ledger:add_firm' %}" class="button-link">{% bi 'Back to firms' %}</a></div>
+{% include "ledger/_firm_details.html" %}</div>
+{% endblock %}

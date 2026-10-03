@@ -1,0 +1,59 @@
+{% extends "ledger/base.html" %}
+{% load bilingual %}
+
+{% block title %}Bills | Pharmacy Ledger
+{% endblock %}
+
+{% block content %}
+{% include "ledger/_page_trash_link.html" with page_heading="Bills" trash_heading="Bills Trash" trash_count=bill_trash_groups|length %}
+
+{% if not is_trash %}
+<div class="panel compact-panel record-list-panel bill-entry-panel">
+
+    <div class="entry-heading-toolbar"><h2>{% bi 'Add Bill' %}</h2>
+
+    <details class="entry-help"><summary>{% bi 'Help' %}</summary><p>{% bi 'Choose a source type and firm first. Company bills require an active representative. Local Market bills are paid immediately in cash.' %}</p></details></div>
+
+    <form method="post" class="record-entry-form bill-entry-form" data-record-form data-firms-url="{% url 'ledger:firms_for_source_type' %}" data-reps-url="{% url 'ledger:representatives_for_firm' %}">
+
+        {% csrf_token %}{{ form.request_id }}
+
+        <div class="form-wide">{{ form.non_field_errors|bilingual_errors }}{{ form.request_id.errors|bilingual_errors }}</div>
+
+        {% for field in form.visible_fields %}<div class="form-field {% if field.name == 'notes' %}bill-notes-field{% endif %}">{% field_label field %}{% bilingual_select field %}{{ field.errors|bilingual_errors }}</div>{% endfor %}
+
+        <div class="form-wide selector-error-slot"><p data-selector-error role="alert" class="muted"></p></div><div class="form-submit"><button type="submit">{% bi 'Save Bill' %}</button></div>
+
+    </form>
+
+</div>
+
+<div class="panel compact-panel record-list-panel">
+
+    <h2>{% bi 'Saved Bills' %}</h2>
+
+    <div class="data-table-wrap" tabindex="0" role="region" aria-label="Scrollable bills">
+
+        <table class="data-table bill-data-table" aria-label="Saved bills">
+
+            <thead><tr><th scope="col">{% table_heading 'Bill' %}</th><th scope="col">{% table_heading 'Date' %}</th><th scope="col">{% table_heading 'Firm' %}</th><th scope="col">{% table_heading 'Source' %}</th><th scope="col">{% table_heading 'Representative' %}</th><th scope="col" class="amount-heading">{% table_heading 'Amount' %}</th><th scope="col">{% table_heading 'Actions' %}</th></tr></thead>
+
+            <tbody>{% for bill in bills %}
+
+                <tr id="bill-{{ bill.pk }}"><td><strong>{{ bill.bill_number }}</strong></td><td>{{ bill.bill_date|date:"d-m-Y" }}</td><td>{{ bill.firm.name }}</td><td>{{ bill.firm.get_source_type_display|bilingual }}</td><td>{{ bill.representative.name|default:"—" }}</td><td class="amount-cell">{{ bill.bill_amount }}</td>
+
+                <td class="table-actions">{% include 'ledger/_bill_actions.html' %}
+                </td></tr>
+
+            {% empty %}<tr class="empty-table-row"><td colspan="7">{% bi 'No saved bills.' %}</td></tr>{% endfor %}</tbody>
+
+        </table>
+
+    </div>
+
+</div>
+
+{% else %}
+{% include "ledger/_deletion_groups_table.html" with deletion_groups=bill_trash_groups deletion_group_heading="Bills Trash" return_url="ledger:bills" empty_trash_message="Bills Trash is empty." records_link=records_link %}
+{% endif %}
+{% endblock %}

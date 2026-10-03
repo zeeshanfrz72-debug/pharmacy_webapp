@@ -1,12 +1,13 @@
 {% extends "ledger/base.html" %}
+{% load bilingual %}
 
 {% block title %}Logged Out | Pharmacy Ledger{% endblock %}
 
 {% block content %}
 <div style="max-width: 640px; margin: 40px auto; text-align: center;">
     <div class="panel">
-        <h2>Signed out</h2>
-        <p class="muted">You have been signed out. <a href="{% url 'login' %}">Sign in again</a></p>
+        <h2>{% bi 'Signed out' %}</h2>
+        <p class="muted">{% bi 'You have been signed out.' %} <a href="{% url 'login' %}">{% bi 'Sign in again' %}</a></p>
     </div>
 </div>
 {% endblock %}

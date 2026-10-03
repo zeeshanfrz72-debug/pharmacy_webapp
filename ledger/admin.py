@@ -1,7 +1,9 @@
 from django.contrib import admin
 from django.db.models import Q, Sum
 
-from .models import Firm, Representative, Bill, Payment, LedgerEntry, TransactionBatch
+from .models import Firm, Representative, Bill, Payment, LedgerEntry, TransactionBatch, DeletionGroup, DeletionMember
+from .models import BillEditEvent
+from .money import balance
 
 
 @admin.register(Firm)
@@ -34,6 +36,8 @@ class RepresentativeAdmin(admin.ModelAdmin):
 
 @admin.register(Bill)
 class BillAdmin(admin.ModelAdmin):
+    def has_add_permission(self, request):
+        return False
     list_display = (
         "bill_number",
         "firm",
@@ -55,6 +59,8 @@ class BillAdmin(admin.ModelAdmin):
 
 @admin.register(Payment)
 class PaymentAdmin(admin.ModelAdmin):
+    def has_add_permission(self, request):
+        return False
     list_display = (
         "firm",
         "representative",
@@ -110,25 +116,13 @@ class LedgerEntryAdmin(admin.ModelAdmin):
         # 1. before this row's date
         # 2. or on the same date but with id less than or equal to this row
         entries_until_this_row = LedgerEntry.objects.filter(
-            firm=obj.firm
+            firm=obj.firm, is_deleted=False
         ).filter(
             Q(date__lt=obj.date) | Q(date=obj.date, id__lte=obj.id)
         )
 
         # Add all debt increases and debt decreases up to this row.
-        totals = entries_until_this_row.aggregate(
-            total_increase=Sum("increase"),
-            total_decrease=Sum("decrease"),
-        )
-
-        # If no total exists, Django may return None.
-        # The "or 0" prevents math errors.
-        increase = totals["total_increase"] or 0
-        decrease = totals["total_decrease"] or 0
-
-        # Running balance means:
-        # all increases so far - all decreases so far.
-        return increase - decrease
+        return balance(entries_until_this_row)
 
     running_balance.short_description = "Running Balance"
 
@@ -148,3 +142,26 @@ class TransactionBatchAdmin(admin.ModelAdmin):
 
     def has_delete_permission(self, request, obj=None):
         return False
+
+
+@admin.register(DeletionGroup)
+class DeletionGroupAdmin(TransactionBatchAdmin):
+    list_display = ("id", "firm", "kind", "deleted_at", "restored_at")
+    list_filter = ("kind", "deleted_at")
+    readonly_fields = tuple(field.name for field in DeletionGroup._meta.fields)
+
+
+@admin.register(DeletionMember)
+class DeletionMemberAdmin(TransactionBatchAdmin):
+    list_display = ("group", "batch", "reversal")
+    list_filter = ()
+    search_fields = ("group__firm__name",)
+    readonly_fields = tuple(field.name for field in DeletionMember._meta.fields)
+
+
+@admin.register(BillEditEvent)
+class BillEditEventAdmin(TransactionBatchAdmin):
+    list_display = ("id", "batch", "bill", "actor", "timestamp")
+    list_filter = ("timestamp",)
+    search_fields = ("bill__bill_number",)
+    readonly_fields = tuple(field.name for field in BillEditEvent._meta.fields)

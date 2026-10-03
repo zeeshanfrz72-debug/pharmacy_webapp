@@ -1,0 +1,152 @@
+{
+  "started": "2026-10-03 13:06:51",
+  "migrations": {
+    "backups\\preview-before-reset-20261002-220531.sqlite3": {
+      "status": "migrated isolated snapshot",
+      "source_unchanged": true,
+      "legacy_values_preserved": true,
+      "migration": {
+        "exit_code": 0,
+        "stdout": "Operations to perform:\n  Apply all migrations: admin, auth, axes, contenttypes, ledger, sessions\nRunning migrations:\n  Applying ledger.0008_ledger_integrity... OK\n  Applying ledger.0009_exact_cent_constraints... OK\n  Applying ledger.0010_snapshot_bounds... OK\n  Applying ledger.0011_immutable_actor_identity... OK\n",
+        "stderr": ""
+      },
+      "application_check": {
+        "exit_code": 0,
+        "stdout": "System check identified no issues (0 silenced).\n",
+        "stderr": ""
+      }
+    },
+    "db.sqlite3": {
+      "status": "no application schema",
+      "source_unchanged": true
+    },
+    "preview-20261001-135817.sqlite3": {
+      "status": "migrated isolated snapshot",
+      "source_unchanged": true,
+      "legacy_values_preserved": true,
+      "migration": {
+        "exit_code": 0,
+        "stdout": "Operations to perform:\n  Apply all migrations: admin, auth, axes, contenttypes, ledger, sessions\nRunning migrations:\n  Applying ledger.0008_ledger_integrity... OK\n  Applying ledger.0009_exact_cent_constraints... OK\n  Applying ledger.0010_snapshot_bounds... OK\n  Applying ledger.0011_immutable_actor_identity... OK\n",
+        "stderr": ""
+      },
+      "application_check": {
+        "exit_code": 0,
+        "stdout": "System check identified no issues (0 silenced).\n",
+        "stderr": ""
+      }
+    }
+  },
+  "snapshot_hashes_before": {
+    "backups\\preview-before-reset-20261002-220531.sqlite3": "4b084c50e5aa0508a91e49cabbb2a81a5692e7f4dcd63cd0dce3d313a36b374e",
+    "db.sqlite3": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "preview-20261001-135817.sqlite3": "13b8c5baab324062ee06e3b46c44cc7f187a097205ab158514a650eca06d76fc"
+  },
+  "tests": {
+    "exit_code": 0,
+    "stdout": "Found 96 test(s).\nSystem check identified no issues (0 silenced).\n",
+    "stderr": "Creating test database for alias 'default'...\n\n.........................AXES: New login failure by {username: \"********************\", ip_address: \"********************\", user_agent: \"<unknown>\", path_info: \"/accounts/login/\"}. Created new record in the database.\nAXES: Repeated login failure by {username: \"********************\", ip_address: \"********************\", user_agent: \"<unknown>\", path_info: \"/accounts/login/\"}. Updated existing record in the database.\nAXES: Repeated login failure by {username: \"********************\", ip_address: \"********************\", user_agent: \"<unknown>\", path_info: \"/accounts/login/\"}. Updated existing record in the database.\nAXES: Repeated login failure by {username: \"********************\", ip_address: \"********************\", user_agent: \"<unknown>\", path_info: \"/accounts/login/\"}. Updated existing record in the database.\nAXES: Repeated login failure by {username: \"********************\", ip_address: \"********************\", user_agent: \"<unknown>\", path_info: \"/accounts/login/\"}. Updated existing record in the database.\nAXES: Locking out {username: \"********************\", ip_address: \"********************\", user_agent: \"<unknown>\", path_info: \"/accounts/login/\"} after repeated login failures.\nAXES: Repeated login failure by {username: \"********************\", ip_address: \"********************\", user_agent: \"<unknown>\", path_info: \"/accounts/login/\"}. Updated existing record in the database.\nAXES: Locking out {username: \"********************\", ip_address: \"********************\", user_agent: \"<unknown>\", path_info: \"/accounts/login/\"} after repeated login failures.\n..........................D:\\pharmacy_webapp-hardening\\ledger\\test_integrity.py:361: UserWarning: Overriding setting DATABASES can lead to unexpected behavior.\n  with override_settings(DATABASES={\"default\": {\"ENGINE\": \"django.db.backends.sqlite3\", \"NAME\": source}}):\n.............................................\n----------------------------------------------------------------------\nRan 96 tests in 14.235s\n\nOK\nDestroying test database for alias 'default'...\n\n"
+  },
+  "migration_drift": {
+    "exit_code": 0,
+    "stdout": "No changes detected\n",
+    "stderr": ""
+  },
+  "races": [
+    {
+      "name": "payment_payment",
+      "outcomes": [
+        {
+          "status": "ValidationError",
+          "error": "['Payment amount cannot be higher than the remaining debt.']"
+        },
+        {
+          "status": "ok",
+          "changed": null
+        }
+      ],
+      "evidence": {
+        "balance": "20.00",
+        "payments": 1
+      }
+    },
+    {
+      "name": "edit_edit",
+      "outcomes": [
+        {
+          "status": "ValidationError",
+          "error": "['This bill changed after you opened it. Reload and review the latest bill.']"
+        },
+        {
+          "status": "ok",
+          "changed": null
+        }
+      ],
+      "evidence": {
+        "balance": "300.00",
+        "adjustments": 1
+      }
+    },
+    {
+      "name": "edit_delete",
+      "outcomes": [
+        {
+          "status": "ValidationError",
+          "error": "['Recover this bill from Trash before editing it.']"
+        },
+        {
+          "status": "ok",
+          "changed": true
+        }
+      ],
+      "evidence": {
+        "balance": "0.00",
+        "status": "reversed"
+      }
+    },
+    {
+      "name": "delete_recover",
+      "outcomes": [
+        {
+          "status": "ok",
+          "changed": true
+        },
+        {
+          "status": "ok",
+          "changed": true
+        }
+      ],
+      "evidence": {
+        "balance": "0.00",
+        "status": "reversed"
+      }
+    },
+    {
+      "name": "duplicate_request",
+      "outcomes": [
+        {
+          "status": "ok",
+          "changed": null
+        },
+        {
+          "status": "ok",
+          "changed": null
+        }
+      ],
+      "evidence": {
+        "balance": "100.00",
+        "bills": 1,
+        "batches": 1
+      }
+    },
+    {
+      "name": "supplier_delete_write",
+      "delete_status": 302,
+      "firm_deleted": true,
+      "committed_bill": 6,
+      "balance": "100.00",
+      "classification": "serializable write-before-delete, retained history; policy/UX risk"
+    }
+  ],
+  "original_databases_unchanged": true,
+  "completed": "2026-10-03 13:07:31"
+}

@@ -2,8 +2,13 @@ from decimal import Decimal
 import uuid
 
 from django import forms
+from django.db.models import Q
 
-from .models import Firm, Representative
+from .models import Bill, Firm, Representative
+from django.utils import timezone
+
+
+BUSINESS_DATE_FORMATS = ["%d-%m-%Y", "%Y-%m-%d"]
 
 
 # Form for adding a new firm/source.
@@ -17,7 +22,7 @@ class FirmForm(forms.ModelForm):
 class RepresentativeForm(forms.ModelForm):
     # Helper field used to filter firms; source type is stored on Firm, not Representative.
     source_type = forms.ChoiceField(
-        choices=[("", "---------")] + list(Firm.SourceType.choices),
+        choices=[("", "---------")] + [(value, label) for value, label in Firm.SourceType.choices if value != Firm.SourceType.LOCAL_MARKET],
         required=True,
         label="Source Type",
     )
@@ -194,7 +199,7 @@ class LedgerTransactionForm(forms.Form):
         adding_new_bill = bill_choice == "add_new"
 
         if firm and bill_choice and not adding_new_bill:
-            if not firm.bills.filter(pk=bill_choice).exists():
+            if not str(bill_choice).isdigit() or not firm.bills.available().filter(pk=bill_choice).exists():
                 raise forms.ValidationError("Choose a bill belonging to the selected firm.")
 
         # Add New Bill requires both bill number and bill amount.
@@ -227,3 +232,69 @@ class LedgerTransactionForm(forms.Form):
             user=user,
             payload_hash=payload_hash,
         )
+
+
+class BillForm(forms.Form):
+    request_id = forms.UUIDField(widget=forms.HiddenInput, initial=uuid.uuid4)
+    source_type = forms.ChoiceField(choices=[("", "Select source type")] + list(Firm.SourceType.choices))
+    firm = forms.ModelChoiceField(queryset=Firm.objects.filter(is_deleted=False).order_by("name"))
+    representative = forms.ModelChoiceField(
+        queryset=Representative.objects.filter(is_deleted=False, is_active=True, firm__is_deleted=False).order_by("name"),
+        required=False,
+    )
+    bill_number = forms.CharField(max_length=100)
+    bill_date = forms.DateField(initial=timezone.localdate, input_formats=BUSINESS_DATE_FORMATS, widget=forms.DateInput(attrs={"placeholder": "DD-MM-YYYY", "inputmode": "numeric"}, format="%d-%m-%Y"))
+    bill_amount = forms.DecimalField(max_digits=12, decimal_places=2, min_value=Decimal("0.01"))
+    notes = forms.CharField(required=False, widget=forms.Textarea(attrs={"rows": 1}))
+
+    def clean(self):
+        data = super().clean()
+        firm = data.get("firm")
+        rep = data.get("representative")
+        if firm and data.get("source_type") != firm.source_type:
+            self.add_error("firm", "Choose a firm belonging to the selected source type.")
+        if firm and firm.source_type == Firm.SourceType.LOCAL_MARKET:
+            if rep:
+                self.add_error("representative", "Local Market bills do not use a representative.")
+        elif firm:
+            if not rep:
+                self.add_error("representative", "Choose an active representative.")
+            elif rep.firm_id != firm.pk:
+                self.add_error("representative", "Choose a representative belonging to this firm.")
+        return data
+
+    def save(self, *, user, payload_hash):
+        from .services import create_transaction_batch
+        data = self.cleaned_data.copy()
+        data.update(
+            bill_choice="add_new", new_bill_number=data["bill_number"],
+            new_bill_amount=data["bill_amount"],
+            payment_amount=data["bill_amount"] if data["firm"].source_type == Firm.SourceType.LOCAL_MARKET else None,
+        )
+        return create_transaction_batch(data, user=user, payload_hash=payload_hash)
+
+
+class BillEditForm(forms.ModelForm):
+    revision = forms.CharField(widget=forms.HiddenInput)
+    bill_date = forms.DateField(input_formats=BUSINESS_DATE_FORMATS, widget=forms.DateInput(attrs={"placeholder": "DD-MM-YYYY", "inputmode": "numeric"}, format="%d-%m-%Y"))
+    bill_amount = forms.DecimalField(max_digits=12, decimal_places=2, min_value=Decimal("0.01"))
+
+    class Meta:
+        model = Bill
+        fields = ["bill_number", "bill_date", "representative", "bill_amount", "notes"]
+        widgets = {"notes": forms.Textarea(attrs={"rows": 2})}
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        from .services import bill_revision
+        self.fields["revision"].initial = bill_revision(self.instance)
+        self.fields["representative"].queryset = Representative.objects.filter(firm_id=self.instance.firm_id).filter(
+            Q(is_active=True, is_deleted=False) | Q(pk=self.instance.representative_id)
+        ).order_by("name")
+        self.fields["representative"].required = self.instance.firm.source_type != Firm.SourceType.LOCAL_MARKET
+        if self.instance.firm.source_type == Firm.SourceType.LOCAL_MARKET:
+            self.fields["representative"].widget = forms.HiddenInput()
+
+    def save(self, *, user):
+        from .services import edit_bill
+        return edit_bill(self.instance.pk, self.cleaned_data, user=user)

@@ -1,7 +1,14 @@
-const CACHE_NAME = 'pharmacy-ledger-static-v2';
+const CACHE_NAME = 'pharmacy-ledger-static-v8';
 
 self.addEventListener('install', event => {
-  event.waitUntil(self.skipWaiting());
+  // Precache the original font even when its first page request finishes before
+  // this worker controls the page. Failure must not prevent English controls.
+  event.waitUntil(
+    caches.open(CACHE_NAME)
+      .then(cache => cache.add('/static/ledger/fonts/JameelNooriNastaleeq.ttf'))
+      .catch(() => undefined)
+      .then(() => self.skipWaiting())
+  );
 });
 
 self.addEventListener('activate', event => {

@@ -1,0 +1,60 @@
+@font-face {
+    font-family: 'Jameel Noori Nastaleeq';
+    src: url('fonts/JameelNooriNastaleeq.ttf') format('truetype');
+    font-style: normal;
+    font-weight: 400;
+    font-display: swap;
+}
+.bi-label { display: inline-flex; direction: ltr; align-items: center; justify-content: space-between; gap: 8px; max-width: 100%; vertical-align: middle; }
+.bi-en { direction: ltr; min-width: 0; text-align: left; }
+.bi-ur { direction: rtl; text-align: right; min-width: 0; font-family: 'Jameel Noori Nastaleeq', serif; font-size: 18px; line-height: 1.6; font-weight: 400; font-synthesis: none; text-transform: none; letter-spacing: normal; }
+label > .bi-label, h1 > .bi-label, h2 > .bi-label, h3 > .bi-label, .metric-label > .bi-label, .total-label > .bi-label { width: 100%; }
+h1 > .bi-label > .bi-ur, h2 > .bi-label > .bi-ur, h3 > .bi-label > .bi-ur { font-size: 24px; }
+label .bi-en, h1 .bi-en, h2 .bi-en, h3 .bi-en, .metric-label .bi-en { flex: 1; }
+button .bi-ur, .button-link .bi-ur, .batch-action > summary .bi-ur, .row-detail-toggle > summary .bi-ur, .bottom-nav .bi-ur, .eye-button .bi-ur { font-size: 16px; }
+.data-table th .bi-label { gap: 8px; white-space: nowrap; }
+.data-table td .bi-label { white-space: nowrap; }
+.data-table .row-detail-panel .bi-label, p > .bi-label, .errorlist .bi-label, .helptext > .bi-label { white-space: normal; align-items: start; width: 100%; }
+p > .bi-label > span, .errorlist .bi-label > span, .helptext > .bi-label > span { flex: 1 1 50%; }
+.data-table td { font-variant-numeric: tabular-nums; }
+.amount-cell, .metric-value, [data-summary], input[type="number"], input[type="date"] { direction: ltr; unicode-bidi: isolate; }
+.bottom-nav a > .bi-label { width: 100%; }
+.bottom-nav .bi-en { font-size: inherit; }
+.dashboard-grid .metric-card { min-height: 82px; }
+.dashboard-grid .metric-label { grid-column: 1 / -1; }
+.dashboard-grid .metric-value { grid-row: 2; }
+.dashboard-grid .metric-subvalue { grid-row: 2; }
+.dashboard-grid .metric-label .bi-ur, .dashboard-grid .metric-sub-label .bi-ur { font-size: 16px; }
+.dashboard-grid .metric-sub-label .bi-label { gap: 4px; white-space: nowrap; }
+.dashboard-grid .total-debt-card .metric-subvalue { grid-column: 1 / -1; grid-row: 3; display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); align-items: start; gap: 0 4px; }
+.dashboard-grid .total-debt-card .metric-sub-label, .dashboard-grid .total-debt-card .metric-sub-label > .bi-label { display: contents; }
+.dashboard-grid .total-debt-card .metric-sub-label .bi-en { grid-column: 1; grid-row: 1; text-align: left; }
+.dashboard-grid .total-debt-card .metric-sub-label .bi-ur { grid-column: 2; grid-row: 1 / 3; }
+.dashboard-grid .total-debt-card [data-summary="supplier_credit_total"] { grid-column: 1; grid-row: 2; text-align: left; }
+.dashboard-grid .total-debt-card .eye-button { grid-column: 2; grid-row: 2; justify-self: end; margin: 0; }
+.dashboard-grid .total-debt-card { grid-template-columns: minmax(0, 1fr) auto; }
+.dashboard-grid .total-debt-card .metric-value { white-space: nowrap; overflow-wrap: normal; font-size: 18px; letter-spacing: 1px; }
+.dashboard-grid .total-debt-card .metric-sub-label { min-width: 0; }
+.dashboard-grid .total-debt-card .metric-sub-label .bi-label { white-space: normal; }
+.dashboard-grid .total-debt-card .metric-sub-label .bi-en, .dashboard-grid .total-debt-card .metric-sub-label .bi-ur { flex: 1 1 50%; }
+select { font-family: Inter, 'Jameel Noori Nastaleeq', Arial, sans-serif; }
+.transaction-card .transaction-field label { text-transform: none; }
+.transaction-card .transaction-actions button { min-height: 38px; }
+.data-table .entity-actions { align-items: center; }
+.batch-dialog p .bi-label { gap: 20px; }
+.helptext { display: block; font-size: 12px; margin-top: 5px; }
+.errorlist { padding-left: 18px; }
+.toast { max-width: min(720px, 95vw); }
+.bi-label > bdi, bdi { unicode-bidi: isolate; }
+@media (max-width: 767px) {
+    .bottom-nav a > .bi-label { flex-wrap: wrap; justify-content: center; gap: 0 5px; }
+    .bottom-nav a > .bi-label > span { width: 100%; text-align: center; }
+    .bottom-nav { padding: 4px 6px; }
+    .bottom-nav a { gap: 1px; min-height: 62px; padding: 4px 3px; }
+    .page-main { padding-bottom: 150px; }
+    .dashboard-grid .metric-label .bi-label { align-items: start; }
+    .dashboard-grid .metric-label .bi-en { font-size: 10px; }
+    .dashboard-grid .metric-card { padding: 8px; min-height: 90px; }
+    .dashboard-grid .total-debt-card .metric-subvalue { gap: 0 6px; }
+    p > .bi-label, .errorlist .bi-label, .batch-dialog p > .bi-label { gap: 12px; }
+}

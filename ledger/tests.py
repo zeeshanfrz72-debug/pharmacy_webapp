@@ -1,3 +1,5 @@
+from .bilingual import label as bilingual_label
+from .templatetags.bilingual import table_heading
 import uuid
 from concurrent.futures import ThreadPoolExecutor
 from datetime import datetime, timezone as datetime_timezone
@@ -149,13 +151,13 @@ class LedgerWorkflowTests(TestCase):
         self.assertEqual(self.firm.current_debt(), Decimal("-1000.00"))
         page = self.client.get(reverse("ledger:add_firm"), secure=True)
         self.assertContains(page, "Supplier Credit")
-        credit = page.context["firms"].get(pk=self.firm.pk).current_credit
+        credit = next(firm for firm in page.context["firms"] if firm.pk == self.firm.pk).display_credit
         self.assertEqual(credit, Decimal("1000.00"))
         self.assertContains(page, str(credit))
         breakdown = self.client.get(reverse("ledger:dashboard_debt_breakdown"), secure=True).json()
         self.assertEqual(breakdown["credits"], [{"label": "Test Distributor", "value": 1000.0}])
 
-    def test_archived_firm_keeps_balance_and_is_restorable(self):
+    def test_deleted_firm_keeps_balance_in_its_trash_and_is_recoverable(self):
         self.create_batch(bill_choice="add_new", bill_amount="1200")
         response = self.client.post(reverse("ledger:archive_firm", args=[self.firm.pk]), secure=True)
         self.assertEqual(response.status_code, 302)
@@ -164,7 +166,7 @@ class LedgerWorkflowTests(TestCase):
         self.assertEqual(self.firm.current_debt(), Decimal("1200.00"))
         page = self.client.get(reverse("ledger:add_firm"), secure=True)
         self.assertEqual(page.context["total_debt"], Decimal("1200.00"))
-        self.assertContains(page, "Archived Firms")
+        self.assertContains(page, "Firms Trash")
         transaction_form = self.client.get(reverse("ledger:add_transaction"), secure=True)
         self.assertNotIn(self.firm, transaction_form.context["form"].fields["firm"].queryset)
 
@@ -173,7 +175,7 @@ class LedgerWorkflowTests(TestCase):
         self.firm.refresh_from_db()
         self.assertFalse(self.firm.is_deleted)
 
-    def test_archived_representative_keeps_historical_link_and_can_be_restored(self):
+    def test_deleted_representative_keeps_historical_link_and_is_recoverable(self):
         batch, _ = self.create_batch(bill_choice="add_new", bill_amount="1000")
         bill = batch.entries.get(bill__isnull=False).bill
         self.client.post(reverse("ledger:archive_representative", args=[self.rep.pk]), secure=True)
@@ -185,36 +187,46 @@ class LedgerWorkflowTests(TestCase):
         history = self.client.get(reverse("ledger:ledger_history"), secure=True)
         self.assertContains(history, "Test Rep")
 
-        self.client.post(reverse("ledger:restore_representative", args=[self.rep.pk]), secure=True)
+        trash_url = reverse("ledger:add_representative") + "#page-trash"
+        response = self.client.post(
+            reverse("ledger:restore_representative", args=[self.rep.pk]),
+            {"next": trash_url}, secure=True,
+        )
+        self.assertRedirects(response, trash_url)
         self.rep.refresh_from_db()
         self.assertFalse(self.rep.is_deleted)
 
-    def test_archive_reverse_and_undo_controls_render_with_mobile_targets(self):
+    def test_history_delete_moves_transaction_to_its_trash_immediately(self):
         firm_page = self.client.get(reverse("ledger:add_firm"), secure=True)
-        self.assertContains(firm_page, reverse("ledger:archive_firm", args=[self.firm.pk]))
-        self.assertContains(firm_page, 'class="archive-button"')
+        self.assertContains(firm_page, reverse("ledger:delete_firm", args=[self.firm.pk]))
+        self.assertContains(firm_page, "Firms Trash")
 
         representative_page = self.client.get(reverse("ledger:add_representative"), secure=True)
         self.assertContains(
             representative_page,
-            reverse("ledger:archive_representative", args=[self.rep.pk]),
+            reverse("ledger:delete_representative", args=[self.rep.pk]),
         )
 
         batch, _ = self.create_batch(bill_choice="add_new", bill_amount="800")
         history_page = self.client.get(reverse("ledger:ledger_history"), secure=True)
         reverse_url = reverse("ledger:reverse_batch", args=[batch.pk])
         self.assertContains(history_page, reverse_url)
-        self.assertContains(history_page, "Correction reason")
-        self.assertContains(history_page, ".batch-action-form button { width:100%; }")
-        self.assertContains(
-            history_page,
-            ".entity-actions .archive-button { width: 100%; min-height: 42px; }",
-        )
+        self.assertContains(history_page, 'data-action="delete"')
+        self.assertContains(history_page, '<summary class="delete-action">' + str(bilingual_label('Delete')) + '</summary>')
+        self.assertContains(history_page, 'id="batch-action-dialog"')
+        self.assertContains(history_page, 'aria-describedby="batch-dialog-description"')
+        self.assertContains(history_page, "Reason for Deletion")
 
         self.client.post(reverse_url, {"reason": "Mobile control rendering check"}, secure=True)
-        undone_page = self.client.get(reverse("ledger:ledger_history"), secure=True)
-        self.assertContains(undone_page, reverse("ledger:restore_batch", args=[batch.pk]))
-        self.assertContains(undone_page, "Undo")
+        undone_page = self.client.get(reverse("ledger:ledger_history"), {"view": "trash"}, secure=True)
+        self.assertEqual(undone_page.context["history_rows"], [])
+        group_id = undone_page.context["transaction_trash_groups"][0].pk
+        self.assertContains(undone_page, reverse("ledger:recover_trash", args=[group_id]))
+        self.assertContains(undone_page, '<summary class="restore-button">' + str(bilingual_label('Recover')) + '</summary>')
+        self.assertContains(undone_page, "Transaction Trash")
+        self.assertNotContains(undone_page, '<span class="deleted-badge">Deleted</span>')
+        self.assertNotContains(undone_page, 'data-action="delete"')
+        self.assertEqual(len(undone_page.context["transaction_trash_groups"]), 1)
 
     def test_guest_login_has_centered_shell_without_ledger_navigation(self):
         response = Client().get(reverse("login"), secure=True)
@@ -223,27 +235,74 @@ class LedgerWorkflowTests(TestCase):
         self.assertContains(response, "Welcome Back")
         self.assertNotContains(response, '<nav class="bottom-nav"')
 
-    def test_firm_and_representative_tables_render_search_and_accessible_sort_controls(self):
+    def test_record_tables_remove_new_controls_and_keep_existing_filters(self):
         firm_page = self.client.get(reverse("ledger:add_firm"), secure=True)
-        self.assertContains(firm_page, 'id="firm-table-search"')
-        self.assertContains(firm_page, "Search name, type, or phone")
-        self.assertContains(firm_page, 'data-sort-key="balance"')
-        self.assertContains(firm_page, 'aria-sort="none"')
-        self.assertContains(firm_page, "No firms match your search.")
-        self.assertContains(firm_page, "Remaining Debt")
-        self.assertContains(firm_page, reverse("ledger:archive_firm", args=[self.firm.pk]))
-
         representative_page = self.client.get(reverse("ledger:add_representative"), secure=True)
-        self.assertContains(representative_page, 'id="representative-table-search"')
-        self.assertContains(representative_page, "Search name, firm, phone, or status")
-        self.assertContains(representative_page, 'data-sort-key="date"')
-        self.assertContains(representative_page, 'aria-sort="none"')
-        self.assertContains(representative_page, "No representatives match your search.")
+        for page in (firm_page, representative_page):
+            self.assertContains(page, '<th scope="col">' + str(table_heading('Firm')) + '</th>')
+            self.assertNotContains(page, 'data-table-tools')
+            self.assertNotContains(page, 'data-sort-key')
+            self.assertNotContains(page, 'search-empty-row')
+        self.assertContains(firm_page, "Remaining Debt")
+        self.assertContains(firm_page, reverse("ledger:delete_firm", args=[self.firm.pk]))
         self.assertContains(representative_page, 'aria-label="Active representatives"')
-        self.assertContains(
-            representative_page,
-            reverse("ledger:toggle_representative_active", args=[self.rep.pk]),
-        )
+        self.assertContains(representative_page, 'id="source_type"')
+        self.assertContains(representative_page, 'id="firm"')
+        self.assertContains(representative_page, reverse("ledger:toggle_representative_active", args=[self.rep.pk]))
+        other_firm = Firm.objects.create(name="Other Firm", source_type=Firm.SourceType.STOCKIST)
+        Representative.objects.create(firm=other_firm, name="Other Rep")
+        selected = self.client.get(reverse("ledger:add_representative"), {
+            "source_type": self.firm.source_type, "firm": self.firm.pk,
+        }, secure=True)
+        self.assertEqual(list(selected.context["representatives"]), [self.rep])
+
+    def test_delete_undo_delete_cycle_is_idempotent_and_keeps_grouped_entries(self):
+        batch, _ = self.create_batch(bill_choice="add_new", bill_amount="2500", payment_amount="1000")
+        original_ids = list(batch.entries.values_list("id", flat=True))
+        for route, balance in (("reverse_batch", "0.00"), ("restore_batch", "1500.00"), ("reverse_batch", "0.00")):
+            url = reverse("ledger:" + route, args=[batch.pk])
+            response = self.client.post(url, {"reason": "Correction cycle"}, secure=True, HTTP_X_REQUESTED_WITH="XMLHttpRequest")
+            self.assertEqual(response.status_code, 200)
+            self.assertTrue(response.json()["changed"])
+            count = LedgerEntry.objects.count()
+            repeated = self.client.post(url, {"reason": "Repeated click"}, secure=True, HTTP_X_REQUESTED_WITH="XMLHttpRequest")
+            self.assertEqual(repeated.status_code, 200)
+            self.assertFalse(repeated.json()["changed"])
+            self.assertEqual(LedgerEntry.objects.count(), count)
+            self.assertEqual(self.firm.current_debt(), Decimal(balance))
+            self.assertEqual(Decimal(response.json()["total_debt"]), Decimal(balance))
+        self.assertEqual(list(batch.entries.values_list("id", flat=True)), original_ids)
+        self.assertEqual(batch.audit_events.count(), 3)
+        self.assertTrue(all(event.entries.count() == 2 for event in batch.audit_events.all()))
+
+    def test_delete_validation_fallback_security_and_history_date_filters(self):
+        batch, _ = self.create_batch(bill_choice="add_new", bill_amount="500")
+        url = reverse("ledger:reverse_batch", args=[batch.pk])
+        for reason in ("   ", "x" * 501):
+            response = self.client.post(url, {"reason": reason}, secure=True, HTTP_X_REQUESTED_WITH="XMLHttpRequest")
+            self.assertEqual(response.status_code, 400)
+            self.assertFalse(response.json()["success"])
+        self.assertEqual(self.client.get(url, secure=True).status_code, 405)
+        self.assertEqual(Client().post(url, {"reason": "Unauthorized"}, secure=True).status_code, 302)
+        csrf_client = Client(enforce_csrf_checks=True)
+        csrf_client.force_login(self.owner)
+        self.assertEqual(csrf_client.post(url, {"reason": "Missing token"}, secure=True).status_code, 403)
+        self.assertEqual(self.firm.current_debt(), Decimal("500.00"))
+        fallback = self.client.post(url, {"reason": "", "next": "https://example.com/"}, secure=True, follow=True)
+        self.assertContains(fallback, "A reason is required.")
+        history_url = reverse("ledger:ledger_history")
+        selected_path = history_url + "?start_date=" + batch.date.isoformat()
+        deleted = self.client.post(url, {"reason": "Fallback delete", "next": selected_path}, secure=True)
+        self.assertRedirects(deleted, selected_path)
+        fragment = self.client.get(history_url, {
+            "ajax": "1", "start_date": batch.date.isoformat(), "end_date": batch.date.isoformat(),
+        }, secure=True)
+        self.assertNotContains(fragment, 'data-batch-id="%s"' % batch.pk)
+        self.assertNotContains(fragment, '<html')
+        empty = self.client.get(history_url, {"start_date": "2099-01-01"}, secure=True)
+        self.assertEqual(empty.context["history_rows"], [])
+        self.assertContains(empty, 'id="start_date"')
+        self.assertContains(empty, 'id="end_date"')
 
     def test_desktop_shell_and_short_dashboard_rules_are_present(self):
         response = self.client.get(reverse("ledger:add_transaction"), secure=True)

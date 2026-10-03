@@ -1,9 +1,10 @@
+{% load bilingual %}
 {% load static %}
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" dir="ltr">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=0">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
     <meta name="theme-color" content="#011b36">
     <meta name="description" content="Pharmacy Ledger - Track bills, payments, and debt for your pharmacy.">
     <link rel="manifest" href="{% url 'manifest.json' %}">
@@ -11,8 +12,9 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&display=swap" rel="stylesheet">
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <title>{% block title %}Pharmacy Ledger{% endblock %}</title>
+    {% bilingual_catalog %}
+    <script src="{% static 'ledger/bilingual.js' %}?v=2"></script>
 
     <style>
         /* ===== DESIGN TOKENS ===== */
@@ -487,21 +489,21 @@
         .entity-actions form,
         .ledger-entry-card .entry-footer form { margin: 0; }
 
-        .entity-actions .archive-button,
+        .entity-actions .delete-action,
         .restore-button {
             min-height: 40px;
             padding: 7px 12px;
             font-size: 12px;
         }
 
-        .entity-actions .archive-button {
+        .entity-actions .delete-action {
             color: #fff;
             background: #b42318;
             border: 1px solid #b42318;
         }
 
         .restore-button { background: #166534; }
-        .archive-badge {
+        .record-kind-badge {
             display: inline-flex;
             padding: 3px 8px;
             border-radius: 999px;
@@ -517,10 +519,6 @@
         .entry-batch-line { display:flex; justify-content:space-between; align-items:flex-start; gap:12px; }
         .entry-batch-amounts { display:flex; gap:8px; white-space:nowrap; }
         .entry-reason { margin: 8px 0; color:#475569; font-size:12px; }
-        .batch-action-form { display:flex; align-items:center; gap:8px; flex-wrap:wrap; }
-        .batch-action-form label { font-size:10px; }
-        .batch-action-form input { width:220px; max-width:100%; height:38px; min-height:38px; }
-        .batch-action-form button { min-height:40px; }
 
         .ledger-total-card {
             background: var(--brand);
@@ -945,167 +943,101 @@
 
         form p { margin-bottom: 14px; }
 
-        /* ===== TABLES (desktop) ===== */
-        table {
+        /* Shared tables retain columns at every viewport width. */
+        table.data-table {
             width: 100%;
+            min-width: 760px;
+            margin: 0;
+            table-layout: auto;
+            border-collapse: collapse;
             background: var(--panel);
-            border: 1px solid rgba(229, 231, 235, 0.95);
-            border-radius: var(--radius);
-            box-shadow: var(--shadow);
-            border-collapse: separate;
-            border-spacing: 0;
-            overflow: hidden;
         }
-
-        th, td {
-            padding: 9px 12px;
-            text-align: left;
-            border-bottom: 1px solid var(--line);
-            vertical-align: middle;
-        }
-
-        th {
-            position: sticky;
-            top: 0;
-            z-index: 5;
-            background: #f3f4f6;
-            color: #374151;
-            font-size: 10px;
-            text-transform: uppercase;
-            letter-spacing: 0.04em;
-        }
-
-        tbody tr:hover { background: #f9fafb; }
-        tbody tr:last-child td { border-bottom: none; }
-        .data-table tbody tr[hidden] { display: none !important; }
-
         .data-table-wrap {
             width: 100%;
             min-width: 0;
             max-width: 100%;
             overflow-x: auto;
             overscroll-behavior-x: contain;
-            border-radius: var(--radius);
+            border: 1px solid var(--line);
+            border-radius: 6px;
         }
-
-        table.data-table {
-            min-width: 760px;
-            margin: 0;
-        }
-
-        .data-table th { top: 64px; }
-        .table-sort {
-            min-height: 0;
-            display: inline-flex;
-            align-items: center;
-            gap: 5px;
-            padding: 4px 2px;
-            border: 0;
-            border-radius: 4px;
-            background: transparent;
-            color: inherit;
-            font: inherit;
+        .data-table-wrap:focus-visible { outline: 2px solid var(--brand); outline-offset: 3px; }
+        .data-table th, .data-table td {
+            padding: 10px 12px;
             text-align: left;
-            cursor: pointer;
+            vertical-align: middle;
+            border-bottom: 1px solid var(--line);
+            border-right: 1px solid var(--line);
         }
-        .table-sort:hover { color: var(--brand); background: transparent; transform: none; }
-        .table-sort-indicator { min-width: 10px; color: var(--accent); }
-        .table-tools {
-            display: grid;
-            grid-template-columns: minmax(210px, 320px) minmax(245px, 320px) minmax(0, 1fr);
-            align-items: end;
-            gap: 8px 14px;
-            margin: 0 0 10px;
+        .data-table th {
+            background: #edf1f5;
+            color: #374151;
+            font-size: 12px;
+            font-weight: 800;
+            white-space: nowrap;
         }
-        .table-search-field { width: 100%; }
-        .table-search-field label { margin: 0 0 3px; font-size: 9px; }
-        .table-search-field input { background: #fff; }
-        .table-search-field input,
-        .table-sort-controls select { height: 34px; min-height: 34px; border-radius: 8px; padding-top: 6px; padding-bottom: 6px; }
-        .table-sort-controls {
-            display: grid;
-            grid-template-columns: minmax(150px, 1fr) auto;
-            align-items: end;
-            gap: 6px 8px;
-            min-width: 0;
+        .data-table td { font-size: 14px; line-height: 1.45; overflow-wrap: anywhere; }
+        .data-table th:last-child, .data-table td:last-child { border-right: 0; }
+        .data-table tbody tr:last-child td { border-bottom: 0; }
+        .data-table tbody tr:nth-child(even) { background: #f8fafc; }
+        .data-table tbody tr:hover { background: #eef5fb; }
+        .data-table .table-primary { font-weight: 600; color: var(--ink); }
+        .data-table .table-secondary { display: block; margin-top: 3px; color: var(--muted); font-size: 12px; }
+        .data-table .amount-cell, .data-table .balance-cell,
+        .data-table th.amount-heading { text-align: right; white-space: nowrap; }
+        .data-table .table-actions { width: 1%; white-space: nowrap; }
+        .data-table .entity-actions { flex-wrap: nowrap; width: auto; gap: 6px; }
+        .data-table .entity-actions > a, .data-table .entity-actions > form { flex: 0 0 auto; }
+        .data-table .entity-actions .button-link,
+        .data-table .delete-action, .data-table .restore-button {
+            width: auto; min-height: 36px; padding: 7px 10px; font-size: 13px;
         }
-        .table-sort-controls label { grid-column: 1 / -1; margin-bottom: -3px; font-size: 9px; }
-        .table-sort-controls select { min-width: 0; }
-        .table-sort-direction { min-height: 34px; padding: 6px 10px; font-size: 11px; white-space: nowrap; }
-        .table-result-count { justify-self: end; margin: 0; color: var(--muted); font-size: 11px; }
-        .search-empty-row[hidden] { display: none; }
-
-        .record-list-panel {
-            width: 100%;
-            max-width: 1360px;
-            margin-right: auto;
-            margin-left: auto;
-        }
-        .record-filter-panel {
-            width: 100%;
-            max-width: 1360px;
-            margin-right: auto;
-            margin-left: auto;
-        }
-        .record-list-panel .ledger-history-header { margin-bottom: 8px; padding-bottom: 8px; }
-        .record-list-panel .ledger-history-header h2 { margin: 0; font-size: 16px; }
-        table.record-table { table-layout: fixed; }
-        .record-table th, .record-table td { padding: 8px 10px; }
-        .record-table th { font-size: 9px; }
-        .record-table td { font-size: 12px; line-height: 1.35; }
-        .record-table .table-primary { font-size: 12px; }
-        .record-table .table-secondary { margin-top: 1px; font-size: 10px; }
-        .record-table .table-actions { min-width: 0; }
-        .record-table .table-actions .entity-actions { justify-content: flex-start; gap: 6px; }
-        .record-table .entity-actions .button-link,
-        .record-table .entity-actions .archive-button,
-        .record-table .restore-button { min-height: 32px; padding: 5px 9px; font-size: 11px; }
-        .record-table .status-toggle-inline { gap: 6px; }
-        .record-table .status-switch { width: 46px; min-width: 46px; height: 26px; min-height: 26px; }
-        .record-table .status-toggle-inline .status-switch { flex-basis: 46px; }
-        .record-table .status-switch .switch-knob { width: 20px; height: 20px; flex-basis: 20px; }
-        .record-table .empty-table-row td { padding: 12px; color: var(--muted); text-align: center; }
+        .data-table .status-toggle-inline { flex-wrap: nowrap; gap: 8px; }
+        .data-table .empty-table-row td { padding: 18px; color: var(--muted); text-align: left; }
+        .record-list-panel, .record-filter-panel { width: 100%; min-width: 0; }
+        .page-trash-toolbar { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 12px; margin-bottom: 16px; }
+        .page-trash-toolbar h1 { margin: 0; font-size: 22px; }
+        .page-trash-link { display: inline-flex; align-items: center; gap: 8px; }
+        .page-trash-link svg { width: 18px; height: 18px; fill: none; stroke: currentColor; stroke-width: 1.8; }
+        .trash-count { padding: 2px 7px; border-radius: 999px; background: #e2e8f0; color: #0f172a; font-variant-numeric: tabular-nums; }
+        #page-trash, #page-records { scroll-margin-top: 80px; }
+        .record-list-panel .ledger-history-header { margin-bottom: 12px; }
         table.firm-data-table { min-width: 720px; }
-        table.representative-data-table { min-width: 760px; }
-        .firm-data-table .firm-column { width: 35%; }
-        .firm-data-table .phone-column { width: 18%; }
-        .firm-data-table .balance-column { width: 24%; }
-        .firm-data-table .actions-column { width: 23%; }
-        .representative-data-table .representative-column { width: 27%; }
-        .representative-data-table .firm-column { width: 25%; }
-        .representative-data-table .added-column { width: 14%; }
-        .representative-data-table .status-column { width: 15%; }
-        .representative-data-table .actions-column { width: 19%; }
-
-        .app-guest .page-main {
-            display: grid;
-            place-items: center;
-            min-height: calc(100vh - 72px);
-            padding-left: 32px;
+        table.representative-data-table { min-width: 880px; }
+        table.history-data-table { min-width: 980px; }
+        .history-data-table .history-activity-cell { min-width: 260px; }
+        .data-table .entry-batch-details { margin: 0; gap: 0; }
+        .data-table .entry-batch-line { flex-direction: row; padding: 5px 0; border-bottom: 1px solid var(--line); }
+        .data-table .entry-batch-line:last-child { border-bottom: 0; }
+        .data-table .history-reason { margin: 6px 0 0; color: var(--muted); font-size: 12px; }
+        .deleted-badge { display: inline-block; margin-top: 4px; color: #991b1b; font-size: 12px; font-weight: 600; }
+        .batch-action > summary { list-style: none; display: inline-block; cursor: pointer; }
+        .batch-action > summary::-webkit-details-marker { display: none; }
+        .batch-action .delete-action { background: #b42318; color: #fff; border: 1px solid #b42318; }
+        .batch-action > summary { min-height: 36px; padding: 7px 10px; border-radius: 6px; font-size: 13px; }
+        .batch-action > summary.restore-button { color: #fff; border: 1px solid #166534; }
+        .batch-action > summary:focus-visible { outline: 2px solid var(--brand); outline-offset: 3px; }
+        .batch-action[open] { white-space: normal; min-width: 230px; }
+        .batch-action-form { display: grid; gap: 8px; margin-top: 10px; }
+        .batch-action-form input { width: 100%; }
+        .batch-action-form label { font-size: 13px; }
+        .batch-dialog {
+            width: min(480px, calc(100vw - 32px)); max-height: calc(100vh - 32px);
+            overflow: auto; padding: 24px; border: 1px solid var(--line);
+            border-radius: 10px; color: var(--ink); background: var(--panel);
         }
+        .batch-dialog::backdrop { background: rgba(8, 18, 29, .55); }
+        .batch-dialog h2 { margin: 0 0 12px; font-size: 20px; }
+        .batch-dialog p { font-size: 14px; overflow-wrap: anywhere; }
+        .batch-dialog input { width: 100%; }
+        .batch-dialog-actions { display: flex; flex-wrap: wrap; justify-content: flex-end; gap: 10px; margin-top: 16px; }
+        .batch-dialog-actions button { min-height: 42px; }
+        .batch-dialog .delete-action { background: #b42318; }
+        .batch-dialog-error { color: #991b1b; }
+        .app-guest .page-main { display: grid; place-items: center; min-height: calc(100vh - 72px); }
         .app-guest .container { max-width: 560px; }
         .app-guest .app-shell { min-height: calc(100vh - 72px); }
-        table.history-data-table { min-width: 1080px; }
 
-        .data-table td { font-size: 13px; }
-        .data-table .table-primary { font-weight: 800; color: var(--ink); }
-        .data-table .table-secondary { display: block; margin-top: 3px; color: var(--muted); font-size: 11px; }
-        .data-table .table-actions { min-width: 174px; }
-        .data-table.record-table .table-actions { min-width: 0; }
-        .data-table .table-actions .entity-actions { flex-wrap: nowrap; }
-        .data-table .entry-batch-details { min-width: 240px; }
-        .data-table .entry-batch-line { padding: 5px 0; border-bottom: 1px solid #f1f5f9; }
-        .data-table .entry-batch-line:last-child { border-bottom: 0; }
-        .data-table .batch-action-form {
-            display: grid;
-            grid-template-columns: minmax(0, 1fr);
-            min-width: 190px;
-            gap: 6px;
-        }
-        .data-table .batch-action-form input { width: 100%; }
-        .data-table .amount-cell { white-space: nowrap; font-weight: 800; }
-        .data-table .balance-cell { white-space: nowrap; font-weight: 800; }
-        .data-table .history-reason { margin: 6px 0 0; color: var(--muted); font-size: 11px; }
         .status-toggle-inline { display: flex; align-items: center; gap: 8px; }
         .status-toggle-inline .status-switch { flex: 0 0 54px; }
 
@@ -1193,17 +1125,11 @@
 
             .ledger-entry-card .entry-footer { flex-wrap: wrap; }
             .entry-batch-line { flex-direction:column; gap:2px; }
-            .batch-action-form { width:100%; }
-            .batch-action-form input { flex:1 1 100%; width:100%; }
-            .batch-action-form button { width:100%; }
             .entity-actions { width: 100%; justify-content: flex-start; }
             .entity-actions > a,
             .entity-actions > form { flex: 1 1 42%; }
             .entity-actions .button-link,
-            .entity-actions .archive-button { width: 100%; min-height: 42px; }
-            .record-table .entity-actions .button-link,
-            .record-table .entity-actions .archive-button,
-            .record-table .restore-button { min-height: 34px; }
+            .entity-actions .delete-action { width: 100%; min-height: 42px; }
 
             /* Stack dashboard: transaction form first, then charts */
             .dashboard-layout {
@@ -1255,88 +1181,6 @@
 
             .ledger-history-filter-group input { width: 100%; }
 
-            .table-tools { grid-template-columns: minmax(0, 1fr); align-items: stretch; gap: 10px; }
-            .table-search-field { width: 100%; }
-            .table-sort-controls { grid-template-columns: minmax(0, 1fr) auto; }
-            .table-result-count { min-height: 1em; }
-        }
-
-        /* Turn tables into labeled cards only on narrow phones. Tablet and preview panes
-           keep real table headers and contain horizontal scrolling inside the wrapper. */
-        @media (max-width: 480px) {
-            .data-table-wrap { overflow: visible; }
-            .record-table .entity-actions .button-link,
-            .record-table .entity-actions .archive-button,
-            .record-table .restore-button { min-height: 42px; }
-
-            table.data-table,
-            table.data-table tbody,
-            table.data-table tr,
-            table.data-table td {
-                display: block;
-                width: 100%;
-                min-width: 0;
-            }
-
-            table.data-table {
-                border: 0;
-                border-radius: 0;
-                border-spacing: 0;
-                background: transparent;
-                box-shadow: none;
-            }
-
-            .data-table thead { display: none; }
-
-            .data-table tbody {
-                display: grid;
-                gap: 12px;
-            }
-
-            .data-table tbody tr {
-                overflow: hidden;
-                background: var(--panel);
-                border: 1px solid var(--line);
-                border-radius: var(--radius);
-                box-shadow: var(--shadow-sm);
-            }
-
-            .data-table tbody tr:hover { background: var(--panel); }
-
-            .data-table tbody td {
-                display: grid;
-                grid-template-columns: minmax(94px, 0.38fr) minmax(0, 1fr);
-                align-items: start;
-                gap: 12px;
-                padding: 10px 12px;
-                border-bottom: 1px solid #f1f5f9;
-                overflow-wrap: anywhere;
-            }
-
-            .data-table tbody td::before {
-                content: attr(data-label);
-                color: var(--muted);
-                font-size: 10px;
-                font-weight: 800;
-                letter-spacing: 0.04em;
-                text-transform: uppercase;
-            }
-
-            .data-table tbody td:last-child { border-bottom: 0; }
-            .data-table .table-actions { min-width: 0; }
-            .data-table .table-actions .entity-actions { flex-wrap: wrap; }
-            .data-table .entry-batch-details { min-width: 0; }
-            .data-table .history-activity-cell { display: block; }
-            .data-table .history-activity-cell::before { display: block; margin-bottom: 6px; }
-            .data-table .batch-action-form { min-width: 0; width: 100%; }
-            .data-table .batch-action-form input,
-            .data-table .batch-action-form button { width: 100%; }
-            .data-table .history-action-cell .batch-action-form { align-items: stretch; }
-            .data-table tbody .empty-table-row td {
-                display: block;
-                text-align: center;
-            }
-            .data-table tbody .empty-table-row td::before { display: none; }
         }
 
         @media (min-width: 900px) {
@@ -1421,13 +1265,7 @@
             .chart-panel { margin-bottom: 20px; }
             .chart-canvas-wrap { height: 320px; }
             .compact-top-chart-grid .chart-canvas-wrap { height: 230px; }
-            .data-table th, .data-table td { padding: 13px 15px; }
-            .data-table th { top: 72px; }
-            .record-table th, .record-table td { padding: 8px 10px; }
-            .record-table th { font-size: 9px; }
-            .record-table td { font-size: 12px; }
-            .data-table.record-table .table-secondary { margin-top: 1px; font-size: 10px; }
-            .data-table.record-table .table-actions { min-width: 0; }
+
         }
 
         @media (min-width: 1280px) {
@@ -1445,7 +1283,24 @@
         @media (min-width: 1280px) and (min-height: 900px) {
             .dashboard-side { position: sticky; top: 92px; }
         }
+
+        .record-entry-form { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 16px; }
+        .record-entry-form .form-field { min-width: 0; }
+        .record-entry-form label { display: block; margin-bottom: 6px; }
+        .record-entry-form input, .record-entry-form select, .record-entry-form textarea { width: 100%; min-width: 0; }
+        .form-wide { grid-column: 1 / -1; }
+        .errorlist { color: #a51d2d; padding-left: 18px; }
+        .audit-details { margin-top: 10px; font-size: 12px; text-align: left; white-space: normal; }
+        @media (max-width: 1099px) {
+            body.app-authenticated { padding-bottom: 136px; }
+            .bottom-nav { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); height: auto; min-height: 116px; padding: 6px 8px; }
+            .bottom-nav a { min-height: 50px; padding: 5px; }
+        }
+        @media (max-width: 767px) { .record-entry-form { grid-template-columns: minmax(0, 1fr); } }
     </style>
+    <link rel="stylesheet" href="{% static 'ledger/compact.css' %}?v=6">
+    <link rel="stylesheet" href="{% static 'ledger/bilingual.css' %}?v=5">
+    <link rel="stylesheet" href="{% static 'ledger/readable_tables.css' %}?v=10">
 </head>
 <body class="{% if user.is_authenticated %}app-authenticated{% else %}app-guest{% endif %}" data-offline-user-id="{% if user.is_authenticated %}{{ user.pk }}{% else %}anonymous{% endif %}">
     <!-- ===== STICKY TOP HEADER ===== -->
@@ -1458,13 +1313,13 @@
 
         <div class="header-center" style="position: relative;">
             <img src="{% static 'ledger/images/white logo with bg.png' %}" alt="Logo" class="site-logo">
-            <span id="offline-indicator" style="display:none; position: absolute; bottom: 2px; background: var(--danger); color: white; padding: 2px 6px; font-size: 9px; font-weight: 800; border-radius: 4px; letter-spacing: 0.05em;">OFFLINE</span>
+            <span id="offline-indicator" style="display:none; position: absolute; bottom: 2px; background: var(--danger); color: white; padding: 2px 6px; font-size: 9px; font-weight: 800; border-radius: 4px; letter-spacing: 0.05em;">{% bi 'OFFLINE' %}</span>
         </div>
 
         <div class="header-right">
             {% if user.is_authenticated %}
             <div class="header-dropdown" id="headerDropdown">
-                <button type="button" class="header-dropdown-toggle" id="dropdownToggle" aria-label="Account Menu" style="background: transparent; border: none; padding: 8px; min-height: unset;">
+                <button type="button" class="header-dropdown-toggle" id="dropdownToggle" aria-label="{{ 'Account Menu'|bilingual_plain }}" style="background: transparent; border: none; padding: 8px; min-height: unset;">
                     <svg viewBox="0 0 24 24">
                         <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
                         <circle cx="12" cy="7" r="4"></circle>
@@ -1473,11 +1328,11 @@
                 <div class="header-dropdown-menu" id="dropdownMenu">
                     <a href="/accounts/password_change/">
                         <svg viewBox="0 0 24 24"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0110 0v4"/></svg>
-                        Change Password
+                        {% bi 'Change Password' %}
                     </a>
                     <button type="button" id="logoutButton" class="danger">
                         <svg viewBox="0 0 24 24"><path d="M17 16l4-4-4-4M21 12H9M13 21H5a2 2 0 01-2-2V5a2 2 0 012-2h8"/></svg>
-                        Sign Out
+                        {% bi 'Sign Out' %}
                     </button>
                 </div>
             </div>
@@ -1494,7 +1349,7 @@
             <div class="container">
                 {% if messages %}
                     <div class="app-messages" role="status">
-                        {% for message in messages %}<div class="app-message">{{ message }}</div>{% endfor %}
+                        {% for message in messages %}<div class="app-message {{ message.tags }}">{{ message|bilingual }}</div>{% endfor %}
                     </div>
                 {% endif %}
                 {% block content %}{% endblock %}
@@ -1502,31 +1357,157 @@
         </main>
     </div>
 
+    {% if user.is_authenticated %}
+    <dialog id="batch-action-dialog" class="batch-dialog" aria-labelledby="batch-dialog-title" aria-describedby="batch-dialog-description">
+        <h2 id="batch-dialog-title"></h2>
+        <p id="batch-dialog-description"></p>
+        <form method="post" id="batch-dialog-form">
+            {% csrf_token %}
+            <input type="hidden" name="next" value="{{ request.get_full_path }}">
+            <label for="batch-dialog-reason">{% bi 'Reason' %}</label>
+            <input id="batch-dialog-reason" name="reason" required maxlength="500" autocomplete="off" autofocus>
+            <p id="batch-dialog-error" class="batch-dialog-error" role="alert" hidden></p>
+            <div class="batch-dialog-actions">
+                <button type="button" id="batch-dialog-cancel" class="button-link">{% bi 'Cancel' %}</button>
+                <button type="submit" id="batch-dialog-confirm"></button>
+            </div>
+        </form>
+    </dialog>
+    {% endif %}
+
     <!-- ===== BOTTOM NAVIGATION ===== -->
     {% if user.is_authenticated %}<nav class="bottom-nav" aria-label="Main navigation">
         <a href="{% url 'ledger:add_transaction' %}" class="{% if request.resolver_match.url_name == 'add_transaction' or request.resolver_match.url_name == 'add_transaction_cap' %}active{% endif %}" {% if request.resolver_match.url_name == 'add_transaction' or request.resolver_match.url_name == 'add_transaction_cap' %}aria-current="page"{% endif %}>
             <!-- Dashboard icon -->
             <svg viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg>
-            Dashboard
+            {% bi 'Dashboard' %}
         </a>
         <a href="{% url 'ledger:add_firm' %}" class="{% if request.resolver_match.url_name == 'add_firm' %}active{% endif %}" {% if request.resolver_match.url_name == 'add_firm' %}aria-current="page"{% endif %}>
             <!-- Building icon -->
             <svg viewBox="0 0 24 24"><path d="M3 21h18M5 21V7l7-4 7 4v14M9 21v-5h6v5"/></svg>
-            Firms
+            {% bi 'Firms' %}
         </a>
         <a href="{% url 'ledger:add_representative' %}" class="{% if request.resolver_match.url_name == 'add_representative' %}active{% endif %}" {% if request.resolver_match.url_name == 'add_representative' %}aria-current="page"{% endif %}>
             <!-- Person icon -->
             <svg viewBox="0 0 24 24"><circle cx="12" cy="8" r="4"/><path d="M4 20c0-4 3.6-7 8-7s8 3 8 7"/></svg>
-            Reps
+            {% bi 'Reps' %}
         </a>
         <a href="{% url 'ledger:ledger_history' %}" class="{% if request.resolver_match.url_name == 'ledger_history' %}active{% endif %}" {% if request.resolver_match.url_name == 'ledger_history' %}aria-current="page"{% endif %}>
             <!-- History/list icon -->
             <svg viewBox="0 0 24 24"><path d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2"/><rect x="9" y="3" width="6" height="4" rx="1"/><line x1="9" y1="12" x2="15" y2="12"/><line x1="9" y1="16" x2="13" y2="16"/></svg>
-            History
+            {% bi 'History' %}
+        </a>
+        <a href="{% url 'ledger:bills' %}" class="{% if request.resolver_match.url_name == 'bills' %}active{% endif %}" {% if request.resolver_match.url_name == 'bills' %}aria-current="page"{% endif %}>
+            <svg viewBox="0 0 24 24"><path d="M6 3h12v18l-3-2-3 2-3-2-3 2zM9 7h6M9 11h6"/></svg>{% bi 'Bills' %}
+        </a>
+        <a href="{% url 'ledger:trash' %}" class="{% if request.resolver_match.url_name == 'trash' %}active{% endif %}" {% if request.resolver_match.url_name == 'trash' %}aria-current="page"{% endif %}>
+            <svg viewBox="0 0 24 24"><path d="M3 6h18M9 6V3h6v3M5 6l1 15h12l1-15M10 10v7M14 10v7"/></svg>{% bi 'Trash' %}
         </a>
     </nav>{% endif %}
 
     <!-- ===== SCRIPTS ===== -->
+    <script nonce="{{ request.csp_nonce }}">
+        // Keep native validation and ordinary POST submission, with bilingual text.
+        document.addEventListener('invalid', function (event) {
+            const field = event.target;
+            if (!field.validity || !field.setCustomValidity || field.dataset.bilingualValidation) return;
+            let message;
+            if (field.validity.valueMissing) message = ledgerUI.text('This field is required.');
+            else if (field.validity.rangeUnderflow) message = ledgerUI.text(`Ensure this value is greater than or equal to ${field.min}.`);
+            else if (field.validity.rangeOverflow) message = ledgerUI.text(`Ensure this value is less than or equal to ${field.max}.`);
+            else message = ledgerUI.text([field.validationMessage, 'درست معلومات درج کریں۔']);
+            field.setCustomValidity(message);
+            field.dataset.bilingualValidation = '1';
+        }, true);
+        function clearBilingualValidation(event) {
+            const field = event.target;
+            if (field.dataset?.bilingualValidation) {
+                field.setCustomValidity('');
+                delete field.dataset.bilingualValidation;
+            }
+        }
+        document.addEventListener('input', clearBilingualValidation);
+        document.addEventListener('change', clearBilingualValidation);
+    </script>
+    <script nonce="{{ request.csp_nonce }}">
+        (function () {
+            const dialog = document.getElementById('batch-action-dialog');
+            if (!dialog || typeof dialog.showModal !== 'function') return;
+            const form = document.getElementById('batch-dialog-form');
+            const reason = document.getElementById('batch-dialog-reason');
+            const error = document.getElementById('batch-dialog-error');
+            const confirm = document.getElementById('batch-dialog-confirm');
+            const cancel = document.getElementById('batch-dialog-cancel');
+            let opener;
+            let busy = false;
+            // Delegation also handles history loaded into dashboard modals.
+            document.addEventListener('click', function (event) {
+                const summary = event.target.closest('.batch-action > summary');
+                if (!summary || busy) return;
+                event.preventDefault();
+                opener = summary;
+                const action = summary.parentElement;
+                const source = action.querySelector('form');
+                const restoring = action.dataset.action === 'restore';
+                form.action = source.action;
+                form.elements.next.value = window.location.pathname + window.location.search;
+                form.elements.csrfmiddlewaretoken.value = source.elements.csrfmiddlewaretoken.value;
+                reason.value = source.elements.reason.value;
+                ledgerUI.set(document.getElementById('batch-dialog-title'), action.dataset.title || (restoring ? 'Recover from Trash?' : 'Move to Trash?'));
+                ledgerUI.set(document.getElementById('batch-dialog-description'), [action.dataset.description, action.dataset.descriptionUr || '']);
+                ledgerUI.set(confirm, action.dataset.label || (restoring ? 'Recover' : 'Delete'));
+                ledgerUI.set(document.querySelector('label[for="batch-dialog-reason"]'), restoring ? 'Reason for Recovery' : 'Reason for Deletion');
+                confirm.className = restoring ? 'restore-button' : 'delete-action';
+                error.hidden = true;
+                dialog.showModal();
+                reason.focus();
+            });
+            cancel.addEventListener('click', () => dialog.close());
+            dialog.addEventListener('cancel', event => { if (busy) event.preventDefault(); });
+            dialog.addEventListener('close', () => { if (opener && opener.isConnected) opener.focus(); });
+            form.addEventListener('submit', async function (event) {
+                // If fetch is unavailable, the form uses its ordinary POST action.
+                if (!window.fetch) return;
+                event.preventDefault();
+                if (busy) return;
+                if (!reason.value.trim()) {
+                    ledgerUI.set(error, 'Enter a reason before continuing.');
+                    error.hidden = false;
+                    reason.focus();
+                    return;
+                }
+                busy = true;
+                confirm.disabled = true;
+                cancel.disabled = true;
+                error.hidden = true;
+                try {
+                    const response = await fetch(form.action, {
+                        method: 'POST', body: new FormData(form),
+                        headers: {'X-Requested-With': 'XMLHttpRequest'},
+                    });
+                    const data = await response.json().catch(() => null);
+                    if (!response.ok || !data || !data.success) {
+                        throw new Error(data && data.error ? data.error : 'Could not update this transaction. Check your connection or sign in again, then retry.');
+                    }
+                    try { localStorage.setItem('ledger-records-changed', Date.now().toString()); } catch (_) {}
+                    if (document.getElementById('dashboard-recent')) {
+                        dialog.close();
+                        window.dispatchEvent(new Event('ledger-records-changed'));
+                        const period = document.getElementById('historyModal')?.dataset.period;
+                        if (period) window.openPeriodModal?.(period);
+                    } else { window.location.reload(); }
+                } catch (failure) {
+                    ledgerUI.set(error, failure.message);
+                    error.hidden = false;
+                    reason.focus();
+                } finally {
+                    busy = false;
+                    confirm.disabled = false;
+                    cancel.disabled = false;
+                }
+            });
+        }());
+    </script>
     <script nonce="{{ request.csp_nonce }}">
         // CSRF helper for AJAX requests.
         function getCookie(name) {
@@ -1544,6 +1525,29 @@
             return cookieValue;
         }
         window.csrftoken = getCookie('csrftoken');
+
+        // Native disclosure menus retain keyboard operation and form fallbacks.
+        document.addEventListener('toggle', event => {
+            const menu = event.target;
+            if (!menu.matches?.('.row-actions') || !menu.open) return;
+            const bounds = menu.getBoundingClientRect();
+            const popup = menu.querySelector('.row-action-menu');
+            menu.classList.toggle('opens-above', bounds.top > 180 && innerHeight - bounds.bottom < popup.offsetHeight + 12);
+        }, true);
+        document.addEventListener('click', event => {
+            if (event.target.closest('dialog')) return;
+            document.querySelectorAll('.row-actions[open]').forEach(menu => {
+                if (!menu.contains(event.target) && !document.getElementById('batch-action-dialog')?.open) menu.open = false;
+            });
+        });
+        document.addEventListener('keydown', event => {
+            if (event.key !== 'Escape' || document.querySelector('dialog[open]')) return;
+            const menu = event.target.closest('.row-actions[open]');
+            if (menu) { menu.open = false; menu.querySelector('summary').focus(); event.preventDefault(); }
+        });
+        {% if messages %}
+        try { localStorage.setItem('ledger-records-changed', Date.now().toString()); } catch (_) {}
+        {% endif %}
 
         // Header dropdown toggle.
         const dropdownToggle = document.getElementById('dropdownToggle');
@@ -1574,7 +1578,11 @@
             const closeButton = event.target.closest('[data-close-modal]');
             if (closeButton) {
                 const modal = document.getElementById(closeButton.dataset.closeModal);
-                if (modal) modal.style.display = 'none';
+                if (modal) {
+                    modal.style.display = 'none';
+                    delete modal.dataset.period;
+                    if (modal.id === 'historyModal') window.historyModalOpener?.focus();
+                }
                 const dashboard = document.querySelector('.dashboard-layout');
                 if (dashboard) {
                     dashboard.style.pointerEvents = 'auto';
@@ -1618,6 +1626,7 @@
         .toast.error { background: var(--danger); }
         .toast.warning { background: #b45309; }
         .app-message { margin: 8px 0; padding: 10px 14px; border-radius: 8px; background: #ecfdf5; color: #14532d; font-weight: 700; }
+        .app-message.error { background: #fef2f2; color: #991b1b; }
         .form-errors { margin: 0 0 12px; padding: 10px 14px; border-radius: 8px; background: #fef2f2; color: #991b1b; }
     </style>
 
@@ -1631,7 +1640,7 @@
 
             const el = document.createElement('div');
             el.className = `toast ${type}`;
-            el.textContent = message;
+            ledgerUI.set(el, message);
             container.appendChild(el);
 
             setTimeout(() => {
@@ -1652,6 +1661,9 @@
             });
         }
     </script>
-    <script src="{% static 'ledger/offline_sync.js' %}"></script>
+    <script src="{% static 'ledger/offline_sync.js' %}?v=7"></script>
+<script src="{% static 'ledger/record_forms.js' %}?v=3" defer></script>
+<script src="{% static 'ledger/firm_details.js' %}?v=2" defer></script>
+<script src="{% static 'ledger/page_views.js' %}?v=1" defer></script>
 </body>
 </html>

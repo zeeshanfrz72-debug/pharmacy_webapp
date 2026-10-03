@@ -5,6 +5,14 @@ from . import views
 app_name = "ledger"
 
 urlpatterns = [
+    path("firm/<int:firm_id>/details/", views.firm_details, name="firm_details"),
+    path("dashboard/recent/", views.dashboard_recent, name="dashboard_recent"),
+    path("dashboard/review/", views.dashboard_review, name="dashboard_review"),
+    path("bills/", views.bills_page, name="bills"),
+    path("bill/<int:bill_id>/edit/", views.edit_bill_view, name="edit_bill"),
+    path("bill/<int:bill_id>/delete/", views.delete_bill_view, name="delete_bill"),
+    path("trash/", views.trash_page, name="trash"),
+    path("trash/<int:group_id>/recover/", views.recover_trash, name="recover_trash"),
     path("Ledger/add-transaction/", views.add_transaction, name="add_transaction_cap"),
     path("add-transaction/", views.add_transaction, name="add_transaction"),
     path("add-firm/", views.add_firm, name="add_firm"),
@@ -26,9 +34,11 @@ urlpatterns = [
     path("ajax/add-firm/", views.ajax_add_firm, name="ajax_add_firm"),
     path("ajax/add-representative/", views.ajax_add_representative, name="ajax_add_representative"),
     path("firm/<int:firm_id>/edit/", views.edit_firm, name="edit_firm"),
-    path("firm/<int:firm_id>/archive/", views.archive_firm, name="archive_firm"),
+    path("firm/<int:firm_id>/delete/", views.delete_firm, name="delete_firm"),
+    path("firm/<int:firm_id>/archive/", views.delete_firm, name="archive_firm"),
     path("firm/<int:firm_id>/restore/", views.restore_firm, name="restore_firm"),
     path("representative/<int:rep_id>/edit/", views.edit_representative, name="edit_representative"),
-    path("representative/<int:rep_id>/archive/", views.archive_representative, name="archive_representative"),
+    path("representative/<int:rep_id>/delete/", views.delete_representative, name="delete_representative"),
+    path("representative/<int:rep_id>/archive/", views.delete_representative, name="archive_representative"),
     path("representative/<int:rep_id>/restore/", views.restore_representative, name="restore_representative"),
 ]

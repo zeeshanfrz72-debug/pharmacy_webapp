@@ -1,0 +1,35 @@
+{% extends "ledger/base.html" %}
+{% load bilingual %}
+{% block title %}Trash | Pharmacy Ledger{% endblock %}
+{% block content %}
+    {% include "ledger/_deletion_groups_table.html" with deletion_groups=groups deletion_group_heading="Bills and Transactions Trash" return_url="ledger:trash" empty_trash_message="Trash is empty." %}
+
+    <div class="panel compact-panel record-list-panel">
+        <h2>{% bi 'Firms Trash' %}</h2>
+        <div class="data-table-wrap" tabindex="0" role="region" aria-label="Firms Trash">
+            <table class="data-table firm-trash-data-table"><thead><tr><th scope="col">{% table_heading 'Firm' %}</th><th scope="col">{% table_heading 'Source Type' %}</th><th scope="col" class="amount-heading">{% table_heading 'Balance' %}</th><th scope="col">{% table_heading 'Actions' %}</th></tr></thead>
+                <tbody>{% for firm in trashed_firms %}<tr>
+                    <td>{{ firm.name }}</td><td>{{ firm.get_source_type_display|bilingual }}</td>
+                    <td class="amount-cell">{{ firm.current_debt }}</td>
+                    <td class="table-actions"><details class="row-actions"><summary aria-label="{{ 'Actions'|bilingual_plain }}"><span aria-hidden="true">⋯</span></summary><div class="row-action-menu"><p>{{ firm.get_source_type_display|bilingual }} · {% bi 'Phone Number' %}: {{ firm.phone|default:"—" }}</p><form method="post" action="{% url 'ledger:restore_firm' firm.pk %}">{% csrf_token %}<button type="submit" class="restore-button">{% bi 'Recover' %}</button></form></div></details></td>
+                </tr>{% empty %}<tr class="empty-table-row"><td colspan="4">{% bi 'Firms Trash is empty.' %}</td></tr>{% endfor %}</tbody>
+            </table>
+        </div>
+    </div>
+
+    <div class="panel compact-panel record-list-panel">
+        <h2>{% bi 'Representatives Trash' %}</h2>
+        <div class="data-table-wrap" tabindex="0" role="region" aria-label="Representatives Trash">
+            <table class="data-table representative-trash-data-table"><thead><tr><th scope="col">{% table_heading 'Representative' %}</th><th scope="col">{% table_heading 'Firm' %}</th><th scope="col">{% table_heading 'Phone' %}</th><th scope="col">{% table_heading 'Actions' %}</th></tr></thead>
+                <tbody>{% for representative in trashed_representatives %}<tr>
+                    <td>{{ representative.name }}</td><td>{{ representative.firm.name }}</td><td>{{ representative.phone|default:"—" }}</td>
+                    <td class="table-actions"><details class="row-actions"><summary aria-label="{{ 'Actions'|bilingual_plain }}"><span aria-hidden="true">⋯</span></summary><div class="row-action-menu"><p>{% bi 'Phone Number' %}: {{ representative.phone|default:"—" }}</p>{% if representative.firm.is_deleted %}
+                        <form method="post" action="{% url 'ledger:restore_firm' representative.firm_id %}">{% csrf_token %}<button type="submit" class="restore-button">{% bi 'Recover firm first' %}</button></form>
+                    {% elif representative.is_deleted %}
+                        <form method="post" action="{% url 'ledger:restore_representative' representative.pk %}">{% csrf_token %}<button type="submit" class="restore-button">{% bi 'Recover' %}</button></form>
+                    {% else %}<span class="muted">{% bi 'Available on the Reps page.' %}</span>{% endif %}</div></details></td>
+                </tr>{% empty %}<tr class="empty-table-row"><td colspan="4">{% bi 'Representatives Trash is empty.' %}</td></tr>{% endfor %}</tbody>
+            </table>
+        </div>
+    </div>
+{% endblock %}

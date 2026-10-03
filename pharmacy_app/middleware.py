@@ -27,7 +27,7 @@ class LoginRequiredMiddleware:
         is_public = any(path == prefix or path.startswith(prefix + "/") for prefix in public_prefixes)
 
         if not request.user.is_authenticated and not is_public:
-            if request.headers.get("X-Offline-Sync") == "1":
+            if request.headers.get("X-Offline-Sync") == "1" or request.headers.get("X-Requested-With") == "XMLHttpRequest":
                 return JsonResponse(
                     {"success": False, "error": "authentication_required"},
                     status=401,

@@ -1,28 +1,38 @@
 {% extends "ledger/base.html" %}
+{% load bilingual %}
 
 {% block title %}Representatives | Pharmacy Ledger{% endblock %}
 
 {% block content %}
+    {% include "ledger/_page_trash_link.html" with page_heading="Representatives" trash_heading="Representatives Trash" trash_count=trashed_representatives|length %}
+    {% if not is_trash %}
+    <div class="panel compact-panel record-list-panel">
+        <h2>{% bi 'Add Representative' %}</h2>
+        <form method="post" class="record-entry-form representative-entry-form" data-record-form data-firms-url="{% url 'ledger:firms_for_source_type' %}">
+            {% csrf_token %}
+            <div class="form-wide">{{ add_rep_form.non_field_errors|bilingual_errors }}</div>
+            {% for field in add_rep_form %}<div class="form-field">{% field_label field %}{% bilingual_select field %}{{ field.errors|bilingual_errors }}</div>{% endfor %}
+            <div class="form-wide selector-error-slot"><p class="muted" data-selector-error role="alert"></p></div><div class="form-submit"><button type="submit">{% bi 'Add Representative' %}</button></div>
+        </form>
+    </div>
+
     <div class="panel compact-panel filter-inline-panel record-filter-panel">
-        <div class="ledger-history-header">
-            <h2>Representative Filters</h2>
-        </div>
 
         <form method="get" class="filter-inline-form">
             <div class="filter-inline-group">
-                <label for="source_type">Source Type</label>
+                <label for="source_type">{% bi 'Source Type' %}</label>
                 <select name="source_type" id="source_type">
-                    <option value="">All Source Types</option>
+                    <option value="">{{ 'All Source Types'|bilingual_plain }}</option>
                     {% for value, label in source_type_choices %}
-                        <option value="{{ value }}" {% if selected_source_type == value %}selected{% endif %}>{{ label }}</option>
+                        <option value="{{ value }}" {% if selected_source_type == value %}selected{% endif %}>{{ label|bilingual_plain }}</option>
                     {% endfor %}
                 </select>
             </div>
 
             <div class="filter-inline-group">
-                <label for="firm">Firm</label>
+                <label for="firm">{% bi 'Firm' %}</label>
                 <select name="firm" id="firm">
-                    <option value="">All Firms</option>
+                    <option value="">{{ 'All Firms'|bilingual_plain }}</option>
                     {% for firm in firm_filter_options %}
                         <option value="{{ firm.id }}" {% if selected_firm_id == firm.id|stringformat:"s" %}selected{% endif %}>{{ firm.name }}</option>
                     {% endfor %}
@@ -30,197 +40,126 @@
             </div>
 
             <div class="filter-inline-actions">
-                <button type="submit">Apply Filter</button>
-                <a class="button-link" href="{% url 'ledger:add_representative' %}">Clear Filter</a>
+                <button type="submit">{% bi 'Apply Filter' %}</button>
+                <a class="button-link" href="{% url 'ledger:add_representative' %}">{% bi 'Clear Filter' %}</a>
             </div>
         </form>
     </div>
 
     <div class="panel compact-panel ledger-history-panel record-list-panel">
-        <div class="ledger-history-header">
-            <h2>Representatives</h2>
-        </div>
 
-        <div class="table-tools" data-table-tools="representatives">
-            <div class="table-search-field">
-                <label for="representative-table-search">Find a representative</label>
-                <input id="representative-table-search" type="search" autocomplete="off" placeholder="Search name, firm, phone, or status">
-            </div>
-            <div class="table-sort-controls">
-                <label for="representative-table-sort">Sort representatives</label>
-                <select id="representative-table-sort">
-                    <option value="name">Representative</option>
-                    <option value="firm">Firm</option>
-                    <option value="phone">Phone</option>
-                    <option value="date">Date added</option>
-                    <option value="status">Status</option>
-                </select>
-                <button class="table-sort-direction" type="button" aria-label="Sort ascending">Ascending ↑</button>
-            </div>
-            <p class="table-result-count" aria-live="polite"></p>
-        </div>
-
-        <div class="data-table-wrap">
+        <div class="data-table-wrap" tabindex="0" role="region" aria-label="Scrollable records">
             <table class="data-table record-table representative-data-table" aria-label="Active representatives">
-                <colgroup>
-                    <col class="representative-column">
-                    <col class="firm-column">
-                    <col class="added-column">
-                    <col class="status-column">
-                    <col class="actions-column">
-                </colgroup>
                 <thead>
                     <tr>
-                        <th scope="col" aria-sort="none"><button class="table-sort" type="button" data-sort-key="name" data-sort-also="phone">Representative <span class="table-sort-indicator" aria-hidden="true"></span></button></th>
-                        <th scope="col" aria-sort="none"><button class="table-sort" type="button" data-sort-key="firm">Firm <span class="table-sort-indicator" aria-hidden="true"></span></button></th>
-                        <th scope="col" aria-sort="none"><button class="table-sort" type="button" data-sort-key="date">Added <span class="table-sort-indicator" aria-hidden="true"></span></button></th>
-                        <th scope="col" aria-sort="none"><button class="table-sort" type="button" data-sort-key="status">Status <span class="table-sort-indicator" aria-hidden="true"></span></button></th>
-                        <th scope="col">Actions</th>
+                        <th scope="col">{% table_heading 'Representative' %}</th>
+                        <th scope="col">{% table_heading 'Phone' %}</th>
+                        <th scope="col">{% table_heading 'Firm' %}</th>
+                        <th scope="col">{% table_heading 'Source' %}</th>
+                        <th scope="col">{% table_heading 'Added' %}</th>
+                        <th scope="col">{% table_heading 'Status' %}</th>
+                        <th scope="col">{% table_heading 'Actions' %}</th>
                     </tr>
                 </thead>
                 <tbody id="representatives-list">
                     {% for representative in representatives %}
-                        <tr data-rep-id="{{ representative.id }}" data-search="{{ representative.name }} {{ representative.firm.name }} {{ representative.phone }} {% if representative.is_active %}Active{% else %}Inactive{% endif %}" data-sort-date="{{ representative.created_at|date:'Y-m-d H:i:s' }}">
-                            <td data-label="Representative" data-sort-value="{{ representative.name }}">
+                        <tr data-rep-id="{{ representative.id }}">
+                            <td data-label="Representative">
                                 <strong class="table-primary">{{ representative.name }}</strong>
-                                <span class="table-secondary" data-sort-value="{{ representative.phone }}">{{ representative.phone|default:"—" }}</span>
                             </td>
-                            <td data-label="Firm" data-sort-value="{{ representative.firm.name }}">
+                            <td data-label="Phone">{{ representative.phone|default:"—" }}</td>
+                            <td data-label="Firm">
                                 <strong class="table-primary">{{ representative.firm.name }}</strong>
-                                <span class="table-secondary">{{ representative.firm.get_source_type_display }}</span>
                             </td>
-                            <td data-label="Added" data-sort-value="{{ representative.created_at|date:'Y-m-d H:i:s' }}">{{ representative.created_at|date:"d M Y" }}</td>
-                            <td data-label="Status" data-sort-value="{% if representative.is_active %}active{% else %}inactive{% endif %}">
-                                <div class="status-toggle-inline">
-                                    <span class="rep-status-text">{% if representative.is_active %}Active{% else %}Inactive{% endif %}</span>
+                            <td data-label="Source">{{ representative.firm.get_source_type_display|bilingual }}</td>
+                            <td data-label="Added">{{ representative.created_at|date:"d-m-Y" }}</td>
+                            <td data-label="Status">
+                                <span class="rep-status-text">{% if representative.is_active %}{% bi 'Active' %}{% else %}{% bi 'Inactive' %}{% endif %}</span>
+                            </td>
+                            <td data-label="Actions" class="table-actions">
+                                <details class="row-actions"><summary aria-label="{{ 'Actions'|bilingual_plain }}" title="{{ 'Actions'|bilingual_plain }}"><span aria-hidden="true">⋯</span></summary><div class="row-action-menu"><div class="status-toggle-inline">
+                                    <span class="rep-status-text">{% if representative.is_active %}{% bi 'Active' %}{% else %}{% bi 'Inactive' %}{% endif %}</span>
                                     <form method="post" action="{% url 'ledger:toggle_representative_active' representative.id %}" class="toggle-form">
                                         {% csrf_token %}
-                                        <button type="submit" class="status-switch {% if representative.is_active %}is-active{% else %}is-inactive{% endif %}" aria-label="Toggle representative active status">
+                                        <button type="submit" class="status-switch {% if representative.is_active %}is-active{% else %}is-inactive{% endif %}" aria-label="{{ 'Toggle representative active status'|bilingual_plain }}">
                                             <span class="switch-knob"></span>
                                         </button>
                                     </form>
-                                </div>
-                            </td>
-                            <td data-label="Actions" class="table-actions">
-                                <div class="entity-actions">
-                                    <a href="{% url 'ledger:edit_representative' representative.id %}" class="button-link">Edit</a>
-                                    <form method="post" action="{% url 'ledger:archive_representative' representative.id %}">
+                                </div><p>{{ representative.firm.get_source_type_display|bilingual }} · {% bi 'Added' %}: {{ representative.created_at|date:"d-m-Y" }}</p>
+                                <p>{% bi 'Phone Number' %}: {{ representative.phone|default:"—" }}</p>
+
+                                    <a href="{% url 'ledger:edit_representative' representative.id %}" class="button-link">{% bi 'Edit' %}</a>
+                                    <form method="post" action="{% url 'ledger:delete_representative' representative.id %}">
                                         {% csrf_token %}
-                                        <button type="submit" class="archive-button">Archive</button>
+                                        <button type="submit" class="delete-action">{% bi 'Delete' %}</button>
                                     </form>
-                                </div>
+                                </div></details>
                             </td>
                         </tr>
                     {% empty %}
-                        <tr class="empty-table-row"><td colspan="5">No representatives found.</td></tr>
+                        <tr class="empty-table-row"><td colspan="7">{% bi 'No representatives found.' %}</td></tr>
                     {% endfor %}
-                    <tr class="search-empty-row" hidden><td colspan="5">No representatives match your search.</td></tr>
                 </tbody>
             </table>
         </div>
     </div>
 
-    <div class="panel compact-panel ledger-history-panel record-list-panel">
-        <div class="ledger-history-header">
-            <h2>Archived Representatives</h2>
-        </div>
-        <div class="data-table-wrap">
-            <table class="data-table record-table archived-representative-data-table">
+    {% else %}
+    <div class="panel compact-panel ledger-history-panel record-list-panel" id="page-trash" aria-labelledby="page-view-heading">
+
+        <div class="data-table-wrap" tabindex="0" role="region" aria-label="Scrollable records">
+            <table class="data-table record-table representative-trash-data-table">
                 <thead>
                     <tr>
-                        <th scope="col">Representative</th>
-                        <th scope="col">Firm</th>
-                        <th scope="col">Phone</th>
-                        <th scope="col">Restore</th>
+                        <th scope="col">{% table_heading 'Representative' %}</th>
+                        <th scope="col">{% table_heading 'Firm' %}</th>
+                        <th scope="col">{% table_heading 'Phone' %}</th>
+                        <th scope="col">{% table_heading 'Actions' %}</th>
                     </tr>
                 </thead>
                 <tbody>
-                    {% for representative in archived_representatives %}
+                    {% for representative in trashed_representatives %}
                         <tr>
                             <td data-label="Representative">
                                 <strong class="table-primary">{{ representative.name }}</strong>
-                                <span class="archive-badge">Archived{% if representative.firm.is_deleted %} with firm{% endif %}</span>
+                                {% if representative.firm.is_deleted %}<span class="deleted-badge">{% bi 'Firm in Trash' %}</span>{% else %}<span class="deleted-badge">{% bi 'In Trash' %}</span>{% endif %}
                             </td>
                             <td data-label="Firm">{{ representative.firm.name }}</td>
                             <td data-label="Phone">{{ representative.phone|default:"—" }}</td>
-                            <td data-label="Restore" class="table-actions">
-                                {% if not representative.firm.is_deleted %}
+                            <td data-label="Actions" class="table-actions">
+                                {% if representative.is_deleted and not representative.firm.is_deleted %}
+                                    <details class="row-actions"><summary aria-label="{{ 'Actions'|bilingual_plain }}"><span aria-hidden="true">⋯</span></summary><div class="row-action-menu">
+                                    <p>{% bi 'Phone Number' %}: {{ representative.phone|default:"—" }}</p>
                                     <form method="post" action="{% url 'ledger:restore_representative' representative.id %}">
                                         {% csrf_token %}
-                                        <button type="submit" class="restore-button">Restore</button>
+                                        <input type="hidden" name="next" value="{{ trash_link }}">
+                                        <button type="submit" class="restore-button">{% bi 'Recover' %}</button>
                                     </form>
+                                    </div></details>
+                                {% elif representative.firm.is_deleted %}
+                                    <details class="row-actions"><summary aria-label="{{ 'Actions'|bilingual_plain }}"><span aria-hidden="true">⋯</span></summary><div class="row-action-menu">
+                                    <p>{% bi 'Phone Number' %}: {{ representative.phone|default:"—" }}</p>
+                                    <form method="post" action="{% url 'ledger:restore_firm' representative.firm_id %}">
+                                        {% csrf_token %}
+                                        <input type="hidden" name="next" value="{{ trash_link }}">
+                                        <button type="submit" class="restore-button">{% bi 'Recover firm first' %}</button>
+                                    </form>
+                                    </div></details>
                                 {% else %}
-                                    <span class="muted">Restore the firm first.</span>
+                                    <span class="muted">{% bi 'Available on the representatives list.' %}</span>
                                 {% endif %}
                             </td>
                         </tr>
                     {% empty %}
-                        <tr class="empty-table-row"><td colspan="4">No archived representatives.</td></tr>
+                        <tr class="empty-table-row"><td colspan="4">{% bi 'Representatives Trash is empty.' %}</td></tr>
                     {% endfor %}
                 </tbody>
             </table>
         </div>
     </div>
 
-    <script nonce="{{ request.csp_nonce }}">
-        (function () {
-            const table = document.querySelector(".representative-data-table");
-            const tools = document.querySelector('[data-table-tools="representatives"]');
-            if (!table || !tools) return;
-            const body = table.tBodies[0];
-            const rows = Array.from(body.querySelectorAll("tr[data-rep-id]"));
-            const search = tools.querySelector("#representative-table-search");
-            const sortSelect = tools.querySelector("#representative-table-sort");
-            const directionButton = tools.querySelector(".table-sort-direction");
-            const count = tools.querySelector(".table-result-count");
-            const searchEmpty = body.querySelector(".search-empty-row");
-            const initialEmpty = body.querySelector(".empty-table-row");
-            const sortValue = (row, key) => {
-                if (key === "date") return row.dataset.sortDate || "";
-                if (key === "phone") return row.cells[0]?.querySelector(".table-secondary")?.dataset.sortValue?.toLocaleLowerCase() || "";
-                const column = {name: 0, firm: 1, date: 2, status: 3}[key];
-                return row.cells[column]?.dataset.sortValue?.toLocaleLowerCase() || "";
-            };
-            let direction = 1;
-            function applyTableState() {
-                const query = search.value.trim().toLocaleLowerCase();
-                const visibleRows = rows.filter(row => row.dataset.search.toLocaleLowerCase().includes(query));
-                visibleRows.sort((a, b) => sortValue(a, sortSelect.value).localeCompare(sortValue(b, sortSelect.value)) * direction);
-                visibleRows.forEach(row => body.insertBefore(row, searchEmpty));
-                rows.filter(row => !visibleRows.includes(row)).forEach(row => {
-                    row.hidden = true;
-                    row.style.display = "none";
-                });
-                visibleRows.forEach(row => {
-                    row.hidden = false;
-                    row.style.display = "";
-                });
-                if (initialEmpty) initialEmpty.hidden = rows.length > 0;
-                searchEmpty.hidden = visibleRows.length > 0 || rows.length === 0;
-                count.textContent = rows.length ? `Showing ${visibleRows.length} of ${rows.length} representatives` : "No representatives to show";
-                const activeKey = sortSelect.value;
-                table.querySelectorAll("thead th").forEach(th => {
-                    const button = th.querySelector(".table-sort");
-                    const active = button?.dataset.sortKey === activeKey || button?.dataset.sortAlso === activeKey;
-                    th.setAttribute("aria-sort", active ? (direction > 0 ? "ascending" : "descending") : "none");
-                    if (button) button.querySelector(".table-sort-indicator").textContent = active ? (direction > 0 ? "↑" : "↓") : "";
-                });
-                directionButton.textContent = direction > 0 ? "Ascending ↑" : "Descending ↓";
-                directionButton.setAttribute("aria-label", direction > 0 ? "Sort ascending" : "Sort descending");
-            }
-            search.addEventListener("input", applyTableState);
-            sortSelect.addEventListener("change", applyTableState);
-            directionButton.addEventListener("click", () => { direction *= -1; applyTableState(); });
-            table.querySelectorAll(".table-sort").forEach(button => button.addEventListener("click", () => {
-                if (sortSelect.value === button.dataset.sortKey) direction *= -1;
-                else { sortSelect.value = button.dataset.sortKey; direction = 1; }
-                applyTableState();
-            }));
-            applyTableState();
-        }());
-    </script>
-
-    <script nonce="{{ request.csp_nonce }}">
+    {% endif %}
+<script nonce="{{ request.csp_nonce }}">
         const sourceTypeFilter = document.getElementById("source_type");
         const firmFilter = document.getElementById("firm");
         const firmsUrl = "{% url 'ledger:firms_for_source_type' %}";
@@ -229,7 +168,7 @@
             firmFilter.replaceChildren();
             const emptyOption = document.createElement("option");
             emptyOption.value = "";
-            emptyOption.textContent = "All Firms";
+            emptyOption.textContent = ledgerUI.text("All Firms");
             firmFilter.appendChild(emptyOption);
         }
 
@@ -265,7 +204,7 @@
             form.addEventListener("submit", function(event) {
                 event.preventDefault();
                 const row = form.closest("tr");
-                const statusText = row.querySelector(".rep-status-text");
+                const statusTexts = row.querySelectorAll(".rep-status-text");
                 const button = form.querySelector("button.status-switch");
                 button.disabled = true;
 
@@ -283,7 +222,7 @@
                     .then(data => {
                         if (data && typeof data.is_active !== "undefined") {
                             const isActive = data.is_active;
-                            statusText.textContent = isActive ? "Active" : "Inactive";
+                            statusTexts.forEach(text => ledgerUI.set(text, isActive ? "Active" : "Inactive"));
                             button.classList.toggle("is-active", isActive);
                             button.classList.toggle("is-inactive", !isActive);
                         }
