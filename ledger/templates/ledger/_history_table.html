@@ -1,87 +1,45 @@
-{% load static %}
-<div class="ledger-total-card">
-    <span class="total-label">Current Total Debt</span>
-    <strong id="total-debt-cell" class="total-value">{{ total_debt }}</strong>
-</div>
-
-<div class="ledger-history-list">
-{% for row in history_rows %}
-    <div class="ledger-entry-card" data-entry-id="{{ row.latest_entry_id }}">
-
-        <div class="entry-header">
-            <div>
-                <div class="entry-date">{{ row.date|date:"d M Y" }}</div>
-                <div class="entry-day">{{ row.day }}</div>
-            </div>
-            <button
-                type="button"
-                onclick="showDeleteModal('{{ row.latest_entry_id|escapejs }}', '{{ row.date|date:"d M Y"|escapejs }}', '{{ row.firm.name|escapejs }}')"
-                style="background:#fef2f2; color:#ef4444; border:1px solid #fecaca; padding:5px 10px; border-radius:999px; cursor:pointer; font-size:11px; font-weight:700; min-height:auto;">
-                🗑 Delete
-            </button>
-        </div>
-
-        <div class="entry-body">
-            <div class="entry-field">
-                <span class="entry-field-label">Firm</span>
-                <span class="entry-field-value">{{ row.firm.name }}</span>
-            </div>
-
-            <div class="entry-field">
-                <span class="entry-field-label">Source</span>
-                <span class="entry-field-value">
-                    {% if row.firm.source_type == 'local_market' %}Local Market{% else %}{{ row.source_type }}{% endif %}
-                </span>
-            </div>
-
-            <div class="entry-field">
-                <span class="entry-field-label">Representative</span>
-                <span class="entry-field-value">
-                    {% if row.firm.source_type == 'local_market' %}
-                        N/A
-                    {% elif row.representative_names %}
-                        {% for rep_name in row.representative_names %}{{ rep_name }}{% if not forloop.last %}, {% endif %}{% endfor %}
-                    {% else %}
-                        N/A
+{% load bilingual %}
+{% if not compact_history %}
+<div class="ledger-total-card"><span class="total-label">{% bi 'Current Net Balance Across All Firms' %}</span><strong id="total-debt-cell" class="total-value">{{ total_debt }}</strong></div>
+{% endif %}
+<div class="data-table-wrap" tabindex="0" role="region" aria-label="Scrollable ledger history">
+    <table class="data-table history-data-table" aria-label="Transaction history">
+        <thead><tr><th scope="col">{% table_heading 'Date' %}</th><th scope="col">{% table_heading 'Firm' %}</th><th scope="col">{% table_heading 'Representative' %}</th><th scope="col">{% table_heading 'Bill' %}</th><th scope="col" class="amount-heading">{% table_heading 'Bill amount' %}</th><th scope="col" class="amount-heading">{% table_heading 'Payment Amount' %}</th><th scope="col" class="amount-heading">{% table_heading 'Debt' %}</th><th scope="col">{% table_heading 'Actions' %}</th></tr></thead>
+        <tbody>{% for row in history_rows %}
+            <tr id="{{ history_id_prefix }}batch-{{ row.batch_id|default:row.entries.0.pk }}" data-batch-id="{{ row.batch_id|default:'' }}">
+                <td data-label="Date">{{ row.date|date:"d-m-Y" }}</td>
+                <td data-label="Firm"><strong>{{ row.firm.name }}</strong></td>
+                <td data-label="Representative">{{ row.representative_names|first|default:"—" }}{% if row.representative_names|length > 1 %} <span class="inline-meta">(+{{ row.representative_names|length|add:"-1" }})</span>{% endif %}</td>
+                <td data-label="Bill">{{ row.related_bill_numbers|first|default:"—" }}{% if row.related_bill_numbers|length > 1 %} <span class="inline-meta">(+{{ row.related_bill_numbers|length|add:"-1" }})</span>{% endif %}</td>
+                <td data-label="Bill amount" class="amount-cell">{{ row.bill_amount }}</td>
+                <td data-label="Payment" class="amount-cell entry-payment">{{ row.payment_made }}</td>
+                <td data-label="Balance After" class="amount-cell">{% if row.remaining_debt < 0 %}<span class="entry-credit" title="{{ 'Supplier Credits'|bilingual_plain }}">{{ row.remaining_debt }}</span>{% else %}{{ row.remaining_debt }}{% endif %}</td>
+                <td data-label="Actions" class="table-actions history-action-cell"><details class="row-actions"><summary aria-label="{{ 'Actions'|bilingual_plain }}" title="{{ 'Actions'|bilingual_plain }}"><span aria-hidden="true">⋯</span></summary><div class="row-action-menu">
+                    <details class="row-detail-toggle"><summary>{% bi 'Details' %}</summary><div class="row-detail-panel">
+                        <p>{{ row.source_type|bilingual }} · {{ row.day|bilingual }}</p>
+                        <p>{% bi 'Date' %}: {{ row.date|date:"d-m-Y" }} · {% bi 'Firm' %}: <bdi>{{ row.firm.name }}</bdi></p>
+                        <p>{% bi 'Bill Amount' %}: {{ row.bill_amount }} · {% bi 'Payment Amount' %}: {{ row.payment_made }}</p>
+                        <p>{% bi 'Corrected chronological balance' %}: {{ row.remaining_debt }}</p>
+                        <p>{% bi 'Representatives' %}: {{ row.representative_names|join:", "|default:"—" }} · {% bi 'Bills' %}: {{ row.related_bill_numbers|join:", "|default:"—" }}</p>
+                        {% for entry in row.entries %}<p>{{ entry.get_entry_type_display|bilingual }} · +{{ entry.increase }} / −{{ entry.decrease }}{% if entry.description %} · {{ entry.description }}{% endif %}</p>{% if entry.bill.notes %}<p>{{ entry.bill.notes }}</p>{% endif %}{% if entry.payment.notes %}<p>{{ entry.payment.notes }}</p>{% endif %}{% endfor %}
+                        <p>{% bi 'Original posting receipt' %}: {% if row.batch.posting_receipt %}{{ row.batch.posting_receipt.date }} · before {{ row.batch.posting_receipt.previous_balance }} · after {{ row.batch.posting_receipt.balance_after }}{% else %}{% bi 'Unavailable for legacy records' %}{% endif %}</p>
+                        {% for entry in row.batch.posting_receipt.entries %}<p>Original reference {{ entry.bill_number|default:"—" }} · +{{ entry.increase }} / −{{ entry.decrease }}</p>{% endfor %}
+                        {% for edit in row.batch.edit_events.all %}<details><summary>Bill correction · {{ edit.timestamp|date:"d-m-Y H:i T" }} · {{ edit.actor_snapshot.username|default:"Unavailable original actor" }}</summary><p>Before: {{ edit.before }}</p><p>After: {{ edit.after }}</p></details>{% endfor %}
+                        {% for event in row.batch.audit_events.all %}<p>{% bi 'Correction details' %} · {{ event.created_at|date:"d-m-Y H:i T" }} · {{ event.get_kind_display|bilingual }} · {{ event.reason }}</p>{% endfor %}
+                    </div></details>
+                    {% if row.is_reversible %}
+                    <details class="batch-action" data-action="delete" data-description="Move transaction #{{ row.batch.pk }} for {{ row.firm.name }} dated {{ row.date|date:'d-m-Y' }} to Trash. This reverses all bill and payment amounts in this transaction. Change to current debt: {{ row.delete_effect }}. You can recover it from Trash at any time." data-description-ur="{% bi_format_urdu 'transaction_delete' id=row.batch.pk firm=row.firm.name date=row.date|date:'d-m-Y' amount=row.delete_effect %}">
+                        <summary class="delete-action">{% bi 'Delete' %}</summary>
+                        <form method="post" action="{% url 'ledger:reverse_batch' row.batch.pk %}" class="batch-action-form">
+                            <p>{% bi 'Move this entire transaction to Trash and reverse its bill and payment amounts. You can recover it at any time.' %}</p>
+                            {% csrf_token %}<input type="hidden" name="next" value="{% if history_return_url %}{{ history_return_url }}{% else %}{% url 'ledger:ledger_history' %}?{{ request.GET.urlencode }}{% endif %}">
+                            <label for="{{ history_id_prefix }}delete-reason-{{ row.batch.pk }}">{% bi 'Reason for deleting' %}</label><input id="{{ history_id_prefix }}delete-reason-{{ row.batch.pk }}" name="reason" required maxlength="500" placeholder="{{ 'Why delete this transaction?'|bilingual_plain }}">
+                            <button class="delete-action" type="submit">{% bi 'Delete' %}</button>
+                        </form>
+                    </details>
                     {% endif %}
-                </span>
-            </div>
-
-            <div class="entry-field entry-bills">
-                <span class="entry-field-label">Bills</span>
-                <span class="entry-field-value">
-                    {% if row.firm.source_type == 'local_market' %}
-                        N/A
-                    {% elif row.related_bill_numbers %}
-                        {% for bill_number in row.related_bill_numbers %}
-                            {% if bill_number in row.new_bill_numbers %}
-                                <span class="bill-badge">★ {{ bill_number }}</span>
-                            {% else %}
-                                <span class="muted">{{ bill_number }}</span>
-                            {% endif %}
-                        {% endfor %}
-                    {% else %}
-                        —
-                    {% endif %}
-                </span>
-            </div>
-        </div>
-
-        <div class="entry-footer">
-            <div>
-                <span style="font-size:9px; text-transform:uppercase; color:var(--muted); font-weight:800; display:block; margin-bottom:1px;">Payment Made</span>
-                <span class="entry-payment">{{ row.payment_made }}</span>
-            </div>
-            <div style="text-align:right;">
-                <span style="font-size:9px; text-transform:uppercase; color:var(--muted); font-weight:800; display:block; margin-bottom:1px;">Remaining Debt</span>
-                <span class="entry-debt">{{ row.remaining_debt }}</span>
-            </div>
-        </div>
-
-    </div>
-{% empty %}
-    <div class="panel" style="text-align:center; color:var(--muted); padding:32px;">
-        No ledger history found for this date range.
-    </div>
-{% endfor %}
+                </div></details></td>
+            </tr>
+        {% empty %}<tr class="empty-table-row"><td colspan="8">{% bi 'No ledger history found for this date range.' %}</td></tr>{% endfor %}</tbody>
+    </table>
 </div>

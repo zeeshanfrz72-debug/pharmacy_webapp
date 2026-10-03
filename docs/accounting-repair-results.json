@@ -1,0 +1,763 @@
+{
+  "started": "2026-10-03 01:12:59",
+  "migrations": {
+    "backups\\preview-before-reset-20261002-220531.sqlite3": {
+      "status": "migrated isolated snapshot",
+      "source_unchanged": true,
+      "legacy_values_preserved": true,
+      "migration": {
+        "exit_code": 0,
+        "stdout": "Operations to perform:\n  Apply all migrations: admin, auth, axes, contenttypes, ledger, sessions\nRunning migrations:\n  Applying ledger.0008_ledger_integrity... OK\n  Applying ledger.0009_exact_cent_constraints... OK\n",
+        "stderr": ""
+      },
+      "application_check": {
+        "exit_code": 0,
+        "stdout": "System check identified no issues (0 silenced).\n",
+        "stderr": ""
+      }
+    },
+    "db.sqlite3": {
+      "status": "no application schema",
+      "source_unchanged": true
+    },
+    "preview-20261001-135817.sqlite3": {
+      "status": "migrated isolated snapshot",
+      "source_unchanged": true,
+      "legacy_values_preserved": true,
+      "migration": {
+        "exit_code": 0,
+        "stdout": "Operations to perform:\n  Apply all migrations: admin, auth, axes, contenttypes, ledger, sessions\nRunning migrations:\n  Applying ledger.0008_ledger_integrity... OK\n  Applying ledger.0009_exact_cent_constraints... OK\n",
+        "stderr": ""
+      },
+      "application_check": {
+        "exit_code": 0,
+        "stdout": "System check identified no issues (0 silenced).\n",
+        "stderr": ""
+      }
+    }
+  },
+  "snapshot_hashes_before": {
+    "backups\\preview-before-reset-20261002-220531.sqlite3": "4b084c50e5aa0508a91e49cabbb2a81a5692e7f4dcd63cd0dce3d313a36b374e",
+    "db.sqlite3": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "preview-20261001-135817.sqlite3": "13b8c5baab324062ee06e3b46c44cc7f187a097205ab158514a650eca06d76fc"
+  },
+  "tests": {
+    "exit_code": 0,
+    "stdout": "Found 86 test(s).\nSystem check identified no issues (0 silenced).\n",
+    "stderr": "Creating test database for alias 'default'...\n\n.........................AXES: New login failure by {username: \"********************\", ip_address: \"********************\", user_agent: \"<unknown>\", path_info: \"/accounts/login/\"}. Created new record in the database.\nAXES: Repeated login failure by {username: \"********************\", ip_address: \"********************\", user_agent: \"<unknown>\", path_info: \"/accounts/login/\"}. Updated existing record in the database.\nAXES: Repeated login failure by {username: \"********************\", ip_address: \"********************\", user_agent: \"<unknown>\", path_info: \"/accounts/login/\"}. Updated existing record in the database.\nAXES: Repeated login failure by {username: \"********************\", ip_address: \"********************\", user_agent: \"<unknown>\", path_info: \"/accounts/login/\"}. Updated existing record in the database.\nAXES: Repeated login failure by {username: \"********************\", ip_address: \"********************\", user_agent: \"<unknown>\", path_info: \"/accounts/login/\"}. Updated existing record in the database.\nAXES: Locking out {username: \"********************\", ip_address: \"********************\", user_agent: \"<unknown>\", path_info: \"/accounts/login/\"} after repeated login failures.\nAXES: Repeated login failure by {username: \"********************\", ip_address: \"********************\", user_agent: \"<unknown>\", path_info: \"/accounts/login/\"}. Updated existing record in the database.\nAXES: Locking out {username: \"********************\", ip_address: \"********************\", user_agent: \"<unknown>\", path_info: \"/accounts/login/\"} after repeated login failures.\n..........................D:\\pharmacy_webapp-hardening\\ledger\\test_integrity.py:247: UserWarning: Overriding setting DATABASES can lead to unexpected behavior.\n  with override_settings(DATABASES={\"default\": {\"ENGINE\": \"django.db.backends.sqlite3\", \"NAME\": source}}):\n...................................\n----------------------------------------------------------------------\nRan 86 tests in 22.617s\n\nOK\nDestroying test database for alias 'default'...\n\n"
+  },
+  "migration_drift": {
+    "exit_code": 0,
+    "stdout": "No changes detected\n",
+    "stderr": ""
+  },
+  "races": [
+    {
+      "name": "payment_payment",
+      "outcomes": [
+        {
+          "status": "ok",
+          "changed": null
+        },
+        {
+          "status": "ValidationError",
+          "error": "['Payment amount cannot be higher than the remaining debt.']"
+        }
+      ],
+      "evidence": {
+        "balance": "20.00",
+        "payments": 1
+      }
+    },
+    {
+      "name": "edit_edit",
+      "outcomes": [
+        {
+          "status": "ok",
+          "changed": null
+        },
+        {
+          "status": "ValidationError",
+          "error": "['This bill changed after you opened it. Reload and review the latest bill.']"
+        }
+      ],
+      "evidence": {
+        "balance": "200.00",
+        "adjustments": 1
+      }
+    },
+    {
+      "name": "edit_delete",
+      "outcomes": [
+        {
+          "status": "ok",
+          "changed": null
+        },
+        {
+          "status": "ok",
+          "changed": true
+        }
+      ],
+      "evidence": {
+        "balance": "0.00",
+        "status": "reversed"
+      }
+    },
+    {
+      "name": "delete_recover",
+      "outcomes": [
+        {
+          "status": "ok",
+          "changed": false
+        },
+        {
+          "status": "ok",
+          "changed": true
+        }
+      ],
+      "evidence": {
+        "balance": "100.00",
+        "status": "active"
+      }
+    },
+    {
+      "name": "duplicate_request",
+      "outcomes": [
+        {
+          "status": "ok",
+          "changed": null
+        },
+        {
+          "status": "ok",
+          "changed": null
+        }
+      ],
+      "evidence": {
+        "balance": "100.00",
+        "bills": 1,
+        "batches": 1
+      }
+    },
+    {
+      "name": "supplier_delete_write",
+      "delete_status": 302,
+      "firm_deleted": true,
+      "committed_bill": 6,
+      "balance": "100.00",
+      "classification": "serializable write-before-delete, retained history; policy/UX risk"
+    }
+  ],
+  "sequences": {
+    "backend": "in-memory SQLite; races separately use file SQLite",
+    "seeds": 100,
+    "steps_per_seed": 200,
+    "completed_operations": 20000,
+    "balance_mismatches": 0,
+    "history_mismatches": 0,
+    "relationship_violations": 4037,
+    "stale_snapshot_observations": 0,
+    "examples": [
+      {
+        "kind": "active_payment_deleted_bill",
+        "seed": 0,
+        "step": 53,
+        "trace": [
+          {
+            "step": 42,
+            "op": "edit",
+            "root": 13,
+            "amount": "318.56",
+            "date": "2026-10-03"
+          },
+          {
+            "step": 43,
+            "op": "delete_bill",
+            "root": 16
+          },
+          {
+            "step": 44,
+            "op": "bill",
+            "root": 24,
+            "amount": "924.5",
+            "paid": "36.12"
+          },
+          {
+            "step": 45,
+            "op": "replay",
+            "root": 10
+          },
+          {
+            "step": 46,
+            "op": "edit",
+            "root": 19,
+            "amount": "81.52",
+            "date": "2026-10-02"
+          },
+          {
+            "step": 47,
+            "op": "replay",
+            "root": 10
+          },
+          {
+            "step": 48,
+            "op": "replay",
+            "root": 22
+          },
+          {
+            "step": 49,
+            "op": "payment",
+            "root": 25,
+            "amount": "7.42"
+          },
+          {
+            "step": 50,
+            "op": "delete_bill",
+            "root": 13
+          },
+          {
+            "step": 51,
+            "op": "recover",
+            "group": 7
+          },
+          {
+            "step": 52,
+            "op": "recover",
+            "group": 1
+          },
+          {
+            "step": 53,
+            "op": "reverse",
+            "root": 7
+          }
+        ]
+      },
+      {
+        "kind": "active_payment_deleted_bill",
+        "seed": 0,
+        "step": 54,
+        "trace": [
+          {
+            "step": 43,
+            "op": "delete_bill",
+            "root": 16
+          },
+          {
+            "step": 44,
+            "op": "bill",
+            "root": 24,
+            "amount": "924.5",
+            "paid": "36.12"
+          },
+          {
+            "step": 45,
+            "op": "replay",
+            "root": 10
+          },
+          {
+            "step": 46,
+            "op": "edit",
+            "root": 19,
+            "amount": "81.52",
+            "date": "2026-10-02"
+          },
+          {
+            "step": 47,
+            "op": "replay",
+            "root": 10
+          },
+          {
+            "step": 48,
+            "op": "replay",
+            "root": 22
+          },
+          {
+            "step": 49,
+            "op": "payment",
+            "root": 25,
+            "amount": "7.42"
+          },
+          {
+            "step": 50,
+            "op": "delete_bill",
+            "root": 13
+          },
+          {
+            "step": 51,
+            "op": "recover",
+            "group": 7
+          },
+          {
+            "step": 52,
+            "op": "recover",
+            "group": 1
+          },
+          {
+            "step": 53,
+            "op": "reverse",
+            "root": 7
+          },
+          {
+            "step": 54,
+            "op": "edit",
+            "root": 12,
+            "amount": "47.7",
+            "date": "2026-10-03"
+          }
+        ]
+      },
+      {
+        "kind": "active_payment_deleted_bill",
+        "seed": 0,
+        "step": 55,
+        "trace": [
+          {
+            "step": 44,
+            "op": "bill",
+            "root": 24,
+            "amount": "924.5",
+            "paid": "36.12"
+          },
+          {
+            "step": 45,
+            "op": "replay",
+            "root": 10
+          },
+          {
+            "step": 46,
+            "op": "edit",
+            "root": 19,
+            "amount": "81.52",
+            "date": "2026-10-02"
+          },
+          {
+            "step": 47,
+            "op": "replay",
+            "root": 10
+          },
+          {
+            "step": 48,
+            "op": "replay",
+            "root": 22
+          },
+          {
+            "step": 49,
+            "op": "payment",
+            "root": 25,
+            "amount": "7.42"
+          },
+          {
+            "step": 50,
+            "op": "delete_bill",
+            "root": 13
+          },
+          {
+            "step": 51,
+            "op": "recover",
+            "group": 7
+          },
+          {
+            "step": 52,
+            "op": "recover",
+            "group": 1
+          },
+          {
+            "step": 53,
+            "op": "reverse",
+            "root": 7
+          },
+          {
+            "step": 54,
+            "op": "edit",
+            "root": 12,
+            "amount": "47.7",
+            "date": "2026-10-03"
+          },
+          {
+            "step": 55,
+            "op": "payment",
+            "root": 29,
+            "amount": "30.31"
+          }
+        ]
+      },
+      {
+        "kind": "active_payment_deleted_bill",
+        "seed": 0,
+        "step": 56,
+        "trace": [
+          {
+            "step": 45,
+            "op": "replay",
+            "root": 10
+          },
+          {
+            "step": 46,
+            "op": "edit",
+            "root": 19,
+            "amount": "81.52",
+            "date": "2026-10-02"
+          },
+          {
+            "step": 47,
+            "op": "replay",
+            "root": 10
+          },
+          {
+            "step": 48,
+            "op": "replay",
+            "root": 22
+          },
+          {
+            "step": 49,
+            "op": "payment",
+            "root": 25,
+            "amount": "7.42"
+          },
+          {
+            "step": 50,
+            "op": "delete_bill",
+            "root": 13
+          },
+          {
+            "step": 51,
+            "op": "recover",
+            "group": 7
+          },
+          {
+            "step": 52,
+            "op": "recover",
+            "group": 1
+          },
+          {
+            "step": 53,
+            "op": "reverse",
+            "root": 7
+          },
+          {
+            "step": 54,
+            "op": "edit",
+            "root": 12,
+            "amount": "47.7",
+            "date": "2026-10-03"
+          },
+          {
+            "step": 55,
+            "op": "payment",
+            "root": 29,
+            "amount": "30.31"
+          },
+          {
+            "step": 56,
+            "op": "delete_bill",
+            "root": 1
+          }
+        ]
+      },
+      {
+        "kind": "active_payment_deleted_bill",
+        "seed": 0,
+        "step": 57,
+        "trace": [
+          {
+            "step": 46,
+            "op": "edit",
+            "root": 19,
+            "amount": "81.52",
+            "date": "2026-10-02"
+          },
+          {
+            "step": 47,
+            "op": "replay",
+            "root": 10
+          },
+          {
+            "step": 48,
+            "op": "replay",
+            "root": 22
+          },
+          {
+            "step": 49,
+            "op": "payment",
+            "root": 25,
+            "amount": "7.42"
+          },
+          {
+            "step": 50,
+            "op": "delete_bill",
+            "root": 13
+          },
+          {
+            "step": 51,
+            "op": "recover",
+            "group": 7
+          },
+          {
+            "step": 52,
+            "op": "recover",
+            "group": 1
+          },
+          {
+            "step": 53,
+            "op": "reverse",
+            "root": 7
+          },
+          {
+            "step": 54,
+            "op": "edit",
+            "root": 12,
+            "amount": "47.7",
+            "date": "2026-10-03"
+          },
+          {
+            "step": 55,
+            "op": "payment",
+            "root": 29,
+            "amount": "30.31"
+          },
+          {
+            "step": 56,
+            "op": "delete_bill",
+            "root": 1
+          },
+          {
+            "step": 57,
+            "op": "delete_bill",
+            "root": 1
+          }
+        ]
+      },
+      {
+        "kind": "active_payment_deleted_bill",
+        "seed": 0,
+        "step": 58,
+        "trace": [
+          {
+            "step": 47,
+            "op": "replay",
+            "root": 10
+          },
+          {
+            "step": 48,
+            "op": "replay",
+            "root": 22
+          },
+          {
+            "step": 49,
+            "op": "payment",
+            "root": 25,
+            "amount": "7.42"
+          },
+          {
+            "step": 50,
+            "op": "delete_bill",
+            "root": 13
+          },
+          {
+            "step": 51,
+            "op": "recover",
+            "group": 7
+          },
+          {
+            "step": 52,
+            "op": "recover",
+            "group": 1
+          },
+          {
+            "step": 53,
+            "op": "reverse",
+            "root": 7
+          },
+          {
+            "step": 54,
+            "op": "edit",
+            "root": 12,
+            "amount": "47.7",
+            "date": "2026-10-03"
+          },
+          {
+            "step": 55,
+            "op": "payment",
+            "root": 29,
+            "amount": "30.31"
+          },
+          {
+            "step": 56,
+            "op": "delete_bill",
+            "root": 1
+          },
+          {
+            "step": 57,
+            "op": "delete_bill",
+            "root": 1
+          },
+          {
+            "step": 58,
+            "op": "recover",
+            "group": 7
+          }
+        ]
+      },
+      {
+        "kind": "active_payment_deleted_bill",
+        "seed": 0,
+        "step": 59,
+        "trace": [
+          {
+            "step": 48,
+            "op": "replay",
+            "root": 22
+          },
+          {
+            "step": 49,
+            "op": "payment",
+            "root": 25,
+            "amount": "7.42"
+          },
+          {
+            "step": 50,
+            "op": "delete_bill",
+            "root": 13
+          },
+          {
+            "step": 51,
+            "op": "recover",
+            "group": 7
+          },
+          {
+            "step": 52,
+            "op": "recover",
+            "group": 1
+          },
+          {
+            "step": 53,
+            "op": "reverse",
+            "root": 7
+          },
+          {
+            "step": 54,
+            "op": "edit",
+            "root": 12,
+            "amount": "47.7",
+            "date": "2026-10-03"
+          },
+          {
+            "step": 55,
+            "op": "payment",
+            "root": 29,
+            "amount": "30.31"
+          },
+          {
+            "step": 56,
+            "op": "delete_bill",
+            "root": 1
+          },
+          {
+            "step": 57,
+            "op": "delete_bill",
+            "root": 1
+          },
+          {
+            "step": 58,
+            "op": "recover",
+            "group": 7
+          },
+          {
+            "step": 59,
+            "op": "recover",
+            "group": 2
+          }
+        ]
+      },
+      {
+        "kind": "active_payment_deleted_bill",
+        "seed": 0,
+        "step": 60,
+        "trace": [
+          {
+            "step": 49,
+            "op": "payment",
+            "root": 25,
+            "amount": "7.42"
+          },
+          {
+            "step": 50,
+            "op": "delete_bill",
+            "root": 13
+          },
+          {
+            "step": 51,
+            "op": "recover",
+            "group": 7
+          },
+          {
+            "step": 52,
+            "op": "recover",
+            "group": 1
+          },
+          {
+            "step": 53,
+            "op": "reverse",
+            "root": 7
+          },
+          {
+            "step": 54,
+            "op": "edit",
+            "root": 12,
+            "amount": "47.7",
+            "date": "2026-10-03"
+          },
+          {
+            "step": 55,
+            "op": "payment",
+            "root": 29,
+            "amount": "30.31"
+          },
+          {
+            "step": 56,
+            "op": "delete_bill",
+            "root": 1
+          },
+          {
+            "step": 57,
+            "op": "delete_bill",
+            "root": 1
+          },
+          {
+            "step": 58,
+            "op": "recover",
+            "group": 7
+          },
+          {
+            "step": 59,
+            "op": "recover",
+            "group": 2
+          },
+          {
+            "step": 60,
+            "op": "replay",
+            "root": 12
+          }
+        ]
+      }
+    ],
+    "operations": {
+      "replay": 2821,
+      "edit": 2738,
+      "reverse": 2793,
+      "recover": 2925,
+      "skipped": 1584,
+      "bill": 2899,
+      "delete_bill": 2812,
+      "payment": 1428
+    },
+    "seconds": 1043.516,
+    "relationship_note": "Active payments referencing reversed bills are supported supplier credit, not relationship corruption."
+  },
+  "stress": {
+    "exit_code": 0,
+    "stdout": "{\n  \"database\": \"temporary synthetic SQLite; discarded after run\",\n  \"client_ramps\": [\n    {\n      \"clients\": 5,\n      \"successes\": 5,\n      \"expected_successes\": 5,\n      \"status_counts\": {\n        \"200\": 5\n      },\n      \"wall_ms\": 961.6,\n      \"median_ms\": 600.5,\n      \"p95_ms\": 959.7,\n      \"balance_after\": \"0\",\n      \"accounting_ok\": true,\n      \"sample_failures\": []\n    },\n    {\n      \"clients\": 10,\n      \"successes\": 5,\n      \"expected_successes\": 5,\n      \"status_counts\": {\n        \"200\": 5,\n        \"400\": 5\n      },\n      \"wall_ms\": 1164.9,\n      \"median_ms\": 1054.2,\n      \"p95_ms\": 1160.8,\n      \"balance_after\": \"0\",\n      \"accounting_ok\": true,\n      \"sample_failures\": [\n        {\n          \"status\": \"400\",\n          \"detail\": \"['Payment amount cannot be higher than the remaining debt.']\"\n        },\n        {\n          \"status\": \"400\",\n          \"detail\": \"['Payment amount cannot be higher than the remaining debt.']\"\n        }\n      ]\n    },\n    {\n      \"clients\": 20,\n      \"successes\": 5,\n      \"expected_successes\": 5,\n      \"status_counts\": {\n        \"400\": 15,\n        \"200\": 5\n      },\n      \"wall_ms\": 1575.4,\n      \"median_ms\": 1301.8,\n      \"p95_ms\": 1460.3,\n      \"balance_after\": \"0\",\n      \"accounting_ok\": true,\n      \"sample_failures\": [\n        {\n          \"status\": \"400\",\n          \"detail\": \"['Payment amount cannot be higher than the remaining debt.']\"\n        },\n        {\n          \"status\": \"400\",\n          \"detail\": \"['Payment amount cannot be higher than the remaining debt.']\"\n        }\n      ]\n    },\n    {\n      \"clients\": 40,\n      \"successes\": 5,\n      \"expected_successes\": 5,\n      \"status_counts\": {\n        \"400\": 35,\n        \"200\": 5\n      },\n      \"wall_ms\": 2383.2,\n      \"median_ms\": 2006.2,\n      \"p95_ms\": 2284.8,\n      \"balance_after\": \"0\",\n      \"accounting_ok\": true,\n      \"sample_failures\": [\n        {\n          \"status\": \"400\",\n          \"detail\": \"['Payment amount cannot be higher than the remaining debt.']\"\n        },\n        {\n          \"status\": \"400\",\n          \"detail\": \"['Payment amount cannot be higher than the remaining debt.']\"\n        }\n      ]\n    }\n  ],\n  \"sqlite_locked_messages\": 0,\n  \"http_500_messages\": 0\n}\n",
+    "stderr": ""
+  },
+  "original_databases_unchanged": true,
+  "completed": "2026-10-03 01:34:48"
+}

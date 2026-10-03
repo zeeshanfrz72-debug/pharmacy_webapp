@@ -1,0 +1,93 @@
+{
+  "database": "temporary synthetic SQLite; discarded after run",
+  "client_ramps": [
+    {
+      "clients": 5,
+      "successes": 5,
+      "expected_successes": 5,
+      "status_counts": {
+        "200": 5
+      },
+      "wall_ms": 1071.3,
+      "median_ms": 570.7,
+      "p95_ms": 1068.0,
+      "balance_after": "0",
+      "accounting_ok": true,
+      "sample_failures": []
+    },
+    {
+      "clients": 10,
+      "successes": 5,
+      "expected_successes": 5,
+      "status_counts": {
+        "200": 5,
+        "400": 5
+      },
+      "wall_ms": 1362.1,
+      "median_ms": 1196.2,
+      "p95_ms": 1353.5,
+      "balance_after": "0",
+      "accounting_ok": true,
+      "sample_failures": [
+        {
+          "status": "400",
+          "detail": "['Payment amount cannot be higher than the remaining debt.']"
+        },
+        {
+          "status": "400",
+          "detail": "['Payment amount cannot be higher than the remaining debt.']"
+        }
+      ]
+    },
+    {
+      "clients": 20,
+      "successes": 5,
+      "expected_successes": 5,
+      "status_counts": {
+        "200": 5,
+        "400": 15
+      },
+      "wall_ms": 1588.9,
+      "median_ms": 1345.6,
+      "p95_ms": 1558.2,
+      "balance_after": "0",
+      "accounting_ok": true,
+      "sample_failures": [
+        {
+          "status": "400",
+          "detail": "['Payment amount cannot be higher than the remaining debt.']"
+        },
+        {
+          "status": "400",
+          "detail": "['Payment amount cannot be higher than the remaining debt.']"
+        }
+      ]
+    },
+    {
+      "clients": 40,
+      "successes": 5,
+      "expected_successes": 5,
+      "status_counts": {
+        "400": 35,
+        "200": 5
+      },
+      "wall_ms": 2801.1,
+      "median_ms": 2198.3,
+      "p95_ms": 2639.4,
+      "balance_after": "0",
+      "accounting_ok": true,
+      "sample_failures": [
+        {
+          "status": "400",
+          "detail": "['Payment amount cannot be higher than the remaining debt.']"
+        },
+        {
+          "status": "400",
+          "detail": "['Payment amount cannot be higher than the remaining debt.']"
+        }
+      ]
+    }
+  ],
+  "sqlite_locked_messages": 0,
+  "http_500_messages": 0
+}

@@ -1,0 +1,2591 @@
+{
+  "seeds": 100,
+  "steps_per_seed": 200,
+  "workers": [
+    {
+      "backend": "in-memory SQLite; races separately use file SQLite",
+      "seeds": 25,
+      "steps_per_seed": 200,
+      "completed_operations": 5000,
+      "balance_mismatches": 0,
+      "history_mismatches": 0,
+      "relationship_violations": 784,
+      "stale_snapshot_observations": 0,
+      "examples": [
+        {
+          "kind": "active_payment_deleted_bill",
+          "seed": 0,
+          "step": 53,
+          "trace": [
+            {
+              "step": 42,
+              "op": "edit",
+              "root": 13,
+              "amount": "318.56",
+              "date": "2026-10-03"
+            },
+            {
+              "step": 43,
+              "op": "delete_bill",
+              "root": 16
+            },
+            {
+              "step": 44,
+              "op": "bill",
+              "root": 24,
+              "amount": "924.5",
+              "paid": "36.12"
+            },
+            {
+              "step": 45,
+              "op": "replay",
+              "root": 10
+            },
+            {
+              "step": 46,
+              "op": "edit",
+              "root": 19,
+              "amount": "81.52",
+              "date": "2026-10-02"
+            },
+            {
+              "step": 47,
+              "op": "replay",
+              "root": 10
+            },
+            {
+              "step": 48,
+              "op": "replay",
+              "root": 22
+            },
+            {
+              "step": 49,
+              "op": "payment",
+              "root": 25,
+              "amount": "7.42"
+            },
+            {
+              "step": 50,
+              "op": "delete_bill",
+              "root": 13
+            },
+            {
+              "step": 51,
+              "op": "recover",
+              "group": 7
+            },
+            {
+              "step": 52,
+              "op": "recover",
+              "group": 1
+            },
+            {
+              "step": 53,
+              "op": "reverse",
+              "root": 7
+            }
+          ]
+        },
+        {
+          "kind": "active_payment_deleted_bill",
+          "seed": 0,
+          "step": 54,
+          "trace": [
+            {
+              "step": 43,
+              "op": "delete_bill",
+              "root": 16
+            },
+            {
+              "step": 44,
+              "op": "bill",
+              "root": 24,
+              "amount": "924.5",
+              "paid": "36.12"
+            },
+            {
+              "step": 45,
+              "op": "replay",
+              "root": 10
+            },
+            {
+              "step": 46,
+              "op": "edit",
+              "root": 19,
+              "amount": "81.52",
+              "date": "2026-10-02"
+            },
+            {
+              "step": 47,
+              "op": "replay",
+              "root": 10
+            },
+            {
+              "step": 48,
+              "op": "replay",
+              "root": 22
+            },
+            {
+              "step": 49,
+              "op": "payment",
+              "root": 25,
+              "amount": "7.42"
+            },
+            {
+              "step": 50,
+              "op": "delete_bill",
+              "root": 13
+            },
+            {
+              "step": 51,
+              "op": "recover",
+              "group": 7
+            },
+            {
+              "step": 52,
+              "op": "recover",
+              "group": 1
+            },
+            {
+              "step": 53,
+              "op": "reverse",
+              "root": 7
+            },
+            {
+              "step": 54,
+              "op": "edit",
+              "root": 12,
+              "amount": "47.7",
+              "date": "2026-10-03"
+            }
+          ]
+        },
+        {
+          "kind": "active_payment_deleted_bill",
+          "seed": 0,
+          "step": 55,
+          "trace": [
+            {
+              "step": 44,
+              "op": "bill",
+              "root": 24,
+              "amount": "924.5",
+              "paid": "36.12"
+            },
+            {
+              "step": 45,
+              "op": "replay",
+              "root": 10
+            },
+            {
+              "step": 46,
+              "op": "edit",
+              "root": 19,
+              "amount": "81.52",
+              "date": "2026-10-02"
+            },
+            {
+              "step": 47,
+              "op": "replay",
+              "root": 10
+            },
+            {
+              "step": 48,
+              "op": "replay",
+              "root": 22
+            },
+            {
+              "step": 49,
+              "op": "payment",
+              "root": 25,
+              "amount": "7.42"
+            },
+            {
+              "step": 50,
+              "op": "delete_bill",
+              "root": 13
+            },
+            {
+              "step": 51,
+              "op": "recover",
+              "group": 7
+            },
+            {
+              "step": 52,
+              "op": "recover",
+              "group": 1
+            },
+            {
+              "step": 53,
+              "op": "reverse",
+              "root": 7
+            },
+            {
+              "step": 54,
+              "op": "edit",
+              "root": 12,
+              "amount": "47.7",
+              "date": "2026-10-03"
+            },
+            {
+              "step": 55,
+              "op": "payment",
+              "root": 29,
+              "amount": "30.31"
+            }
+          ]
+        },
+        {
+          "kind": "active_payment_deleted_bill",
+          "seed": 0,
+          "step": 56,
+          "trace": [
+            {
+              "step": 45,
+              "op": "replay",
+              "root": 10
+            },
+            {
+              "step": 46,
+              "op": "edit",
+              "root": 19,
+              "amount": "81.52",
+              "date": "2026-10-02"
+            },
+            {
+              "step": 47,
+              "op": "replay",
+              "root": 10
+            },
+            {
+              "step": 48,
+              "op": "replay",
+              "root": 22
+            },
+            {
+              "step": 49,
+              "op": "payment",
+              "root": 25,
+              "amount": "7.42"
+            },
+            {
+              "step": 50,
+              "op": "delete_bill",
+              "root": 13
+            },
+            {
+              "step": 51,
+              "op": "recover",
+              "group": 7
+            },
+            {
+              "step": 52,
+              "op": "recover",
+              "group": 1
+            },
+            {
+              "step": 53,
+              "op": "reverse",
+              "root": 7
+            },
+            {
+              "step": 54,
+              "op": "edit",
+              "root": 12,
+              "amount": "47.7",
+              "date": "2026-10-03"
+            },
+            {
+              "step": 55,
+              "op": "payment",
+              "root": 29,
+              "amount": "30.31"
+            },
+            {
+              "step": 56,
+              "op": "delete_bill",
+              "root": 1
+            }
+          ]
+        },
+        {
+          "kind": "active_payment_deleted_bill",
+          "seed": 0,
+          "step": 57,
+          "trace": [
+            {
+              "step": 46,
+              "op": "edit",
+              "root": 19,
+              "amount": "81.52",
+              "date": "2026-10-02"
+            },
+            {
+              "step": 47,
+              "op": "replay",
+              "root": 10
+            },
+            {
+              "step": 48,
+              "op": "replay",
+              "root": 22
+            },
+            {
+              "step": 49,
+              "op": "payment",
+              "root": 25,
+              "amount": "7.42"
+            },
+            {
+              "step": 50,
+              "op": "delete_bill",
+              "root": 13
+            },
+            {
+              "step": 51,
+              "op": "recover",
+              "group": 7
+            },
+            {
+              "step": 52,
+              "op": "recover",
+              "group": 1
+            },
+            {
+              "step": 53,
+              "op": "reverse",
+              "root": 7
+            },
+            {
+              "step": 54,
+              "op": "edit",
+              "root": 12,
+              "amount": "47.7",
+              "date": "2026-10-03"
+            },
+            {
+              "step": 55,
+              "op": "payment",
+              "root": 29,
+              "amount": "30.31"
+            },
+            {
+              "step": 56,
+              "op": "delete_bill",
+              "root": 1
+            },
+            {
+              "step": 57,
+              "op": "delete_bill",
+              "root": 1
+            }
+          ]
+        },
+        {
+          "kind": "active_payment_deleted_bill",
+          "seed": 0,
+          "step": 58,
+          "trace": [
+            {
+              "step": 47,
+              "op": "replay",
+              "root": 10
+            },
+            {
+              "step": 48,
+              "op": "replay",
+              "root": 22
+            },
+            {
+              "step": 49,
+              "op": "payment",
+              "root": 25,
+              "amount": "7.42"
+            },
+            {
+              "step": 50,
+              "op": "delete_bill",
+              "root": 13
+            },
+            {
+              "step": 51,
+              "op": "recover",
+              "group": 7
+            },
+            {
+              "step": 52,
+              "op": "recover",
+              "group": 1
+            },
+            {
+              "step": 53,
+              "op": "reverse",
+              "root": 7
+            },
+            {
+              "step": 54,
+              "op": "edit",
+              "root": 12,
+              "amount": "47.7",
+              "date": "2026-10-03"
+            },
+            {
+              "step": 55,
+              "op": "payment",
+              "root": 29,
+              "amount": "30.31"
+            },
+            {
+              "step": 56,
+              "op": "delete_bill",
+              "root": 1
+            },
+            {
+              "step": 57,
+              "op": "delete_bill",
+              "root": 1
+            },
+            {
+              "step": 58,
+              "op": "recover",
+              "group": 7
+            }
+          ]
+        },
+        {
+          "kind": "active_payment_deleted_bill",
+          "seed": 0,
+          "step": 59,
+          "trace": [
+            {
+              "step": 48,
+              "op": "replay",
+              "root": 22
+            },
+            {
+              "step": 49,
+              "op": "payment",
+              "root": 25,
+              "amount": "7.42"
+            },
+            {
+              "step": 50,
+              "op": "delete_bill",
+              "root": 13
+            },
+            {
+              "step": 51,
+              "op": "recover",
+              "group": 7
+            },
+            {
+              "step": 52,
+              "op": "recover",
+              "group": 1
+            },
+            {
+              "step": 53,
+              "op": "reverse",
+              "root": 7
+            },
+            {
+              "step": 54,
+              "op": "edit",
+              "root": 12,
+              "amount": "47.7",
+              "date": "2026-10-03"
+            },
+            {
+              "step": 55,
+              "op": "payment",
+              "root": 29,
+              "amount": "30.31"
+            },
+            {
+              "step": 56,
+              "op": "delete_bill",
+              "root": 1
+            },
+            {
+              "step": 57,
+              "op": "delete_bill",
+              "root": 1
+            },
+            {
+              "step": 58,
+              "op": "recover",
+              "group": 7
+            },
+            {
+              "step": 59,
+              "op": "recover",
+              "group": 2
+            }
+          ]
+        },
+        {
+          "kind": "active_payment_deleted_bill",
+          "seed": 0,
+          "step": 60,
+          "trace": [
+            {
+              "step": 49,
+              "op": "payment",
+              "root": 25,
+              "amount": "7.42"
+            },
+            {
+              "step": 50,
+              "op": "delete_bill",
+              "root": 13
+            },
+            {
+              "step": 51,
+              "op": "recover",
+              "group": 7
+            },
+            {
+              "step": 52,
+              "op": "recover",
+              "group": 1
+            },
+            {
+              "step": 53,
+              "op": "reverse",
+              "root": 7
+            },
+            {
+              "step": 54,
+              "op": "edit",
+              "root": 12,
+              "amount": "47.7",
+              "date": "2026-10-03"
+            },
+            {
+              "step": 55,
+              "op": "payment",
+              "root": 29,
+              "amount": "30.31"
+            },
+            {
+              "step": 56,
+              "op": "delete_bill",
+              "root": 1
+            },
+            {
+              "step": 57,
+              "op": "delete_bill",
+              "root": 1
+            },
+            {
+              "step": 58,
+              "op": "recover",
+              "group": 7
+            },
+            {
+              "step": 59,
+              "op": "recover",
+              "group": 2
+            },
+            {
+              "step": 60,
+              "op": "replay",
+              "root": 12
+            }
+          ]
+        }
+      ],
+      "operations": {
+        "replay": 700,
+        "edit": 703,
+        "reverse": 681,
+        "recover": 701,
+        "skipped": 362,
+        "bill": 761,
+        "delete_bill": 729,
+        "payment": 363
+      },
+      "seconds": 365.786,
+      "first_seed": 0,
+      "wall_seconds": 416.858
+    },
+    {
+      "backend": "in-memory SQLite; races separately use file SQLite",
+      "seeds": 25,
+      "steps_per_seed": 200,
+      "completed_operations": 5000,
+      "balance_mismatches": 0,
+      "history_mismatches": 0,
+      "relationship_violations": 1139,
+      "stale_snapshot_observations": 0,
+      "examples": [
+        {
+          "kind": "active_payment_deleted_bill",
+          "seed": 26,
+          "step": 75,
+          "trace": [
+            {
+              "step": 64,
+              "op": "bill",
+              "root": 114,
+              "amount": "959.91",
+              "paid": "25.29"
+            },
+            {
+              "step": 65,
+              "op": "bill",
+              "root": 115,
+              "amount": "188.54",
+              "paid": "65.05"
+            },
+            {
+              "step": 66,
+              "op": "edit",
+              "root": 97,
+              "amount": "262.72",
+              "date": "2026-09-29"
+            },
+            {
+              "step": 67,
+              "op": "edit",
+              "root": 109,
+              "amount": "616.48",
+              "date": "2026-09-30"
+            },
+            {
+              "step": 68,
+              "op": "delete_bill",
+              "root": 102
+            },
+            {
+              "step": 69,
+              "op": "payment",
+              "root": 117,
+              "amount": "1.11"
+            },
+            {
+              "step": 70,
+              "op": "payment",
+              "root": 118,
+              "amount": "34.72"
+            },
+            {
+              "step": 71,
+              "op": "bill",
+              "root": 119,
+              "amount": "815.26",
+              "paid": "88.7"
+            },
+            {
+              "step": 72,
+              "op": "replay",
+              "root": 94
+            },
+            {
+              "step": 73,
+              "op": "recover",
+              "group": 30
+            },
+            {
+              "step": 74,
+              "op": "bill",
+              "root": 120,
+              "amount": "508.76",
+              "paid": "79.39"
+            },
+            {
+              "step": 75,
+              "op": "reverse",
+              "root": 97
+            }
+          ]
+        },
+        {
+          "kind": "active_payment_deleted_bill",
+          "seed": 26,
+          "step": 76,
+          "trace": [
+            {
+              "step": 65,
+              "op": "bill",
+              "root": 115,
+              "amount": "188.54",
+              "paid": "65.05"
+            },
+            {
+              "step": 66,
+              "op": "edit",
+              "root": 97,
+              "amount": "262.72",
+              "date": "2026-09-29"
+            },
+            {
+              "step": 67,
+              "op": "edit",
+              "root": 109,
+              "amount": "616.48",
+              "date": "2026-09-30"
+            },
+            {
+              "step": 68,
+              "op": "delete_bill",
+              "root": 102
+            },
+            {
+              "step": 69,
+              "op": "payment",
+              "root": 117,
+              "amount": "1.11"
+            },
+            {
+              "step": 70,
+              "op": "payment",
+              "root": 118,
+              "amount": "34.72"
+            },
+            {
+              "step": 71,
+              "op": "bill",
+              "root": 119,
+              "amount": "815.26",
+              "paid": "88.7"
+            },
+            {
+              "step": 72,
+              "op": "replay",
+              "root": 94
+            },
+            {
+              "step": 73,
+              "op": "recover",
+              "group": 30
+            },
+            {
+              "step": 74,
+              "op": "bill",
+              "root": 120,
+              "amount": "508.76",
+              "paid": "79.39"
+            },
+            {
+              "step": 75,
+              "op": "reverse",
+              "root": 97
+            },
+            {
+              "step": 76,
+              "op": "edit",
+              "root": 104,
+              "amount": "302.33",
+              "date": "2026-10-03"
+            }
+          ]
+        },
+        {
+          "kind": "active_payment_deleted_bill",
+          "seed": 26,
+          "step": 77,
+          "trace": [
+            {
+              "step": 66,
+              "op": "edit",
+              "root": 97,
+              "amount": "262.72",
+              "date": "2026-09-29"
+            },
+            {
+              "step": 67,
+              "op": "edit",
+              "root": 109,
+              "amount": "616.48",
+              "date": "2026-09-30"
+            },
+            {
+              "step": 68,
+              "op": "delete_bill",
+              "root": 102
+            },
+            {
+              "step": 69,
+              "op": "payment",
+              "root": 117,
+              "amount": "1.11"
+            },
+            {
+              "step": 70,
+              "op": "payment",
+              "root": 118,
+              "amount": "34.72"
+            },
+            {
+              "step": 71,
+              "op": "bill",
+              "root": 119,
+              "amount": "815.26",
+              "paid": "88.7"
+            },
+            {
+              "step": 72,
+              "op": "replay",
+              "root": 94
+            },
+            {
+              "step": 73,
+              "op": "recover",
+              "group": 30
+            },
+            {
+              "step": 74,
+              "op": "bill",
+              "root": 120,
+              "amount": "508.76",
+              "paid": "79.39"
+            },
+            {
+              "step": 75,
+              "op": "reverse",
+              "root": 97
+            },
+            {
+              "step": 76,
+              "op": "edit",
+              "root": 104,
+              "amount": "302.33",
+              "date": "2026-10-03"
+            },
+            {
+              "step": 77,
+              "op": "recover",
+              "group": 30
+            }
+          ]
+        },
+        {
+          "kind": "active_payment_deleted_bill",
+          "seed": 26,
+          "step": 78,
+          "trace": [
+            {
+              "step": 67,
+              "op": "edit",
+              "root": 109,
+              "amount": "616.48",
+              "date": "2026-09-30"
+            },
+            {
+              "step": 68,
+              "op": "delete_bill",
+              "root": 102
+            },
+            {
+              "step": 69,
+              "op": "payment",
+              "root": 117,
+              "amount": "1.11"
+            },
+            {
+              "step": 70,
+              "op": "payment",
+              "root": 118,
+              "amount": "34.72"
+            },
+            {
+              "step": 71,
+              "op": "bill",
+              "root": 119,
+              "amount": "815.26",
+              "paid": "88.7"
+            },
+            {
+              "step": 72,
+              "op": "replay",
+              "root": 94
+            },
+            {
+              "step": 73,
+              "op": "recover",
+              "group": 30
+            },
+            {
+              "step": 74,
+              "op": "bill",
+              "root": 120,
+              "amount": "508.76",
+              "paid": "79.39"
+            },
+            {
+              "step": 75,
+              "op": "reverse",
+              "root": 97
+            },
+            {
+              "step": 76,
+              "op": "edit",
+              "root": 104,
+              "amount": "302.33",
+              "date": "2026-10-03"
+            },
+            {
+              "step": 77,
+              "op": "recover",
+              "group": 30
+            },
+            {
+              "step": 78,
+              "op": "edit",
+              "root": 109,
+              "amount": "546.76",
+              "date": "2026-09-30"
+            }
+          ]
+        },
+        {
+          "kind": "active_payment_deleted_bill",
+          "seed": 26,
+          "step": 79,
+          "trace": [
+            {
+              "step": 68,
+              "op": "delete_bill",
+              "root": 102
+            },
+            {
+              "step": 69,
+              "op": "payment",
+              "root": 117,
+              "amount": "1.11"
+            },
+            {
+              "step": 70,
+              "op": "payment",
+              "root": 118,
+              "amount": "34.72"
+            },
+            {
+              "step": 71,
+              "op": "bill",
+              "root": 119,
+              "amount": "815.26",
+              "paid": "88.7"
+            },
+            {
+              "step": 72,
+              "op": "replay",
+              "root": 94
+            },
+            {
+              "step": 73,
+              "op": "recover",
+              "group": 30
+            },
+            {
+              "step": 74,
+              "op": "bill",
+              "root": 120,
+              "amount": "508.76",
+              "paid": "79.39"
+            },
+            {
+              "step": 75,
+              "op": "reverse",
+              "root": 97
+            },
+            {
+              "step": 76,
+              "op": "edit",
+              "root": 104,
+              "amount": "302.33",
+              "date": "2026-10-03"
+            },
+            {
+              "step": 77,
+              "op": "recover",
+              "group": 30
+            },
+            {
+              "step": 78,
+              "op": "edit",
+              "root": 109,
+              "amount": "546.76",
+              "date": "2026-09-30"
+            },
+            {
+              "step": 79,
+              "op": "delete_bill",
+              "root": 120
+            }
+          ]
+        },
+        {
+          "kind": "active_payment_deleted_bill",
+          "seed": 26,
+          "step": 80,
+          "trace": [
+            {
+              "step": 69,
+              "op": "payment",
+              "root": 117,
+              "amount": "1.11"
+            },
+            {
+              "step": 70,
+              "op": "payment",
+              "root": 118,
+              "amount": "34.72"
+            },
+            {
+              "step": 71,
+              "op": "bill",
+              "root": 119,
+              "amount": "815.26",
+              "paid": "88.7"
+            },
+            {
+              "step": 72,
+              "op": "replay",
+              "root": 94
+            },
+            {
+              "step": 73,
+              "op": "recover",
+              "group": 30
+            },
+            {
+              "step": 74,
+              "op": "bill",
+              "root": 120,
+              "amount": "508.76",
+              "paid": "79.39"
+            },
+            {
+              "step": 75,
+              "op": "reverse",
+              "root": 97
+            },
+            {
+              "step": 76,
+              "op": "edit",
+              "root": 104,
+              "amount": "302.33",
+              "date": "2026-10-03"
+            },
+            {
+              "step": 77,
+              "op": "recover",
+              "group": 30
+            },
+            {
+              "step": 78,
+              "op": "edit",
+              "root": 109,
+              "amount": "546.76",
+              "date": "2026-09-30"
+            },
+            {
+              "step": 79,
+              "op": "delete_bill",
+              "root": 120
+            },
+            {
+              "step": 80,
+              "op": "reverse",
+              "root": 118
+            }
+          ]
+        },
+        {
+          "kind": "active_payment_deleted_bill",
+          "seed": 26,
+          "step": 81,
+          "trace": [
+            {
+              "step": 70,
+              "op": "payment",
+              "root": 118,
+              "amount": "34.72"
+            },
+            {
+              "step": 71,
+              "op": "bill",
+              "root": 119,
+              "amount": "815.26",
+              "paid": "88.7"
+            },
+            {
+              "step": 72,
+              "op": "replay",
+              "root": 94
+            },
+            {
+              "step": 73,
+              "op": "recover",
+              "group": 30
+            },
+            {
+              "step": 74,
+              "op": "bill",
+              "root": 120,
+              "amount": "508.76",
+              "paid": "79.39"
+            },
+            {
+              "step": 75,
+              "op": "reverse",
+              "root": 97
+            },
+            {
+              "step": 76,
+              "op": "edit",
+              "root": 104,
+              "amount": "302.33",
+              "date": "2026-10-03"
+            },
+            {
+              "step": 77,
+              "op": "recover",
+              "group": 30
+            },
+            {
+              "step": 78,
+              "op": "edit",
+              "root": 109,
+              "amount": "546.76",
+              "date": "2026-09-30"
+            },
+            {
+              "step": 79,
+              "op": "delete_bill",
+              "root": 120
+            },
+            {
+              "step": 80,
+              "op": "reverse",
+              "root": 118
+            },
+            {
+              "step": 81,
+              "op": "delete_bill",
+              "root": 119
+            }
+          ]
+        },
+        {
+          "kind": "active_payment_deleted_bill",
+          "seed": 26,
+          "step": 82,
+          "trace": [
+            {
+              "step": 71,
+              "op": "bill",
+              "root": 119,
+              "amount": "815.26",
+              "paid": "88.7"
+            },
+            {
+              "step": 72,
+              "op": "replay",
+              "root": 94
+            },
+            {
+              "step": 73,
+              "op": "recover",
+              "group": 30
+            },
+            {
+              "step": 74,
+              "op": "bill",
+              "root": 120,
+              "amount": "508.76",
+              "paid": "79.39"
+            },
+            {
+              "step": 75,
+              "op": "reverse",
+              "root": 97
+            },
+            {
+              "step": 76,
+              "op": "edit",
+              "root": 104,
+              "amount": "302.33",
+              "date": "2026-10-03"
+            },
+            {
+              "step": 77,
+              "op": "recover",
+              "group": 30
+            },
+            {
+              "step": 78,
+              "op": "edit",
+              "root": 109,
+              "amount": "546.76",
+              "date": "2026-09-30"
+            },
+            {
+              "step": 79,
+              "op": "delete_bill",
+              "root": 120
+            },
+            {
+              "step": 80,
+              "op": "reverse",
+              "root": 118
+            },
+            {
+              "step": 81,
+              "op": "delete_bill",
+              "root": 119
+            },
+            {
+              "step": 82,
+              "op": "edit",
+              "root": 104,
+              "amount": "998.25",
+              "date": "2026-09-29"
+            }
+          ]
+        }
+      ],
+      "operations": {
+        "reverse": 688,
+        "replay": 710,
+        "delete_bill": 682,
+        "bill": 766,
+        "recover": 751,
+        "skipped": 395,
+        "edit": 673,
+        "payment": 335
+      },
+      "seconds": 366.863,
+      "first_seed": 25,
+      "wall_seconds": 416.592
+    },
+    {
+      "backend": "in-memory SQLite; races separately use file SQLite",
+      "seeds": 25,
+      "steps_per_seed": 200,
+      "completed_operations": 5000,
+      "balance_mismatches": 0,
+      "history_mismatches": 0,
+      "relationship_violations": 1089,
+      "stale_snapshot_observations": 0,
+      "examples": [
+        {
+          "kind": "active_payment_deleted_bill",
+          "seed": 50,
+          "step": 15,
+          "trace": [
+            {
+              "step": 4,
+              "op": "delete_bill",
+              "root": 1
+            },
+            {
+              "step": 5,
+              "op": "payment",
+              "root": 4,
+              "amount": "56.89"
+            },
+            {
+              "step": 6,
+              "op": "payment",
+              "root": 5,
+              "amount": "30.97"
+            },
+            {
+              "step": 7,
+              "op": "delete_bill",
+              "root": 1
+            },
+            {
+              "step": 8,
+              "op": "bill",
+              "root": 6,
+              "amount": "908.53",
+              "paid": "98.94"
+            },
+            {
+              "step": 9,
+              "op": "replay",
+              "root": 5
+            },
+            {
+              "step": 10,
+              "op": "bill",
+              "root": 7,
+              "amount": "297.83",
+              "paid": "55.28"
+            },
+            {
+              "step": 11,
+              "op": "replay",
+              "root": 5
+            },
+            {
+              "step": 12,
+              "op": "delete_bill",
+              "root": 1
+            },
+            {
+              "step": 13,
+              "op": "payment",
+              "root": 8,
+              "amount": "72.54"
+            },
+            {
+              "step": 14,
+              "op": "payment",
+              "root": 9,
+              "amount": "44.19"
+            },
+            {
+              "step": 15,
+              "op": "reverse",
+              "root": 3
+            }
+          ]
+        },
+        {
+          "kind": "active_payment_deleted_bill",
+          "seed": 50,
+          "step": 16,
+          "trace": [
+            {
+              "step": 5,
+              "op": "payment",
+              "root": 4,
+              "amount": "56.89"
+            },
+            {
+              "step": 6,
+              "op": "payment",
+              "root": 5,
+              "amount": "30.97"
+            },
+            {
+              "step": 7,
+              "op": "delete_bill",
+              "root": 1
+            },
+            {
+              "step": 8,
+              "op": "bill",
+              "root": 6,
+              "amount": "908.53",
+              "paid": "98.94"
+            },
+            {
+              "step": 9,
+              "op": "replay",
+              "root": 5
+            },
+            {
+              "step": 10,
+              "op": "bill",
+              "root": 7,
+              "amount": "297.83",
+              "paid": "55.28"
+            },
+            {
+              "step": 11,
+              "op": "replay",
+              "root": 5
+            },
+            {
+              "step": 12,
+              "op": "delete_bill",
+              "root": 1
+            },
+            {
+              "step": 13,
+              "op": "payment",
+              "root": 8,
+              "amount": "72.54"
+            },
+            {
+              "step": 14,
+              "op": "payment",
+              "root": 9,
+              "amount": "44.19"
+            },
+            {
+              "step": 15,
+              "op": "reverse",
+              "root": 3
+            },
+            {
+              "step": 16,
+              "op": "replay",
+              "root": 9
+            }
+          ]
+        },
+        {
+          "kind": "active_payment_deleted_bill",
+          "seed": 50,
+          "step": 17,
+          "trace": [
+            {
+              "step": 6,
+              "op": "payment",
+              "root": 5,
+              "amount": "30.97"
+            },
+            {
+              "step": 7,
+              "op": "delete_bill",
+              "root": 1
+            },
+            {
+              "step": 8,
+              "op": "bill",
+              "root": 6,
+              "amount": "908.53",
+              "paid": "98.94"
+            },
+            {
+              "step": 9,
+              "op": "replay",
+              "root": 5
+            },
+            {
+              "step": 10,
+              "op": "bill",
+              "root": 7,
+              "amount": "297.83",
+              "paid": "55.28"
+            },
+            {
+              "step": 11,
+              "op": "replay",
+              "root": 5
+            },
+            {
+              "step": 12,
+              "op": "delete_bill",
+              "root": 1
+            },
+            {
+              "step": 13,
+              "op": "payment",
+              "root": 8,
+              "amount": "72.54"
+            },
+            {
+              "step": 14,
+              "op": "payment",
+              "root": 9,
+              "amount": "44.19"
+            },
+            {
+              "step": 15,
+              "op": "reverse",
+              "root": 3
+            },
+            {
+              "step": 16,
+              "op": "replay",
+              "root": 9
+            },
+            {
+              "step": 17,
+              "op": "reverse",
+              "root": 4
+            }
+          ]
+        },
+        {
+          "kind": "active_payment_deleted_bill",
+          "seed": 50,
+          "step": 18,
+          "trace": [
+            {
+              "step": 7,
+              "op": "delete_bill",
+              "root": 1
+            },
+            {
+              "step": 8,
+              "op": "bill",
+              "root": 6,
+              "amount": "908.53",
+              "paid": "98.94"
+            },
+            {
+              "step": 9,
+              "op": "replay",
+              "root": 5
+            },
+            {
+              "step": 10,
+              "op": "bill",
+              "root": 7,
+              "amount": "297.83",
+              "paid": "55.28"
+            },
+            {
+              "step": 11,
+              "op": "replay",
+              "root": 5
+            },
+            {
+              "step": 12,
+              "op": "delete_bill",
+              "root": 1
+            },
+            {
+              "step": 13,
+              "op": "payment",
+              "root": 8,
+              "amount": "72.54"
+            },
+            {
+              "step": 14,
+              "op": "payment",
+              "root": 9,
+              "amount": "44.19"
+            },
+            {
+              "step": 15,
+              "op": "reverse",
+              "root": 3
+            },
+            {
+              "step": 16,
+              "op": "replay",
+              "root": 9
+            },
+            {
+              "step": 17,
+              "op": "reverse",
+              "root": 4
+            },
+            {
+              "step": 18,
+              "op": "reverse",
+              "root": 6
+            }
+          ]
+        },
+        {
+          "kind": "active_payment_deleted_bill",
+          "seed": 50,
+          "step": 19,
+          "trace": [
+            {
+              "step": 8,
+              "op": "bill",
+              "root": 6,
+              "amount": "908.53",
+              "paid": "98.94"
+            },
+            {
+              "step": 9,
+              "op": "replay",
+              "root": 5
+            },
+            {
+              "step": 10,
+              "op": "bill",
+              "root": 7,
+              "amount": "297.83",
+              "paid": "55.28"
+            },
+            {
+              "step": 11,
+              "op": "replay",
+              "root": 5
+            },
+            {
+              "step": 12,
+              "op": "delete_bill",
+              "root": 1
+            },
+            {
+              "step": 13,
+              "op": "payment",
+              "root": 8,
+              "amount": "72.54"
+            },
+            {
+              "step": 14,
+              "op": "payment",
+              "root": 9,
+              "amount": "44.19"
+            },
+            {
+              "step": 15,
+              "op": "reverse",
+              "root": 3
+            },
+            {
+              "step": 16,
+              "op": "replay",
+              "root": 9
+            },
+            {
+              "step": 17,
+              "op": "reverse",
+              "root": 4
+            },
+            {
+              "step": 18,
+              "op": "reverse",
+              "root": 6
+            },
+            {
+              "step": 19,
+              "op": "bill",
+              "root": 13,
+              "amount": "482.01",
+              "paid": "84.66"
+            }
+          ]
+        },
+        {
+          "kind": "active_payment_deleted_bill",
+          "seed": 50,
+          "step": 20,
+          "trace": [
+            {
+              "step": 9,
+              "op": "replay",
+              "root": 5
+            },
+            {
+              "step": 10,
+              "op": "bill",
+              "root": 7,
+              "amount": "297.83",
+              "paid": "55.28"
+            },
+            {
+              "step": 11,
+              "op": "replay",
+              "root": 5
+            },
+            {
+              "step": 12,
+              "op": "delete_bill",
+              "root": 1
+            },
+            {
+              "step": 13,
+              "op": "payment",
+              "root": 8,
+              "amount": "72.54"
+            },
+            {
+              "step": 14,
+              "op": "payment",
+              "root": 9,
+              "amount": "44.19"
+            },
+            {
+              "step": 15,
+              "op": "reverse",
+              "root": 3
+            },
+            {
+              "step": 16,
+              "op": "replay",
+              "root": 9
+            },
+            {
+              "step": 17,
+              "op": "reverse",
+              "root": 4
+            },
+            {
+              "step": 18,
+              "op": "reverse",
+              "root": 6
+            },
+            {
+              "step": 19,
+              "op": "bill",
+              "root": 13,
+              "amount": "482.01",
+              "paid": "84.66"
+            },
+            {
+              "step": 20,
+              "op": "bill",
+              "root": 14,
+              "amount": "469.76",
+              "paid": "1.47"
+            }
+          ]
+        },
+        {
+          "kind": "active_payment_deleted_bill",
+          "seed": 50,
+          "step": 21,
+          "trace": [
+            {
+              "step": 10,
+              "op": "bill",
+              "root": 7,
+              "amount": "297.83",
+              "paid": "55.28"
+            },
+            {
+              "step": 11,
+              "op": "replay",
+              "root": 5
+            },
+            {
+              "step": 12,
+              "op": "delete_bill",
+              "root": 1
+            },
+            {
+              "step": 13,
+              "op": "payment",
+              "root": 8,
+              "amount": "72.54"
+            },
+            {
+              "step": 14,
+              "op": "payment",
+              "root": 9,
+              "amount": "44.19"
+            },
+            {
+              "step": 15,
+              "op": "reverse",
+              "root": 3
+            },
+            {
+              "step": 16,
+              "op": "replay",
+              "root": 9
+            },
+            {
+              "step": 17,
+              "op": "reverse",
+              "root": 4
+            },
+            {
+              "step": 18,
+              "op": "reverse",
+              "root": 6
+            },
+            {
+              "step": 19,
+              "op": "bill",
+              "root": 13,
+              "amount": "482.01",
+              "paid": "84.66"
+            },
+            {
+              "step": 20,
+              "op": "bill",
+              "root": 14,
+              "amount": "469.76",
+              "paid": "1.47"
+            },
+            {
+              "step": 21,
+              "op": "reverse",
+              "root": 13
+            }
+          ]
+        },
+        {
+          "kind": "active_payment_deleted_bill",
+          "seed": 50,
+          "step": 22,
+          "trace": [
+            {
+              "step": 11,
+              "op": "replay",
+              "root": 5
+            },
+            {
+              "step": 12,
+              "op": "delete_bill",
+              "root": 1
+            },
+            {
+              "step": 13,
+              "op": "payment",
+              "root": 8,
+              "amount": "72.54"
+            },
+            {
+              "step": 14,
+              "op": "payment",
+              "root": 9,
+              "amount": "44.19"
+            },
+            {
+              "step": 15,
+              "op": "reverse",
+              "root": 3
+            },
+            {
+              "step": 16,
+              "op": "replay",
+              "root": 9
+            },
+            {
+              "step": 17,
+              "op": "reverse",
+              "root": 4
+            },
+            {
+              "step": 18,
+              "op": "reverse",
+              "root": 6
+            },
+            {
+              "step": 19,
+              "op": "bill",
+              "root": 13,
+              "amount": "482.01",
+              "paid": "84.66"
+            },
+            {
+              "step": 20,
+              "op": "bill",
+              "root": 14,
+              "amount": "469.76",
+              "paid": "1.47"
+            },
+            {
+              "step": 21,
+              "op": "reverse",
+              "root": 13
+            },
+            {
+              "step": 22,
+              "op": "replay",
+              "root": 5
+            }
+          ]
+        }
+      ],
+      "operations": {
+        "reverse": 752,
+        "delete_bill": 682,
+        "replay": 703,
+        "bill": 709,
+        "payment": 370,
+        "edit": 689,
+        "recover": 727,
+        "skipped": 368
+      },
+      "seconds": 360.692,
+      "first_seed": 50,
+      "wall_seconds": 408.86
+    },
+    {
+      "backend": "in-memory SQLite; races separately use file SQLite",
+      "seeds": 25,
+      "steps_per_seed": 200,
+      "completed_operations": 5000,
+      "balance_mismatches": 0,
+      "history_mismatches": 0,
+      "relationship_violations": 1025,
+      "stale_snapshot_observations": 0,
+      "examples": [
+        {
+          "kind": "active_payment_deleted_bill",
+          "seed": 76,
+          "step": 36,
+          "trace": [
+            {
+              "step": 25,
+              "op": "reverse",
+              "root": 89
+            },
+            {
+              "step": 26,
+              "op": "delete_bill",
+              "root": 76
+            },
+            {
+              "step": 27,
+              "op": "delete_bill",
+              "root": 78
+            },
+            {
+              "step": 28,
+              "op": "bill",
+              "root": 96,
+              "amount": "731.27",
+              "paid": "8.93"
+            },
+            {
+              "step": 29,
+              "op": "bill",
+              "root": 97,
+              "amount": "950.91",
+              "paid": "35.9"
+            },
+            {
+              "step": 30,
+              "op": "delete_bill",
+              "root": 85
+            },
+            {
+              "step": 31,
+              "op": "reverse",
+              "root": 93
+            },
+            {
+              "step": 32,
+              "op": "bill",
+              "root": 99,
+              "amount": "658.1",
+              "paid": "14.08"
+            },
+            {
+              "step": 33,
+              "op": "edit",
+              "root": 99,
+              "amount": "420.57",
+              "date": "2026-10-02"
+            },
+            {
+              "step": 34,
+              "op": "bill",
+              "root": 100,
+              "amount": "564.89",
+              "paid": "20.14"
+            },
+            {
+              "step": 35,
+              "op": "edit",
+              "root": 96,
+              "amount": "529.6",
+              "date": "2026-09-26"
+            },
+            {
+              "step": 36,
+              "op": "reverse",
+              "root": 88
+            }
+          ]
+        },
+        {
+          "kind": "active_payment_deleted_bill",
+          "seed": 76,
+          "step": 37,
+          "trace": [
+            {
+              "step": 26,
+              "op": "delete_bill",
+              "root": 76
+            },
+            {
+              "step": 27,
+              "op": "delete_bill",
+              "root": 78
+            },
+            {
+              "step": 28,
+              "op": "bill",
+              "root": 96,
+              "amount": "731.27",
+              "paid": "8.93"
+            },
+            {
+              "step": 29,
+              "op": "bill",
+              "root": 97,
+              "amount": "950.91",
+              "paid": "35.9"
+            },
+            {
+              "step": 30,
+              "op": "delete_bill",
+              "root": 85
+            },
+            {
+              "step": 31,
+              "op": "reverse",
+              "root": 93
+            },
+            {
+              "step": 32,
+              "op": "bill",
+              "root": 99,
+              "amount": "658.1",
+              "paid": "14.08"
+            },
+            {
+              "step": 33,
+              "op": "edit",
+              "root": 99,
+              "amount": "420.57",
+              "date": "2026-10-02"
+            },
+            {
+              "step": 34,
+              "op": "bill",
+              "root": 100,
+              "amount": "564.89",
+              "paid": "20.14"
+            },
+            {
+              "step": 35,
+              "op": "edit",
+              "root": 96,
+              "amount": "529.6",
+              "date": "2026-09-26"
+            },
+            {
+              "step": 36,
+              "op": "reverse",
+              "root": 88
+            },
+            {
+              "step": 37,
+              "op": "recover",
+              "group": 32
+            }
+          ]
+        },
+        {
+          "kind": "active_payment_deleted_bill",
+          "seed": 76,
+          "step": 38,
+          "trace": [
+            {
+              "step": 27,
+              "op": "delete_bill",
+              "root": 78
+            },
+            {
+              "step": 28,
+              "op": "bill",
+              "root": 96,
+              "amount": "731.27",
+              "paid": "8.93"
+            },
+            {
+              "step": 29,
+              "op": "bill",
+              "root": 97,
+              "amount": "950.91",
+              "paid": "35.9"
+            },
+            {
+              "step": 30,
+              "op": "delete_bill",
+              "root": 85
+            },
+            {
+              "step": 31,
+              "op": "reverse",
+              "root": 93
+            },
+            {
+              "step": 32,
+              "op": "bill",
+              "root": 99,
+              "amount": "658.1",
+              "paid": "14.08"
+            },
+            {
+              "step": 33,
+              "op": "edit",
+              "root": 99,
+              "amount": "420.57",
+              "date": "2026-10-02"
+            },
+            {
+              "step": 34,
+              "op": "bill",
+              "root": 100,
+              "amount": "564.89",
+              "paid": "20.14"
+            },
+            {
+              "step": 35,
+              "op": "edit",
+              "root": 96,
+              "amount": "529.6",
+              "date": "2026-09-26"
+            },
+            {
+              "step": 36,
+              "op": "reverse",
+              "root": 88
+            },
+            {
+              "step": 37,
+              "op": "recover",
+              "group": 32
+            },
+            {
+              "step": 38,
+              "op": "replay",
+              "root": 100
+            }
+          ]
+        },
+        {
+          "kind": "active_payment_deleted_bill",
+          "seed": 76,
+          "step": 39,
+          "trace": [
+            {
+              "step": 28,
+              "op": "bill",
+              "root": 96,
+              "amount": "731.27",
+              "paid": "8.93"
+            },
+            {
+              "step": 29,
+              "op": "bill",
+              "root": 97,
+              "amount": "950.91",
+              "paid": "35.9"
+            },
+            {
+              "step": 30,
+              "op": "delete_bill",
+              "root": 85
+            },
+            {
+              "step": 31,
+              "op": "reverse",
+              "root": 93
+            },
+            {
+              "step": 32,
+              "op": "bill",
+              "root": 99,
+              "amount": "658.1",
+              "paid": "14.08"
+            },
+            {
+              "step": 33,
+              "op": "edit",
+              "root": 99,
+              "amount": "420.57",
+              "date": "2026-10-02"
+            },
+            {
+              "step": 34,
+              "op": "bill",
+              "root": 100,
+              "amount": "564.89",
+              "paid": "20.14"
+            },
+            {
+              "step": 35,
+              "op": "edit",
+              "root": 96,
+              "amount": "529.6",
+              "date": "2026-09-26"
+            },
+            {
+              "step": 36,
+              "op": "reverse",
+              "root": 88
+            },
+            {
+              "step": 37,
+              "op": "recover",
+              "group": 32
+            },
+            {
+              "step": 38,
+              "op": "replay",
+              "root": 100
+            },
+            {
+              "step": 39,
+              "op": "bill",
+              "root": 103,
+              "amount": "377.9",
+              "paid": "63.99"
+            }
+          ]
+        },
+        {
+          "kind": "active_payment_deleted_bill",
+          "seed": 76,
+          "step": 40,
+          "trace": [
+            {
+              "step": 29,
+              "op": "bill",
+              "root": 97,
+              "amount": "950.91",
+              "paid": "35.9"
+            },
+            {
+              "step": 30,
+              "op": "delete_bill",
+              "root": 85
+            },
+            {
+              "step": 31,
+              "op": "reverse",
+              "root": 93
+            },
+            {
+              "step": 32,
+              "op": "bill",
+              "root": 99,
+              "amount": "658.1",
+              "paid": "14.08"
+            },
+            {
+              "step": 33,
+              "op": "edit",
+              "root": 99,
+              "amount": "420.57",
+              "date": "2026-10-02"
+            },
+            {
+              "step": 34,
+              "op": "bill",
+              "root": 100,
+              "amount": "564.89",
+              "paid": "20.14"
+            },
+            {
+              "step": 35,
+              "op": "edit",
+              "root": 96,
+              "amount": "529.6",
+              "date": "2026-09-26"
+            },
+            {
+              "step": 36,
+              "op": "reverse",
+              "root": 88
+            },
+            {
+              "step": 37,
+              "op": "recover",
+              "group": 32
+            },
+            {
+              "step": 38,
+              "op": "replay",
+              "root": 100
+            },
+            {
+              "step": 39,
+              "op": "bill",
+              "root": 103,
+              "amount": "377.9",
+              "paid": "63.99"
+            },
+            {
+              "step": 40,
+              "op": "payment",
+              "root": 104,
+              "amount": "51.5"
+            }
+          ]
+        },
+        {
+          "kind": "active_payment_deleted_bill",
+          "seed": 76,
+          "step": 41,
+          "trace": [
+            {
+              "step": 30,
+              "op": "delete_bill",
+              "root": 85
+            },
+            {
+              "step": 31,
+              "op": "reverse",
+              "root": 93
+            },
+            {
+              "step": 32,
+              "op": "bill",
+              "root": 99,
+              "amount": "658.1",
+              "paid": "14.08"
+            },
+            {
+              "step": 33,
+              "op": "edit",
+              "root": 99,
+              "amount": "420.57",
+              "date": "2026-10-02"
+            },
+            {
+              "step": 34,
+              "op": "bill",
+              "root": 100,
+              "amount": "564.89",
+              "paid": "20.14"
+            },
+            {
+              "step": 35,
+              "op": "edit",
+              "root": 96,
+              "amount": "529.6",
+              "date": "2026-09-26"
+            },
+            {
+              "step": 36,
+              "op": "reverse",
+              "root": 88
+            },
+            {
+              "step": 37,
+              "op": "recover",
+              "group": 32
+            },
+            {
+              "step": 38,
+              "op": "replay",
+              "root": 100
+            },
+            {
+              "step": 39,
+              "op": "bill",
+              "root": 103,
+              "amount": "377.9",
+              "paid": "63.99"
+            },
+            {
+              "step": 40,
+              "op": "payment",
+              "root": 104,
+              "amount": "51.5"
+            },
+            {
+              "step": 41,
+              "op": "reverse",
+              "root": 89
+            }
+          ]
+        },
+        {
+          "kind": "active_payment_deleted_bill",
+          "seed": 76,
+          "step": 42,
+          "trace": [
+            {
+              "step": 31,
+              "op": "reverse",
+              "root": 93
+            },
+            {
+              "step": 32,
+              "op": "bill",
+              "root": 99,
+              "amount": "658.1",
+              "paid": "14.08"
+            },
+            {
+              "step": 33,
+              "op": "edit",
+              "root": 99,
+              "amount": "420.57",
+              "date": "2026-10-02"
+            },
+            {
+              "step": 34,
+              "op": "bill",
+              "root": 100,
+              "amount": "564.89",
+              "paid": "20.14"
+            },
+            {
+              "step": 35,
+              "op": "edit",
+              "root": 96,
+              "amount": "529.6",
+              "date": "2026-09-26"
+            },
+            {
+              "step": 36,
+              "op": "reverse",
+              "root": 88
+            },
+            {
+              "step": 37,
+              "op": "recover",
+              "group": 32
+            },
+            {
+              "step": 38,
+              "op": "replay",
+              "root": 100
+            },
+            {
+              "step": 39,
+              "op": "bill",
+              "root": 103,
+              "amount": "377.9",
+              "paid": "63.99"
+            },
+            {
+              "step": 40,
+              "op": "payment",
+              "root": 104,
+              "amount": "51.5"
+            },
+            {
+              "step": 41,
+              "op": "reverse",
+              "root": 89
+            },
+            {
+              "step": 42,
+              "op": "reverse",
+              "root": 93
+            }
+          ]
+        },
+        {
+          "kind": "active_payment_deleted_bill",
+          "seed": 76,
+          "step": 43,
+          "trace": [
+            {
+              "step": 32,
+              "op": "bill",
+              "root": 99,
+              "amount": "658.1",
+              "paid": "14.08"
+            },
+            {
+              "step": 33,
+              "op": "edit",
+              "root": 99,
+              "amount": "420.57",
+              "date": "2026-10-02"
+            },
+            {
+              "step": 34,
+              "op": "bill",
+              "root": 100,
+              "amount": "564.89",
+              "paid": "20.14"
+            },
+            {
+              "step": 35,
+              "op": "edit",
+              "root": 96,
+              "amount": "529.6",
+              "date": "2026-09-26"
+            },
+            {
+              "step": 36,
+              "op": "reverse",
+              "root": 88
+            },
+            {
+              "step": 37,
+              "op": "recover",
+              "group": 32
+            },
+            {
+              "step": 38,
+              "op": "replay",
+              "root": 100
+            },
+            {
+              "step": 39,
+              "op": "bill",
+              "root": 103,
+              "amount": "377.9",
+              "paid": "63.99"
+            },
+            {
+              "step": 40,
+              "op": "payment",
+              "root": 104,
+              "amount": "51.5"
+            },
+            {
+              "step": 41,
+              "op": "reverse",
+              "root": 89
+            },
+            {
+              "step": 42,
+              "op": "reverse",
+              "root": 93
+            },
+            {
+              "step": 43,
+              "op": "recover",
+              "group": 31
+            }
+          ]
+        }
+      ],
+      "operations": {
+        "reverse": 672,
+        "delete_bill": 719,
+        "bill": 663,
+        "edit": 673,
+        "recover": 746,
+        "skipped": 459,
+        "replay": 708,
+        "payment": 360
+      },
+      "seconds": 345.076,
+      "first_seed": 75,
+      "wall_seconds": 395.894
+    }
+  ],
+  "source_sha256": {
+    "ledger\\admin.py": "4ebbc5dd78dd7d09aed481357728d4b691ed4fdbd799773249729a12b19f39eb",
+    "ledger\\apps.py": "07a9bbcbfb5413f393232a7571d3122dfbcfc2bbe2f730d3fb8020ea2cca00c9",
+    "ledger\\backup.py": "93824d7327fa6cdd97ab0e314df390c11bfbb64fdf81fd5fe2b1f0939cbe7d99",
+    "ledger\\batch_context.py": "3125f297cc15ae67ad3ed3cb607f342e2b3e9c589f6292063d661358de768917",
+    "ledger\\bilingual.py": "b2767c8362dc100076027cac1317f980f6fda04350ff7e23a17caf134f6fc5ff",
+    "ledger\\drive_backup.py": "31ee936722a4132765f2fe0869f6d26f4783884010cc6f3247932594dbe0d8f3",
+    "ledger\\forms.py": "636f7a242536d74df9143d5cd1e104c68bf58e86b5b889fe404da9b92b22e9f5",
+    "ledger\\insights.py": "939161c47e1082ad57528a6e69e0e1ce8c80b886a2cdcd4a44e7a51ff34a4973",
+    "ledger\\models.py": "8695888886694775272d6da68aaf6c0fc38a82a4e09ec0edac2bfc76508d52a8",
+    "ledger\\money.py": "7d8010bbc79dbb5bd7036d85e930d7dd162ea8ed983a49246d362fca86c8ebfa",
+    "ledger\\services.py": "566c3ae32e14e3a531dc345904b7aa1bef811412baa75c3274f53de798f58b60",
+    "ledger\\signals.py": "730c453f0016a74627b89c3d8f95fd3718054f01b3989a1802a76479814d59de",
+    "ledger\\tests.py": "48d2daa2487d52b21ef7150a197df7fdf2a48ab0364491d7d65cdd9db4095c9c",
+    "ledger\\test_bilingual.py": "6925abc023f481cc55ec4e54796b2c8ea5877f822e232d5c00c8bfbdc45d5dfb",
+    "ledger\\test_bill_edit.py": "b10f5784fd9a4df686087ffde84a4938e2892e916830b5d65ba33f49dd7dcd8e",
+    "ledger\\test_dashboard.py": "aa7ef5756cb53332c417a1be042146ea1ef6eeec09e9417211dc0eeb791361cc",
+    "ledger\\test_integrity.py": "5a583f73b8b9ffe9afe1e5ad900bbb03cb73700a159cdc1f34427382174c65d6",
+    "ledger\\test_migrations.py": "be86242febaa5667b42a3e287be0acfb6d0834a13ed97b34f15147c693508e39",
+    "ledger\\test_page_views.py": "28052f489d7ac717d2dd6efc271755e8d8b95553a9f9aa50b02d5a26b3ad20e4",
+    "ledger\\test_recovery.py": "872b176aa0f16668dbd8982e3aab28ebc5e5560bbf589f7b61a8401a24c09cda",
+    "ledger\\urls.py": "c36c8eaf45815102b309da86ea7fdb703f327db823a333d11719883078c31273",
+    "ledger\\views.py": "d7f3b5450342c5574f6304d8dff8d960d041e5b6a1fe9742f6a9ec8032cc037d",
+    "ledger\\__init__.py": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "ledger\\migrations\\0001_initial.py": "45fdfa5f69e80d51b488b611e396132e15db080013bc864e919d9cf910638540",
+    "ledger\\migrations\\0002_alter_ledgerentry_entry_type.py": "0ee8d4319724b92d14606b2edd4708c2ccf759aa6c93e3677c2465fd5002519e",
+    "ledger\\migrations\\0003_representative_created_at.py": "33c93ab42f083c0b55f0b7bd4f4d4bd709ae14290489216dddd0fc3ffaeb344d",
+    "ledger\\migrations\\0004_ledgerentry_deleted_at_ledgerentry_is_deleted.py": "5359af29c85cfd320bc600caa625d69bf8437c1f0f53dd8ddf6dddd62744999d",
+    "ledger\\migrations\\0005_firm_deleted_at_firm_is_deleted_and_more.py": "4f91784b2b92573330435492d0df67a0d171cd3be5175a3d756f078fb80eda0d",
+    "ledger\\migrations\\0006_transaction_batches_and_balance_lock.py": "24dedbd1545cbcba53afaaf689a05d36dd76a4e8312bda07824f0949e4912da5",
+    "ledger\\migrations\\0007_timed_deletion_groups.py": "4075aa25de26cc77ad3baa8064fe819a5272ec8ce77e385097e212563be828cb",
+    "ledger\\migrations\\0008_ledger_integrity.py": "77182eff6b85594fe8650735bfaba49508e578ceab914b5969bef523d414c39a",
+    "ledger\\migrations\\0009_exact_cent_constraints.py": "2d8263bcb53fcd40dafc9634ac202183514851766c3e95c419bab83e25d47563",
+    "ledger\\migrations\\0010_snapshot_bounds.py": "05002ee7af8b102defb7e4c92dfedfde64e2bfbd150233335a8f5ddd06ddb2cb",
+    "ledger\\migrations\\0011_immutable_actor_identity.py": "684455e6b82c5865e55b55c9b6cffbc8758ef95836121eb2e27efeaa4b90ac2f",
+    "ledger\\migrations\\_integrity_preflight.py": "7f8996fc4fc7872f740d86c8422f26bb1efcc0de1860ff36bbe4e2a22dd1fa1d",
+    "ledger\\migrations\\__init__.py": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "ledger\\templatetags\\bilingual.py": "9c32b7e162643b6718d4d4ef203bed3214516e3734b829d29d5ff781e743ebb4",
+    "ledger\\templatetags\\__init__.py": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "ledger\\management\\commands\\backup_ledger.py": "ae04052bce9f22c2997a86091f05c30c1cf2f4b2d8a997b5eb1880f931695acd"
+  },
+  "source_unchanged_during_run": true,
+  "completed_operations": 20000,
+  "balance_mismatches": 0,
+  "history_mismatches": 0,
+  "stale_snapshot_observations": 0,
+  "relationship_violations": 4037,
+  "relationship_note": "Active payments referencing reversed bills represent supported supplier credit.",
+  "wall_seconds": 417.723
+}

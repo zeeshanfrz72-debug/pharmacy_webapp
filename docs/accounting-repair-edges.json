@@ -1,0 +1,140 @@
+{
+  "supplier_type": [
+    {
+      "outcomes": [
+        "accepted",
+        "rejected"
+      ],
+      "posted_bills": 1,
+      "financial_relationships_preserved": true
+    },
+    {
+      "outcomes": [
+        "accepted",
+        "rejected"
+      ],
+      "posted_bills": 1,
+      "financial_relationships_preserved": true
+    },
+    {
+      "outcomes": [
+        "accepted",
+        "rejected"
+      ],
+      "posted_bills": 1,
+      "financial_relationships_preserved": true
+    },
+    {
+      "outcomes": [
+        "accepted",
+        "rejected"
+      ],
+      "posted_bills": 1,
+      "financial_relationships_preserved": true
+    },
+    {
+      "outcomes": [
+        "accepted",
+        "rejected"
+      ],
+      "posted_bills": 1,
+      "financial_relationships_preserved": true
+    }
+  ],
+  "representative_transfer": [
+    {
+      "outcomes": [
+        "rejected",
+        "accepted"
+      ],
+      "posted_bills": 0,
+      "financial_relationships_preserved": true
+    },
+    {
+      "outcomes": [
+        "rejected",
+        "accepted"
+      ],
+      "posted_bills": 0,
+      "financial_relationships_preserved": true
+    },
+    {
+      "outcomes": [
+        "rejected",
+        "accepted"
+      ],
+      "posted_bills": 0,
+      "financial_relationships_preserved": true
+    },
+    {
+      "outcomes": [
+        "rejected",
+        "accepted"
+      ],
+      "posted_bills": 0,
+      "financial_relationships_preserved": true
+    },
+    {
+      "outcomes": [
+        "rejected",
+        "accepted"
+      ],
+      "posted_bills": 0,
+      "financial_relationships_preserved": true
+    }
+  ],
+  "writer_lock": {
+    "rejected": "database is locked",
+    "records_unchanged": true,
+    "retry_balance": "80.00"
+  },
+  "csrf": {
+    "status": 403,
+    "balance_unchanged": true
+  },
+  "malformed": {
+    "status": 400,
+    "balance_unchanged": true
+  },
+  "oversized": {
+    "status": 400,
+    "balance_unchanged": true
+  },
+  "wal_backup": {
+    "verification": {
+      "integrity": "ok",
+      "ledger_entries": 8,
+      "migrations": 39
+    },
+    "before_commit": [
+      "",
+      ""
+    ],
+    "after_commit": [
+      "new version",
+      "new version"
+    ],
+    "raw_main_file_misses_committed_wal": true
+  },
+  "backup_command": {
+    "exit_code": 0,
+    "stdout": "Verified backup: C:\\Users\\Zeeshan\\AppData\\Local\\Temp\\ledger-repair-edges-ic17k087\\command-backup.sqlite3 (8 entries)\n",
+    "stderr": ""
+  },
+  "restore_application": {
+    "exit_code": 0,
+    "stdout": "System check identified no issues (0 silenced).\n",
+    "stderr": ""
+  },
+  "restored_balances": {
+    "exit_code": 0,
+    "stdout": "25 objects imported automatically (use -v 2 for details).\n\n[(1, '100'), (2, '0'), (3, '100'), (4, '0'), (5, '100'), (6, '0'), (7, '100'), (8, '0'), (9, '100'), (10, '0'), (11, '0'), (12, '0'), (13, '0'), (14, '0'), (15, '0'), (16, '0'), (17, '0'), (18, '0'), (19, '0'), (20, '0'), (21, '80')]\n",
+    "stderr": ""
+  },
+  "migration_failure": {
+    "clear_failure": true,
+    "evidence_unchanged": true,
+    "retry_succeeded": true,
+    "failure": "grate(\n                         ^^^^^^^^^^^^^^^^^\n  File \"C:\\Users\\Zeeshan\\AppData\\Local\\Temp\\pharmacy-accounting-audit-20261002\\Lib\\site-packages\\django\\db\\migrations\\executor.py\", line 137, in migrate\n    state = self._migrate_all_forwards(\n            ^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"C:\\Users\\Zeeshan\\AppData\\Local\\Temp\\pharmacy-accounting-audit-20261002\\Lib\\site-packages\\django\\db\\migrations\\executor.py\", line 169, in _migrate_all_forwards\n    state = self.apply_migration(\n            ^^^^^^^^^^^^^^^^^^^^^\n  File \"C:\\Users\\Zeeshan\\AppData\\Local\\Temp\\pharmacy-accounting-audit-20261002\\Lib\\site-packages\\django\\db\\migrations\\executor.py\", line 257, in apply_migration\n    state = migration.apply(state, schema_editor)\n            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"C:\\Users\\Zeeshan\\AppData\\Local\\Temp\\pharmacy-accounting-audit-20261002\\Lib\\site-packages\\django\\db\\migrations\\migration.py\", line 132, in apply\n    operation.database_forwards(\n  File \"C:\\Users\\Zeeshan\\AppData\\Local\\Temp\\pharmacy-accounting-audit-20261002\\Lib\\site-packages\\django\\db\\migrations\\operations\\special.py\", line 199, in database_forwards\n    self.code(from_state.apps, schema_editor)\n  File \"D:\\pharmacy_webapp-hardening\\ledger\\migrations\\_integrity_preflight.py\", line 33, in verify\n    raise RuntimeError(\"Ledger migration stopped without changing financial evidence. Review invalid legacy values on a disposable snapshot: \" + \"; \".join(problems))\nRuntimeError: Ledger migration stopped without changing financial evidence. Review invalid legacy values on a disposable snapshot: Bill #6 bill_amount\n"
+  }
+}

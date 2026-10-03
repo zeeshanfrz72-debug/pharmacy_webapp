@@ -1,62 +1,117 @@
-<!-- Use the shared layout from base.html. -->
 {% extends "ledger/base.html" %}
+{% load bilingual %}
 
-{% block title %}Add Firm | Pharmacy Ledger{% endblock %}
+{% block title %}Firms | Pharmacy Ledger
+{% endblock %}
 
 {% block content %}
-
-
-<!-- Set the browser tab title for this page. -->
-
-    <!-- This panel shows current balances for all firms. -->
-    <div class="panel compact-panel ledger-history-panel">
-        <h2>Firm Balances</h2>
-
-        <div class="ledger-total-card">
-            <span class="total-label">Total Debt Across All Firms</span>
-            <strong class="total-value">{{ total_debt }}</strong>
+    {% include "ledger/_page_trash_link.html" with page_heading="Firms" trash_heading="Firms Trash" trash_count=trashed_firms|length %}
+    {% if not is_trash %}
+    <div class="panel compact-panel">
+        <h2>{% bi 'Add Firm' %}</h2>
+        <form method="post" class="record-entry-form firm-entry-form">
+            {% csrf_token %}{% include 'ledger/_bilingual_form.html' %}
+            <div class="form-submit"><button type="submit">{% bi 'Save Firm' %}</button></div>
+        </form>
+    </div>
+    <div class="panel compact-panel ledger-history-panel record-list-panel">
+        <div class="ledger-history-header">
+            <div class="ledger-total-card record-total">
+                <span class="total-label">{% bi 'Net balance · all firms' %}</span>
+                <strong class="total-value">{{ total_debt }}</strong>
+            </div>
         </div>
 
-        <div class="ledger-history-list">
-            {% for firm in firms %}
-                <div class="ledger-entry-card">
-                    <div class="entry-header">
-                        <div>
-                            <div class="entry-date">{{ firm.name }}</div>
-                        </div>
-                    </div>
-
-                    <div class="entry-body">
-                        <div class="entry-field">
-                            <span class="entry-field-label">Source Type</span>
-                            <span class="entry-field-value">{{ firm.get_source_type_display }}</span>
-                        </div>
-
-                        <div class="entry-field">
-                            <span class="entry-field-label">Phone</span>
-                            <span class="entry-field-value">{{ firm.phone|default:"—" }}</span>
-                        </div>
-                    </div>
-
-                    <div class="entry-footer" style="display:flex; justify-content:space-between; align-items:center;">
-                        <div>
-                            <span style="font-size:9px; text-transform:uppercase; color:var(--muted); font-weight:800; display:block; margin-bottom:1px;">Remaining Debt</span>
-                            <span class="entry-debt">{{ firm.current_debt }}</span>
-                        </div>
-                        <div style="display:flex; gap:8px;">
-                            <a href="{% url 'ledger:edit_firm' firm.id %}" class="button-link" style="padding:4px 8px; font-size:12px;">Edit</a>
-                            <form method="post" action="{% url 'ledger:soft_delete_firm' firm.id %}" onsubmit="return confirm('Are you sure you want to delete this firm? Transactions will remain.');">
-                                {% csrf_token %}
-                                <button type="submit" style="background:var(--error); padding:4px 8px; font-size:12px; color:white; border:none; border-radius:4px; cursor:pointer;">Delete</button>
-                            </form>
-                        </div>
-                    </div>
-                </div>
-            {% empty %}
-                <div class="panel" style="text-align:center; color:var(--muted); padding:32px;">
-                    No firms added yet.
-                </div>
-            {% endfor %}
+        <div class="data-table-wrap" tabindex="0" role="region" aria-label="Scrollable records">
+            <table class="data-table record-table firm-data-table" aria-label="Active firms">
+                <thead>
+                    <tr>
+                        <th scope="col">{% table_heading 'Firm' %}</th>
+                        <th scope="col">{% table_heading 'Source' %}</th>
+                        <th scope="col">{% table_heading 'Phone' %}</th>
+                        <th scope="col" class="amount-heading">{% table_heading 'Balance' %}</th>
+                        <th scope="col">{% table_heading 'Actions' %}</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for firm in firms %}
+                        <tr>
+                            <td data-label="Firm">
+                                <a class="firm-disclosure" data-firm-details href="{% url 'ledger:firm_details' firm.pk %}" aria-expanded="false" aria-controls="firm-detail-{{ firm.pk }}"><span aria-hidden="true" class="disclosure-arrow">›</span> {{ firm.name }}</a>
+                            </td>
+                            <td data-label="Source">{{ firm.get_source_type_display|bilingual }}</td>
+                            <td data-label="Phone">{{ firm.phone|default:"—" }}</td>
+                            <td data-label="Balance" class="amount-cell">
+                                {% if firm.display_balance < 0 %}
+                                    <span class="entry-credit" title="{{ 'Supplier Credits'|bilingual_plain }}">{{ firm.display_balance }}</span>
+                                {% else %}
+                                    <span class="entry-debt">{{ firm.display_balance }}</span>
+                                {% endif %}
+                            </td>
+                            <td data-label="Actions" class="table-actions">
+                                <details class="row-actions"><summary aria-label="{{ 'Actions'|bilingual_plain }}" title="{{ 'Actions'|bilingual_plain }}"><span aria-hidden="true">⋯</span></summary><div class="row-action-menu">
+                                    <a href="{% url 'ledger:edit_firm' firm.id %}" class="button-link">{% bi 'Edit' %}</a>
+                                    <form method="post" action="{% url 'ledger:delete_firm' firm.id %}">
+                                        {% csrf_token %}
+                                        <button type="submit" class="delete-action">{% bi 'Delete' %}</button>
+                                    </form>
+                                </div></details>
+                            </td>
+                        </tr>
+                        <tr id="firm-detail-{{ firm.pk }}" class="firm-detail-row" hidden><td colspan="5"><div data-firm-content></div></td></tr>
+                    {% empty %}
+                        <tr class="empty-table-row"><td colspan="5">{% bi 'No firms added yet.' %}</td></tr>
+                    {% endfor %}
+                </tbody>
+            </table>
         </div>
     </div>
+
+    {% else %}
+    <div class="panel compact-panel ledger-history-panel record-list-panel" id="page-trash" aria-labelledby="page-view-heading">
+
+        <div class="data-table-wrap" tabindex="0" role="region" aria-label="Scrollable records">
+            <table class="data-table record-table firm-trash-data-table">
+                <thead>
+                    <tr>
+                        <th scope="col">{% table_heading 'Firm' %}</th>
+                        <th scope="col">{% table_heading 'Source Type' %}</th>
+                        <th scope="col" class="amount-heading">{% table_heading 'Balance' %}</th>
+                        <th scope="col">{% table_heading 'Actions' %}</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for firm in trashed_firms %}
+                        <tr>
+                            <td data-label="Firm">
+                                <strong class="table-primary">{{ firm.name }}</strong>
+                                <span class="deleted-badge">{% bi 'In Trash' %}</span>
+                            </td>
+                            <td data-label="Source Type">{{ firm.get_source_type_display|bilingual }}</td>
+                            <td data-label="Balance" class="amount-cell">
+                                {% if firm.display_balance < 0 %}
+                                    <span class="entry-credit" title="{{ 'Supplier Credits'|bilingual_plain }}">{{ firm.display_balance }}</span>
+                                {% else %}
+                                    <span class="entry-debt">{{ firm.display_balance }}</span>
+                                {% endif %}
+                            </td>
+                            <td data-label="Actions" class="table-actions">
+                                <details class="row-actions"><summary aria-label="{{ 'Actions'|bilingual_plain }}"><span aria-hidden="true">⋯</span></summary><div class="row-action-menu">
+                                <p>{{ firm.get_source_type_display|bilingual }} · {% bi 'Phone Number' %}: {{ firm.phone|default:"—" }}</p>
+                                <form method="post" action="{% url 'ledger:restore_firm' firm.id %}">
+                                    {% csrf_token %}
+                                    <input type="hidden" name="next" value="{{ trash_link }}">
+                                    <button type="submit" class="restore-button">{% bi 'Recover' %}</button>
+                                </form>
+                                </div></details>
+                            </td>
+                        </tr>
+                    {% empty %}
+                        <tr class="empty-table-row"><td colspan="4">{% bi 'Firms Trash is empty.' %}</td></tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+    {% endif %}
 {% endblock %}

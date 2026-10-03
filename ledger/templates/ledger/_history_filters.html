@@ -1,0 +1,16 @@
+{% load bilingual %}
+        <form method="get" class="ledger-history-filter-form">
+            {% if selected_firm %}<input type="hidden" name="firm_id" value="{{ selected_firm.pk }}">{% endif %}
+            <div class="ledger-history-filter-group">
+                <label for="start_date">{% bi 'From' %}</label>
+                <input type="text" inputmode="numeric" placeholder="DD-MM-YYYY" id="start_date" name="start_date" value="{{ start_date }}">
+            </div>
+            <div class="ledger-history-filter-group">
+                <label for="end_date">{% bi 'To' %}</label>
+                <input type="text" inputmode="numeric" placeholder="DD-MM-YYYY" id="end_date" name="end_date" value="{{ end_date }}">
+            </div>
+            <div class="ledger-history-filter-actions">
+                <button type="submit">{% bi 'Apply' %}</button>
+                <a class="button-link" href="{% url 'ledger:ledger_history' %}">{% bi 'Clear' %}</a>
+            </div>
+        </form>

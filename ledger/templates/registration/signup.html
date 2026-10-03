@@ -1,4 +1,5 @@
 {% extends "ledger/base.html" %}
+{% load bilingual %}
 {% load static %}
 
 {% block title %}Sign Up | Pharmacy Ledger{% endblock %}
@@ -7,18 +8,18 @@
 <div style="max-width: 400px; margin: 60px auto; text-align: center;">
     <div style="margin-bottom: 24px;">
         <img src="{% static 'ledger/images/white logo with bg.png' %}" alt="Logo" style="width: 80px; height: 80px; border-radius: 50%; box-shadow: var(--shadow);">
-        <h2 style="color: var(--brand); margin-top: 16px;">Create Account</h2>
-        <p style="color: var(--muted); font-size: 14px;">Sign up to start managing your ledger</p>
+        <h2 style="color: var(--brand); margin-top: 16px;">{% bi 'Create Account' %}</h2>
+        <p style="color: var(--muted); font-size: 14px;">{% bi 'Sign up to start managing your ledger' %}</p>
     </div>
 
     <div class="panel" style="text-align: left; padding: 24px;">
         <form method="post">
             {% csrf_token %}
-            {{ form.as_p }}
-            <button type="submit" style="width: 100%; padding: 12px; font-size: 16px; margin-top: 16px;">Create Account</button>
+            {% include "ledger/_bilingual_form.html" %}
+            <button type="submit" style="width: 100%; padding: 12px; font-size: 16px; margin-top: 16px;">{% bi 'Create Account' %}</button>
         </form>
         <p class="muted" style="margin-top:20px; text-align: center;">
-            Already have an account? <a href="{% url 'login' %}" style="color: var(--brand); font-weight: bold; text-decoration: none;">Sign in</a>
+            {% bi 'Already have an account?' %} <a href="{% url 'login' %}" style="color: var(--brand); font-weight: bold; text-decoration: none;">{% bi 'Sign in' %}</a>
         </p>
     </div>
 </div>

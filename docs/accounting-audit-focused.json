@@ -1,0 +1,611 @@
+{
+  "focused": [
+    {
+      "name": "A01_admin_negative_payment_increases_debt",
+      "status": "confirmed",
+      "evidence": {
+        "http_status": 302,
+        "entered_payment": "-100.00",
+        "balance_before": "1000.00",
+        "balance_after": "1100.00"
+      },
+      "seconds": 0.577
+    },
+    {
+      "name": "A02_admin_overpayment_bypasses_service",
+      "status": "confirmed",
+      "evidence": {
+        "http_status": 302,
+        "debt": "100.00",
+        "payment": "1000.00",
+        "balance_after": "-900.00"
+      },
+      "seconds": 0.485
+    },
+    {
+      "name": "A03_admin_local_market_bill_and_incomplete_snapshots",
+      "status": "confirmed",
+      "evidence": {
+        "balance": "500.00",
+        "payments": 0,
+        "batch_balance_after": "0.00",
+        "batch_created_by": null,
+        "bill_previous_debt": "123.00"
+      },
+      "seconds": 0.27
+    },
+    {
+      "name": "A04_service_accepts_negative_and_empty_actions",
+      "status": "confirmed",
+      "evidence": {
+        "balance": "130.00",
+        "negative_payments": 1,
+        "negative_bills": 1,
+        "empty_batch_entries": 0
+      },
+      "seconds": 1.052
+    },
+    {
+      "name": "C01_HTTP_invalid_amounts_and_cross_firm_rejected",
+      "status": "passed",
+      "evidence": {
+        "rejected_values": {
+          "-1": 400,
+          "0": 400,
+          "0.001": 400,
+          "10000000000.00": 400,
+          "NaN": 400,
+          "Infinity": 400,
+          "abc": 400
+        },
+        "wrong_supplier_representative": 400,
+        "ledger_entries": 0
+      },
+      "seconds": 0.505
+    },
+    {
+      "name": "A05_service_fractional_cent_rounding",
+      "status": "confirmed",
+      "evidence": {
+        "stored_bill": "0.00",
+        "stored_payment": "0.00",
+        "decimal_row_balance": "0.00",
+        "application_balance": "0.00100000000000000",
+        "requested_effect": "0.001"
+      },
+      "seconds": 0.606
+    },
+    {
+      "name": "A06_recover_payment_while_bill_deleted",
+      "status": "confirmed",
+      "evidence": {
+        "recovery_http_status": 200,
+        "bill_available": false,
+        "active_payment": true,
+        "balance": "-200.00",
+        "bill_deletion_group": 2
+      },
+      "seconds": 1.111
+    },
+    {
+      "name": "A07_local_bill_without_paired_payment_edit",
+      "status": "boundary",
+      "evidence": {
+        "balance": "200.00",
+        "original_bill_paired_payments": 0
+      },
+      "seconds": 0.659
+    },
+    {
+      "name": "A08_committed_retry_rejected_after_rep_deletion",
+      "status": "confirmed",
+      "evidence": {
+        "first_status": 200,
+        "replay_status": 400,
+        "batches": 1,
+        "replay_error": {
+          "success": false,
+          "errors": {
+            "representative": [
+              {
+                "message": "Select a valid choice. That choice is not one of the available choices.",
+                "code": "invalid_choice"
+              }
+            ],
+            "__all__": [
+              {
+                "message": "Please select an active representative before saving this transaction.",
+                "code": ""
+              }
+            ]
+          }
+        }
+      },
+      "seconds": 0.683
+    },
+    {
+      "name": "A09_committed_retry_rejected_after_bill_deletion",
+      "status": "confirmed",
+      "evidence": {
+        "replay_status": 400,
+        "balance": "0.00",
+        "replay_error": {
+          "success": false,
+          "errors": {
+            "__all__": [
+              {
+                "message": "Choose a bill belonging to the selected firm.",
+                "code": ""
+              }
+            ]
+          }
+        }
+      },
+      "seconds": 0.793
+    },
+    {
+      "name": "A10_representative_transfer_breaks_historical_links",
+      "status": "confirmed",
+      "evidence": {
+        "http_status": 302,
+        "historical_bill_rep_cross_firm": true,
+        "payment_rep_cross_firm": true
+      },
+      "seconds": 1.015
+    },
+    {
+      "name": "A11_source_type_change_alters_historical_edit_semantics",
+      "status": "confirmed",
+      "evidence": {
+        "change_source_status": 302,
+        "historical_cash_bill_after_edit": "200.00",
+        "historical_cash_payment": "100.00",
+        "debt": "100.00"
+      },
+      "seconds": 0.666
+    },
+    {
+      "name": "P01_reducing_paid_bill_creates_supplier_credit",
+      "status": "policy",
+      "evidence": {
+        "balance": "-500.00",
+        "supplier_credit": "500"
+      },
+      "seconds": 0.578
+    },
+    {
+      "name": "A12_backdated_create_snapshots_disagree_with_history",
+      "status": "confirmed",
+      "evidence": {
+        "backdated_receipt_previous": "100",
+        "backdated_receipt_after": "300",
+        "same_action_history_after": "200.00",
+        "later_bill_previous": "0.00"
+      },
+      "seconds": 0.52
+    },
+    {
+      "name": "P02_restatement_preserves_balance_but_old_event_snapshots",
+      "status": "policy",
+      "evidence": {
+        "current_balance": "200.00",
+        "history_after": "200.00",
+        "offsets": [
+          [
+            "reversal",
+            "100.00",
+            "0.00"
+          ],
+          [
+            "restoration",
+            "0.00",
+            "100.00"
+          ]
+        ]
+      },
+      "seconds": 1.089
+    },
+    {
+      "name": "A13_snapshot_meaning_changes_on_notes_only_edit",
+      "status": "confirmed",
+      "evidence": {
+        "snapshot_before_notes_edit": "300.00",
+        "displayed_history_before": "200.00",
+        "snapshot_after_notes_edit": "200.00"
+      },
+      "seconds": 0.979
+    },
+    {
+      "name": "A14_cumulative_balance_overflow",
+      "status": "confirmed",
+      "evidence": {
+        "submissions": [
+          {
+            "status": 200,
+            "bills": 1,
+            "batches": 1
+          },
+          {
+            "status": 200,
+            "bills": 2,
+            "batches": 2
+          },
+          {
+            "status": 500,
+            "bills": 2,
+            "batches": 2
+          }
+        ],
+        "read_errors": {
+          "read_batch": "InvalidOperation",
+          "history": "InvalidOperation"
+        },
+        "balance": "19999999999.98"
+      },
+      "seconds": 1.304
+    },
+    {
+      "name": "A15_direct_ORM_signal_failure_leaves_orphan",
+      "status": "boundary",
+      "evidence": {
+        "bills": 1,
+        "ledger_entries": 0,
+        "balance": "0.00",
+        "path": "direct ORM autocommit, not admin transaction"
+      },
+      "seconds": 0.428
+    },
+    {
+      "name": "C02_service_write_and_recovery_failure_rollback",
+      "status": "passed",
+      "evidence": {
+        "ledger": "rolled back; retry correct",
+        "payment": "rolled back; retry correct",
+        "batch_final_save": "rolled back; retry correct",
+        "deletion_member_and_recovery_offset": "rolled back; retries correct"
+      },
+      "seconds": 2.607
+    },
+    {
+      "name": "A16_missing_database_financial_constraints",
+      "status": "boundary",
+      "evidence": {
+        "cross_firm_link": true,
+        "invalid_entry_type": true,
+        "negative_increase": true,
+        "balance": "-70.00",
+        "path": "trusted ORM/maintenance only"
+      },
+      "seconds": 0.689
+    },
+    {
+      "name": "C03_HTTP_payment_on_supplier_credit_rejected",
+      "status": "passed",
+      "evidence": {
+        "balance": "-50.00",
+        "payment_status": 400,
+        "unchanged": true
+      },
+      "seconds": 0.816
+    },
+    {
+      "name": "P03_duplicate_invoice_reference_allowed",
+      "status": "policy",
+      "evidence": {
+        "identical_bill_references": 2,
+        "balance": "200.00",
+        "request_ids": "different"
+      },
+      "seconds": 0.598
+    },
+    {
+      "name": "A17_legacy_soft_deleted_source_bill_remains_available",
+      "status": "boundary",
+      "evidence": {
+        "bill_available": true,
+        "balance": "0.00",
+        "delete_error": "['There are no active ledger entries to reverse.']",
+        "path": "legacy/synthetic soft deletion"
+      },
+      "seconds": 0.627
+    },
+    {
+      "name": "A18_all_integrity_errors_misreported_as_request_conflict",
+      "status": "confirmed",
+      "evidence": {
+        "error": "IdempotencyConflict: ['This request ID was already used for different transaction data.']",
+        "real_failure": "unrelated payment integrity error",
+        "rollback": true
+      },
+      "seconds": 0.252
+    }
+  ],
+  "sequences": {},
+  "races": [
+    {
+      "name": "payment_payment",
+      "outcomes": [
+        {
+          "status": "ValidationError",
+          "error": "['Payment amount cannot be higher than the remaining debt.']"
+        },
+        {
+          "status": "ok",
+          "changed": null
+        }
+      ],
+      "evidence": {
+        "balance": "20.00",
+        "payments": 1
+      }
+    },
+    {
+      "name": "edit_edit",
+      "outcomes": [
+        {
+          "status": "ok",
+          "changed": null
+        },
+        {
+          "status": "ValidationError",
+          "error": "['This bill changed after you opened it. Reload and review the latest bill.']"
+        }
+      ],
+      "evidence": {
+        "balance": "200.00",
+        "adjustments": 1
+      }
+    },
+    {
+      "name": "edit_delete",
+      "outcomes": [
+        {
+          "status": "ValidationError",
+          "error": "['Recover this bill from Trash before editing it.']"
+        },
+        {
+          "status": "ok",
+          "changed": true
+        }
+      ],
+      "evidence": {
+        "balance": "0.00",
+        "status": "reversed"
+      }
+    },
+    {
+      "name": "delete_recover",
+      "outcomes": [
+        {
+          "status": "ok",
+          "changed": false
+        },
+        {
+          "status": "ok",
+          "changed": true
+        }
+      ],
+      "evidence": {
+        "balance": "100.00",
+        "status": "active"
+      }
+    },
+    {
+      "name": "duplicate_request",
+      "outcomes": [
+        {
+          "status": "ok",
+          "changed": null
+        },
+        {
+          "status": "ok",
+          "changed": null
+        }
+      ],
+      "evidence": {
+        "balance": "100.00",
+        "bills": 1,
+        "batches": 1
+      }
+    },
+    {
+      "name": "supplier_delete_write",
+      "delete_status": 302,
+      "firm_deleted": true,
+      "committed_bill": 37,
+      "balance": "100.00",
+      "classification": "serializable write-before-delete, retained history; policy/UX risk"
+    }
+  ],
+  "snapshot": {
+    "backups\\preview-before-reset-20261002-220531.sqlite3": {
+      "integrity_check": [
+        [
+          "ok"
+        ]
+      ],
+      "foreign_key_errors": 0,
+      "source_sha256_before": "4b084c50e5aa0508a91e49cabbb2a81a5692e7f4dcd63cd0dce3d313a36b374e",
+      "source_sha256_after": "4b084c50e5aa0508a91e49cabbb2a81a5692e7f4dcd63cd0dce3d313a36b374e",
+      "ledger_bill_count": 8,
+      "ledger_deletiongroup_count": 10,
+      "ledger_deletionmember_count": 10,
+      "ledger_firm_count": 5,
+      "ledger_ledgerentry_count": 40,
+      "ledger_payment_count": 7,
+      "ledger_representative_count": 4,
+      "ledger_transactionbatch_count": 26,
+      "negative_source_amounts": 0,
+      "bill_rep_cross_firm": 0,
+      "payment_cross_firm": 0,
+      "ledger_cross_firm": 0,
+      "ledger_without_batch": 1,
+      "bills_without_creation_batch": 0,
+      "invalid_ledger_sides": 0,
+      "reversed_without_deletion_group": 0,
+      "active_payment_deleted_bill": 0,
+      "unbatched_bill_ledger": 0,
+      "payments_without_ledger": 0,
+      "duplicate_bill_reference_groups": 0,
+      "applied_ledger_migrations": [
+        "0001_initial",
+        "0002_alter_ledgerentry_entry_type",
+        "0003_representative_created_at",
+        "0004_ledgerentry_deleted_at_ledgerentry_is_deleted",
+        "0005_firm_deleted_at_firm_is_deleted_and_more",
+        "0006_transaction_batches_and_balance_lock",
+        "0007_timed_deletion_groups"
+      ],
+      "source_creation_batches_zero_after": 0,
+      "source_sha256_final": "4b084c50e5aa0508a91e49cabbb2a81a5692e7f4dcd63cd0dce3d313a36b374e"
+    },
+    "db.sqlite3": {
+      "integrity_check": [
+        [
+          "ok"
+        ]
+      ],
+      "foreign_key_errors": 0,
+      "source_sha256_before": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "source_sha256_after": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "status": "no Django schema",
+      "table_count": 0,
+      "source_sha256_final": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    "preview-20261001-135817.sqlite3": {
+      "integrity_check": [
+        [
+          "ok"
+        ]
+      ],
+      "foreign_key_errors": 0,
+      "source_sha256_before": "13b8c5baab324062ee06e3b46c44cc7f187a097205ab158514a650eca06d76fc",
+      "source_sha256_after": "13b8c5baab324062ee06e3b46c44cc7f187a097205ab158514a650eca06d76fc",
+      "ledger_bill_count": 2,
+      "ledger_deletiongroup_count": 0,
+      "ledger_deletionmember_count": 0,
+      "ledger_firm_count": 2,
+      "ledger_ledgerentry_count": 4,
+      "ledger_payment_count": 2,
+      "ledger_representative_count": 2,
+      "ledger_transactionbatch_count": 2,
+      "negative_source_amounts": 0,
+      "bill_rep_cross_firm": 0,
+      "payment_cross_firm": 0,
+      "ledger_cross_firm": 0,
+      "ledger_without_batch": 0,
+      "bills_without_creation_batch": 0,
+      "invalid_ledger_sides": 0,
+      "reversed_without_deletion_group": 0,
+      "active_payment_deleted_bill": 0,
+      "unbatched_bill_ledger": 0,
+      "payments_without_ledger": 0,
+      "duplicate_bill_reference_groups": 0,
+      "applied_ledger_migrations": [
+        "0001_initial",
+        "0002_alter_ledgerentry_entry_type",
+        "0003_representative_created_at",
+        "0004_ledgerentry_deleted_at_ledgerentry_is_deleted",
+        "0005_firm_deleted_at_firm_is_deleted_and_more",
+        "0006_transaction_batches_and_balance_lock",
+        "0007_timed_deletion_groups"
+      ],
+      "source_creation_batches_zero_after": 0,
+      "source_sha256_final": "13b8c5baab324062ee06e3b46c44cc7f187a097205ab158514a650eca06d76fc"
+    }
+  },
+  "environment": {
+    "python": "3.12.10 (tags/v3.12.10:0cc8128, Apr  8 2025, 12:21:36) [MSC v.1943 64 bit (AMD64)]",
+    "packages": {
+      "Django": "6.0.8",
+      "django-axes": "8.3.1",
+      "asgiref": "3.11.1",
+      "sqlparse": "0.6.0",
+      "tzdata": "2026.2"
+    },
+    "source_sha256": {
+      "ledger\\admin.py": "5ec460bdf9cfb799b6006bbef6fd8b6b3502ebe53bed8ef9d5152a697cc80c36",
+      "ledger\\apps.py": "07a9bbcbfb5413f393232a7571d3122dfbcfc2bbe2f730d3fb8020ea2cca00c9",
+      "ledger\\batch_context.py": "3125f297cc15ae67ad3ed3cb607f342e2b3e9c589f6292063d661358de768917",
+      "ledger\\bilingual.py": "c5a2caefa7c20d679e2d69cdf7740525884839b2ec301d1d073bedac306e4de9",
+      "ledger\\drive_backup.py": "f97dac228b08f13e51ecf133cbb23ad93ae4814a6a0aee3a5e155db9826aca99",
+      "ledger\\forms.py": "636f7a242536d74df9143d5cd1e104c68bf58e86b5b889fe404da9b92b22e9f5",
+      "ledger\\insights.py": "939161c47e1082ad57528a6e69e0e1ce8c80b886a2cdcd4a44e7a51ff34a4973",
+      "ledger\\models.py": "267d819af27942f79017d5db7483327e8c4d30966a1591b223fe3cd28d432e58",
+      "ledger\\services.py": "fd56179d7ad6345fffe3039b23b1ddbac3454b946216e689c243b59f1c560f68",
+      "ledger\\signals.py": "97fd9c89f4671deac57e48dd1a8c638803f05e2b1a1df37c5b089ca2c829516c",
+      "ledger\\tests.py": "c84b0006588c7eceb729171f94638d5ff1a3cbe32e524b79c8e8676d4ad383ab",
+      "ledger\\test_bilingual.py": "d92f514b30ba214ef0b68e0a79bfe756a508ea955ca88e0c74fb8614b3907667",
+      "ledger\\test_bill_edit.py": "b10f5784fd9a4df686087ffde84a4938e2892e916830b5d65ba33f49dd7dcd8e",
+      "ledger\\test_dashboard.py": "4be6a69ee995ff987876bdde34bb247484db0fcdd8020ec9e743fc2f24a42971",
+      "ledger\\test_migrations.py": "b99dbc54e18249607ba4933d9c90e10608cc21ffcdf187206440a995247dc27a",
+      "ledger\\test_page_views.py": "28052f489d7ac717d2dd6efc271755e8d8b95553a9f9aa50b02d5a26b3ad20e4",
+      "ledger\\test_recovery.py": "872b176aa0f16668dbd8982e3aab28ebc5e5560bbf589f7b61a8401a24c09cda",
+      "ledger\\urls.py": "c36c8eaf45815102b309da86ea7fdb703f327db823a333d11719883078c31273",
+      "ledger\\views.py": "b41635553ba8469f967b2d21260779d0c211dcc4dda523a1bfd8c77dd53dbdaf",
+      "ledger\\__init__.py": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "ledger\\migrations\\0001_initial.py": "45fdfa5f69e80d51b488b611e396132e15db080013bc864e919d9cf910638540",
+      "ledger\\migrations\\0002_alter_ledgerentry_entry_type.py": "0ee8d4319724b92d14606b2edd4708c2ccf759aa6c93e3677c2465fd5002519e",
+      "ledger\\migrations\\0003_representative_created_at.py": "33c93ab42f083c0b55f0b7bd4f4d4bd709ae14290489216dddd0fc3ffaeb344d",
+      "ledger\\migrations\\0004_ledgerentry_deleted_at_ledgerentry_is_deleted.py": "5359af29c85cfd320bc600caa625d69bf8437c1f0f53dd8ddf6dddd62744999d",
+      "ledger\\migrations\\0005_firm_deleted_at_firm_is_deleted_and_more.py": "4f91784b2b92573330435492d0df67a0d171cd3be5175a3d756f078fb80eda0d",
+      "ledger\\migrations\\0006_transaction_batches_and_balance_lock.py": "24dedbd1545cbcba53afaaf689a05d36dd76a4e8312bda07824f0949e4912da5",
+      "ledger\\migrations\\0007_timed_deletion_groups.py": "4075aa25de26cc77ad3baa8064fe819a5272ec8ce77e385097e212563be828cb",
+      "ledger\\migrations\\__init__.py": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "ledger\\templates\\sw.js": "1be110af989ff8aa4a3a987a829c915e0472c29ec239e3874834c6a72ddf00b9",
+      "ledger\\templatetags\\bilingual.py": "9c32b7e162643b6718d4d4ef203bed3214516e3734b829d29d5ff781e743ebb4",
+      "ledger\\templatetags\\__init__.py": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "ledger\\static\\ledger\\bilingual.js": "1f6e52df5950a4981cb010abb26c1a466dabf372be14e081390ad24a2e5aabbb",
+      "ledger\\static\\ledger\\dashboard.js": "a89b8354aaedc38d04b44d49ce342e829ef3ad6040cadc40a540ac2d1a48836a",
+      "ledger\\static\\ledger\\firm_details.js": "7831a8dfe3790dadd96810c54188d6d99f70a2023ea305249e5e2fcbd4f5a100",
+      "ledger\\static\\ledger\\offline_sync.js": "5643fcaf54f60fd504ccfa2302bd3d65876b05d4987830cedff67b648ee5cd6c",
+      "ledger\\static\\ledger\\page_views.js": "c5e437ecfc5f8ec5ba825134ef49306f337e6ed4b443fc56cc6259352907454b",
+      "ledger\\static\\ledger\\record_forms.js": "4ef7f9392eadaca666381c7b6503cf17a33f523e0587c7bf5b96e4ef20c60996",
+      "ledger\\templates\\ledger\\add_firm.html": "9e7ee2d40f74ee78d54df50073c6cb42b1255ffaee83fab6ef99caa218f3f705",
+      "ledger\\templates\\ledger\\add_representative.html": "683c3abc5fa23e9bf178e3c5b18d8b9cf656c50aaf4ac7cb52daee5240192c91",
+      "ledger\\templates\\ledger\\add_transaction.html": "21e015da192e0093072cb6d704544aab8b91a4e5582ffb0bc4708e9888ab4fa6",
+      "ledger\\templates\\ledger\\base.html": "495130b1b1e2dd5a614e415072414914ebf740a0269e8cb591d4aa1a1b9bd18b",
+      "ledger\\templates\\ledger\\bills.html": "a96764c9276bcb1cabc8fcdb1919b2113a7935662040d325e12e170f6e621811",
+      "ledger\\templates\\ledger\\edit_bill.html": "2c276fde91f6a933d745fca10bb239b8dc5d6679aa0efd8ea9f2c167b4d1ea60",
+      "ledger\\templates\\ledger\\edit_firm.html": "1426f925f87aa557a250ec86bd2950ad101370d527f3573182b02258ff5b1c76",
+      "ledger\\templates\\ledger\\edit_representative.html": "9e64fea812fefb71102d51d214e141e9355254a5d4504e73686ca8fc113f34d3",
+      "ledger\\templates\\ledger\\firm_details.html": "81e5970f40d22486e7abcc099612435722eac1025c3693d9a6ac43d5ce936d66",
+      "ledger\\templates\\ledger\\ledger_history.html": "ac0b931dc7f94647071daddbb55daab6371b41c2962f7f33ceff948c6e5d4682",
+      "ledger\\templates\\ledger\\record_review.html": "bf8dd953b351ae7db77b84ee4c16f64faa8c3c8526883e032eb511e530d9ab29",
+      "ledger\\templates\\ledger\\trash.html": "04de97a864ab96ad843c4bee360d855434eb92e12c506a3704ea1b01f762ec48",
+      "ledger\\templates\\ledger\\_bilingual_form.html": "cf1ab5e0eb341a6a95de09fdd6e5f5ac2e8fece3fa9eab620ace754a41c423ce",
+      "ledger\\templates\\ledger\\_bill_actions.html": "a0924d0973a722de35c97d2416fcde12da4368b5c81d2d4d92967c4acfeb25f3",
+      "ledger\\templates\\ledger\\_bill_delete.html": "f2a5f5e353598fe993a2e8c57ecd50baf8eeaf5a224f873ac789876b6472a840",
+      "ledger\\templates\\ledger\\_deletion_groups_table.html": "b7d79f9d0b1916f3ab2fe94afd7b05c2d1aab4a37c66ce893183278680c62558",
+      "ledger\\templates\\ledger\\_firm_details.html": "75f57f9443d3ad04eda934b5c35261e2e5c0313212fd5a6ce28dc4d45f950738",
+      "ledger\\templates\\ledger\\_history_filters.html": "d9ae21b92aa1cf0985e440014f67e07944b4c04f80aa49b6f02e24cbff1bcd63",
+      "ledger\\templates\\ledger\\_history_table.html": "0215946a10031eab5e5562db32123ffbe45a479e2f629d02688ce8e7e9a2e159",
+      "ledger\\templates\\ledger\\_page_trash_link.html": "b044bd3952c57d821d2de894dfca50710f096ec2838e71ee7a751050eb19f271",
+      "ledger\\templates\\ledger\\_record_review.html": "90ba2c0b395749c57c1e4ae2806b64a9993e2be0c0712c966f9ce153bd4619da",
+      "ledger\\templates\\registration\\logged_out.html": "a36bde3599ca7d65821ee16bb12b3e611e2bd38abc9c5d04e2b885f20e56e7da",
+      "ledger\\templates\\registration\\login.html": "b9bb309b82cfc23175b07c52dbe21a892514c50fbe4e0acd900fe03354a67ce6",
+      "ledger\\templates\\registration\\password_change_done.html": "2558b394010192187e5716eeddaea94b1617298386d6ae1758d7b8ba49ee09a7",
+      "ledger\\templates\\registration\\password_change_form.html": "1f68746300f125e58629924cacdc7c2f178db4ffd8287049d84848c318c6c9e8",
+      "ledger\\templates\\registration\\signup.html": "eb97e9988720eaa4bb9ed2c3f62ecba5a67b255807e81cb7f9b1512e8368a585",
+      "pharmacy_app\\asgi.py": "3f8a339cde17b7d8e536594ac55e5fd1182170a5f25322a490141288c6b7db22",
+      "pharmacy_app\\middleware.py": "49aae8aed9cf95abfad93a25691eb5462198fb1fd058119873ac54d03eb4e253",
+      "pharmacy_app\\settings.py": "0d48872b555e206ec1b61a6883aaea05d13171bbc9156105423c2fdd40a1f8fb",
+      "pharmacy_app\\urls.py": "2b2034c7667399c3919072929f3ce6b5ed1fdc40be6fd4e0790a098825379855",
+      "pharmacy_app\\wsgi.py": "636adbb8e697188149bb93c357bb8a484ed48c31134f873c59f94a58c39837eb",
+      "pharmacy_app\\__init__.py": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    }
+  },
+  "baseline": {
+    "exit_code": 0,
+    "seconds": 7.97,
+    "stdout": "Found 69 test(s).\nSystem check identified no issues (0 silenced).\n",
+    "stderr": "Creating test database for alias 'default'...\n\n.........................AXES: New login failure by {username: \"********************\", ip_address: \"********************\", user_agent: \"<unknown>\", path_info: \"/accounts/login/\"}. Created new record in the database.\nAXES: Repeated login failure by {username: \"********************\", ip_address: \"********************\", user_agent: \"<unknown>\", path_info: \"/accounts/login/\"}. Updated existing record in the database.\nAXES: Repeated login failure by {username: \"********************\", ip_address: \"********************\", user_agent: \"<unknown>\", path_info: \"/accounts/login/\"}. Updated existing record in the database.\nAXES: Repeated login failure by {username: \"********************\", ip_address: \"********************\", user_agent: \"<unknown>\", path_info: \"/accounts/login/\"}. Updated existing record in the database.\nAXES: Repeated login failure by {username: \"********************\", ip_address: \"********************\", user_agent: \"<unknown>\", path_info: \"/accounts/login/\"}. Updated existing record in the database.\nAXES: Locking out {username: \"********************\", ip_address: \"********************\", user_agent: \"<unknown>\", path_info: \"/accounts/login/\"} after repeated login failures.\nAXES: Repeated login failure by {username: \"********************\", ip_address: \"********************\", user_agent: \"<unknown>\", path_info: \"/accounts/login/\"}. Updated existing record in the database.\nAXES: Locking out {username: \"********************\", ip_address: \"********************\", user_agent: \"<unknown>\", path_info: \"/accounts/login/\"} after repeated login failures.\n............................................\n----------------------------------------------------------------------\nRan 69 tests in 5.961s\n\nOK\nDestroying test database for alias 'default'...\n\n"
+  },
+  "checks": {
+    "exit_code": 0,
+    "seconds": 0.975,
+    "stdout": "System check identified no issues (0 silenced).\n",
+    "stderr": ""
+  },
+  "source_files_unchanged": true
+}

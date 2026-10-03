@@ -1,0 +1,15 @@
+{% extends "ledger/base.html" %}
+{% load bilingual %}
+{% block title %}Edit Bill | Pharmacy Ledger{% endblock %}
+{% block content %}
+<div class="panel compact-panel">
+    <h2>{% bi 'Edit Bill' %}</h2>
+    <p>{% bi 'Firm' %}: <bdi>{{ bill.firm.name }}</bdi> · {{ bill.firm.get_source_type_display|bilingual }}</p>
+    <p>{% bi 'Bill edits are recorded in history. Amount changes update debt; Local Market cash payments stay equal to the bill.' %}</p>
+    <form method="post" class="record-entry-form">
+        {% csrf_token %}
+        {% include 'ledger/_bilingual_form.html' %}
+        <div class="form-wide"><button type="submit">{% bi 'Update Bill' %}</button> <a class="button-link" href="{% url 'ledger:bills' %}">{% bi 'Cancel' %}</a></div>
+    </form>
+</div>
+{% endblock %}

@@ -1,0 +1,267 @@
+/* Fit laptop tables without reducing reading size or clipping recorded values. */
+h1, .panel h2, .panel h3 { color: #08233b; font-weight: 800; }
+.panel h2 { font-size: 22px; }
+h1 > .bi-label > .bi-ur, h2 > .bi-label > .bi-ur, h3 > .bi-label > .bi-ur { font-size: 26px; -webkit-text-stroke: .18px currentColor; }
+label .bi-en { font-size: 13px; font-weight: 700; color: #18344a; }
+.data-table-wrap { overflow: visible !important; min-width: 0; }
+table.data-table { width: 100%; min-width: 0 !important; table-layout: fixed; }
+.data-table th { height: 36px; padding: 3px 6px; font-size: 14px; font-weight: 800; white-space: normal; color: #092841; background: #e5edf5; border: 1px solid #ccd7e2; }
+.data-table th .bi-label { display: flex; width: 100%; align-items: center; justify-content: space-between; gap: 4px; white-space: nowrap; }
+.data-table th .bi-en { flex: 0 0 auto; text-align: left; font-weight: 800; line-height: 1.25; }
+.data-table th .bi-ur { flex: 0 0 auto; text-align: right; font-size: 18px; line-height: 1.5; -webkit-text-stroke: .15px currentColor; }
+.data-table td { padding: 4px 6px; white-space: normal; overflow-wrap: anywhere; word-break: normal; font-size: 14px; color: #142b3d; border: 1px solid #dbe2ea; }
+.data-table td .bi-label { white-space: normal; flex-wrap: wrap; gap: 0 4px; }
+.data-table td > .bi-label .bi-ur { line-height: 1.4; }
+.data-table .amount-cell { white-space: nowrap; font-variant-numeric: tabular-nums; }
+.data-table .table-actions { width: auto; text-align: right; }
+.data-table td[data-label="Date"] { white-space: nowrap; }
+.data-table .row-detail-panel { min-width: 0; max-width: none; }
+.data-table .firm-detail-row > td { padding: 10px; }
+.trash-record-summary { display: block; width: auto; }
+.trash-record-summary > * { max-width: 100%; }
+.row-actions { position: relative; display: inline-block; text-align: left; }
+.row-actions > summary { list-style: none; cursor: pointer; min-height: 28px; padding: 0 8px; border: 1px solid #9bb0c2; border-radius: 5px; font: 800 24px/26px Arial, sans-serif; background: #f1f6fa; color: #08233b; text-align: center; }
+.row-actions > summary::-webkit-details-marker { display: none; }
+.row-actions > summary:focus-visible { outline: 2px solid #15803d; outline-offset: 2px; }
+.row-actions[open] > summary { background: #08233b; color: white; }
+.row-action-menu { position: absolute; right: 0; top: calc(100% + 4px); z-index: 1000; width: 320px; max-width: calc(100vw - 40px); max-height: min(65vh, 580px); overflow-y: auto; background: white; border: 1px solid #b7c8d8; border-radius: 7px; box-shadow: 0 10px 25px #102a4330; padding: 10px; display: flex; flex-direction: column; gap: 8px; color: #142b3d; font-weight: 400; }
+.row-action-menu > .button-link, .row-action-menu > .batch-action > summary, .row-action-menu > .row-detail-toggle > summary { display: block; width: 100%; }
+.row-action-menu .bi-label { width: 100%; }
+.row-action-menu p { margin: 4px 0; white-space: normal; overflow-wrap: anywhere; }
+.row-action-menu .row-detail-panel p .bi-label { display: inline-flex; }
+.row-action-menu .batch-action-form input { width: 100%; }
+.firm-data-table th:nth-child(1) { width: 30%; }
+.firm-data-table th:nth-child(2) { width: 24%; }
+.firm-data-table th:nth-child(3) { width: 13%; }
+.firm-data-table th:nth-child(4) { width: 19%; }
+.firm-data-table th:nth-child(5) { width: 14%; }
+.history-data-table th:nth-child(1) { width: 11%; }
+.history-data-table th:nth-child(2) { width: 15%; }
+.history-data-table th:nth-child(3) { width: 14%; }
+.history-data-table th:nth-child(4) { width: 10%; }
+.history-data-table th:nth-child(5), .history-data-table th:nth-child(6), .history-data-table th:nth-child(7) { width: 14%; }
+.history-data-table th:nth-child(8) { width: 8%; }
+.bill-data-table th:nth-child(4), .bill-data-table td:nth-child(4),
+.representative-data-table th:nth-child(4), .representative-data-table td:nth-child(4),
+.representative-data-table th:nth-child(5), .representative-data-table td:nth-child(5) { display: none; }
+.bill-data-table th:nth-child(1), .bill-data-table th:nth-child(2), .bill-data-table th:nth-child(7) { width: 14%; }
+.bill-data-table th:nth-child(3) { width: 22%; }
+.bill-data-table th:nth-child(5), .bill-data-table th:nth-child(6) { width: 18%; }
+.representative-data-table th:nth-child(1), .representative-data-table th:nth-child(3) { width: 25%; }
+.representative-data-table th:nth-child(2) { width: 15%; }
+.representative-data-table th:nth-child(6) { width: 23%; }
+.representative-data-table th:nth-child(7) { width: 12%; }
+.trash-transactions-table th:nth-child(1) { width: 22%; }
+.trash-transactions-table th:nth-child(2), .trash-transactions-table th:nth-child(3) { width: 20%; }
+.trash-transactions-table th:nth-child(4) { width: 18%; }
+.trash-transactions-table th:nth-child(5), .trash-transactions-table th:nth-child(6) { width: 10%; }
+.data-table .status-toggle-inline { flex-wrap: wrap; }
+.row-action-menu .status-toggle-inline { justify-content: space-between; }
+.firm-entry-form { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+.firm-entry-form .form-field { margin: 0; }
+.ledger-history-filter-group input { width: 128px; min-width: 0; }
+.dashboard-grid .metric-card { min-height: 84px; }
+.dashboard-grid .total-debt-card .metric-value { font-size: 22px; }
+.row-actions.opens-above > .row-action-menu { top: auto; bottom: calc(100% + 4px); }
+.firm-bills-table th:nth-child(1) { width: 22%; }
+.firm-bills-table th:nth-child(2) { width: 18%; }
+.firm-bills-table th:nth-child(3) { width: 28%; }
+.firm-bills-table th:nth-child(4) { width: 20%; }
+.firm-bills-table th:nth-child(5) { width: 12%; }
+.firm-trash-data-table th:first-child, .representative-trash-data-table th:first-child { width: 35%; }
+.firm-trash-data-table th:last-child, .representative-trash-data-table th:last-child { width: 15%; }
+@media (max-width: 1000px) {
+    .history-data-table th:nth-child(3), .history-data-table td:nth-child(3) { display: none; }
+    .history-data-table th:nth-child(1) { width: 14%; }
+    .history-data-table th:nth-child(2) { width: 20%; }
+    .history-data-table th:nth-child(4) { width: 10%; }
+    .history-data-table th:nth-child(5), .history-data-table th:nth-child(6), .history-data-table th:nth-child(7) { width: 16%; }
+    .history-data-table th:nth-child(8) { width: 8%; }
+}
+@media (max-width: 900px) {
+    .bill-data-table th:nth-child(5), .bill-data-table td:nth-child(5),
+    .representative-data-table th:nth-child(2), .representative-data-table td:nth-child(2),
+    .firm-data-table th:nth-child(3), .firm-data-table td:nth-child(3) { display: none; }
+    .bill-data-table th:nth-child(1), .bill-data-table th:nth-child(6) { width: 20%; }
+    .bill-data-table th:nth-child(2) { width: 22%; }
+    .bill-data-table th:nth-child(3) { width: 24%; }
+    .bill-data-table th:nth-child(7) { width: 14%; }
+    .firm-data-table th:nth-child(1) { width: 32%; }
+    .firm-data-table th:nth-child(2) { width: 30%; }
+    .firm-data-table th:nth-child(4) { width: 23%; }
+    .firm-data-table th:nth-child(5) { width: 15%; }
+    .representative-data-table th:nth-child(1), .representative-data-table th:nth-child(3) { width: 30%; }
+    .representative-data-table th:nth-child(6) { width: 23%; }
+    .representative-data-table th:nth-child(7) { width: 17%; }
+}
+@media (min-width: 651px) and (max-width: 800px) {
+    .history-data-table th:nth-child(4), .history-data-table td:nth-child(4) { display: none; }
+    .history-data-table th:nth-child(1) { width: 17%; }
+    .history-data-table th:nth-child(2) { width: 22%; }
+    .history-data-table th:nth-child(5), .history-data-table th:nth-child(6), .history-data-table th:nth-child(7) { width: 17%; }
+    .history-data-table th:nth-child(8) { width: 10%; }
+}
+@media (max-width: 650px) {
+    .firm-entry-form { grid-template-columns: 1fr; }
+    .history-data-table th:nth-child(2), .history-data-table td:nth-child(2),
+    .history-data-table th:nth-child(4), .history-data-table td:nth-child(4),
+    .history-data-table th:nth-child(5), .history-data-table td:nth-child(5),
+    .bill-data-table th:nth-child(2), .bill-data-table td:nth-child(2),
+    .representative-data-table th:nth-child(6), .representative-data-table td:nth-child(6),
+    .firm-data-table th:nth-child(2), .firm-data-table td:nth-child(2),
+    .trash-transactions-table th:nth-child(2), .trash-transactions-table td:nth-child(2),
+    .trash-transactions-table th:nth-child(3), .trash-transactions-table td:nth-child(3),
+    .trash-transactions-table th:nth-child(5), .trash-transactions-table td:nth-child(5) { display: none; }
+    .firm-bills-table th:nth-child(2), .firm-bills-table td:nth-child(2),
+    .firm-bills-table th:nth-child(3), .firm-bills-table td:nth-child(3),
+    .firm-trash-data-table th:nth-child(2), .firm-trash-data-table td:nth-child(2),
+    .representative-trash-data-table th:nth-child(3), .representative-trash-data-table td:nth-child(3) { display: none; }
+    .firm-bills-table th:nth-child(1), .firm-trash-data-table th:nth-child(1) { width: 48%; }
+    .firm-bills-table th:nth-child(4), .firm-trash-data-table th:nth-child(3) { width: 30%; }
+    .firm-bills-table th:nth-child(5), .firm-trash-data-table th:nth-child(4) { width: 22%; }
+    .representative-trash-data-table th:nth-child(1) { width: 42%; }
+    .representative-trash-data-table th:nth-child(2) { width: 36%; }
+    .representative-trash-data-table th:nth-child(4) { width: 22%; }
+    .data-table th { font-size: 13px; padding: 4px; }
+    .data-table th .bi-ur { font-size: 16px; }
+    .data-table td { padding: 6px 4px; }
+    .data-table .amount-cell { white-space: normal; overflow-wrap: anywhere; }
+    .data-table .row-actions > summary { min-height: 44px; padding: 6px 8px; }
+    .history-data-table th:nth-child(1) { width: 25%; }
+    .history-data-table th:nth-child(6) { width: 28%; }
+    .history-data-table th:nth-child(7) { width: 24%; }
+    .history-data-table th:nth-child(8) { width: 23%; }
+    .bill-data-table th:nth-child(1) { width: 25%; }
+    .bill-data-table th:nth-child(3) { width: 30%; }
+    .bill-data-table th:nth-child(6) { width: 25%; }
+    .bill-data-table th:nth-child(7) { width: 20%; }
+    .firm-data-table th:nth-child(1) { width: 48%; }
+    .firm-data-table th:nth-child(4) { width: 30%; }
+    .firm-data-table th:nth-child(5) { width: 22%; }
+    .representative-data-table th:nth-child(1) { width: 42%; }
+    .representative-data-table th:nth-child(3) { width: 38%; }
+    .representative-data-table th:nth-child(7) { width: 20%; }
+    .trash-transactions-table th:nth-child(1) { width: 48%; }
+    .trash-transactions-table th:nth-child(4) { width: 30%; }
+    .trash-transactions-table th:nth-child(6) { width: 22%; }
+}
+
+/* A single density layer overrides the older page-specific desktop spacing. */
+.visually-hidden { position: absolute !important; width: 1px !important; height: 1px !important; padding: 0 !important; margin: -1px !important; clip-path: inset(50%); overflow: hidden !important; white-space: nowrap; }
+body { padding-top: 64px; }
+.app-header { height: 64px; padding: 0 12px; justify-content: space-between; gap: 12px; }
+.header-left { display: flex; flex: 0 0 auto; height: 56px; }
+.header-portrait, .header-portrait img { height: 56px; width: auto; overflow: visible; object-fit: contain; }
+.header-center { flex: 0 1 auto; margin-right: auto; justify-content: flex-start; min-width: 0; }
+.app-header .site-logo { height: 54px; max-width: 240px; width: auto; padding: 0; object-fit: contain; }
+.header-right { flex: 0 0 auto; padding: 0; }
+.panel, .panel.compact-panel, .transaction-card { padding: 8px 10px; margin-bottom: 8px; }
+.panel h2, .panel.compact-panel h2 { font-size: 22px; margin: 0 0 6px; }
+.page-trash-toolbar { margin-bottom: 8px; min-height: 36px; }
+.page-trash-toolbar h1 { margin: 0; }
+.ledger-history-header { margin-bottom: 6px; padding-bottom: 0; border: 0; }
+.ledger-total-card { padding: 5px 8px; margin-bottom: 6px; }
+.record-total { width: 100%; }
+.ledger-history-filter-form { width: 100%; justify-content: flex-start; gap: 8px; }
+.filter-inline-form { gap: 8px; align-items: end; }
+.filter-inline-group label { margin-bottom: 2px; }
+.record-entry-form, .transaction-card .transaction-grid { gap: 6px 8px; }
+.record-entry-form .form-field { margin: 0; }
+.record-entry-form label, .transaction-card .transaction-field label { margin-bottom: 2px; }
+.record-entry-form input, .record-entry-form select, .record-entry-form textarea { min-height: 36px; height: 36px; font-size: 14px; padding: 4px 8px; }
+.record-entry-form textarea { resize: vertical; }
+.form-submit { align-self: end; }
+.form-submit button { min-height: 36px; padding: 4px 10px; width: 100%; }
+.record-entry-form > .form-wide:empty, [data-selector-error]:empty, .selector-error-slot:has([data-selector-error]:empty) { display: none; }
+.entry-help, .trash-help { font-size: 13px; }
+.entry-help { position: absolute; right: 10px; top: 8px; }
+.entry-help > summary, .trash-help > summary { cursor: pointer; }
+.entry-help[open] { position: static; margin-bottom: 6px; }
+.entry-help p, .trash-help p { margin: 4px 0; }
+.bill-entry-panel { position: relative; }
+.trash-help { margin: 0 0 6px; }
+.transaction-identity-grid { margin-bottom: 6px; }
+.dashboard-grid { gap: 8px; margin-bottom: 8px; }
+.dashboard-grid .metric-card { min-height: 64px; padding: 5px 8px; }
+.dashboard-grid .metric-label .bi-label { gap: 4px; }
+.dashboard-grid .metric-label .bi-en { font-size: 11px; letter-spacing: 0; }
+.dashboard-grid .metric-label .bi-ur { font-size: 16px; line-height: 1.5; }
+.dashboard-grid .metric-value { font-size: 20px; }
+.dashboard-grid .metric-subvalue { font-size: 13px; }
+.dashboard-grid .metric-sub-label { display: none; }
+.dashboard-analytics > summary { padding: 6px 0; }
+.dashboard-analytics > summary .muted { display: none; }
+.data-table .firm-disclosure { min-height: 28px; padding: 2px 0; }
+.data-table .row-action-menu p { font-size: 14px; }
+@media (min-width: 768px) {
+    .firm-entry-form { grid-template-columns: repeat(3, minmax(0, 1fr)) 150px; }
+    .representative-entry-form { grid-template-columns: repeat(4, minmax(0, 1fr)) 155px; }
+    .bill-entry-form { grid-template-columns: repeat(3, minmax(0, 1fr)) 155px; }
+    .representative-entry-form .form-wide:not(:empty), .bill-entry-form .form-wide:not(:empty) { grid-column: 1 / -1; }
+}
+@media (min-width: 1100px) {
+    .bottom-nav { top: 64px; width: 200px; padding: 8px; }
+    .bottom-nav a { gap: 8px; padding: 8px; margin: 1px 0; }
+    .bottom-nav a > .bi-label { gap: 6px; }
+    .page-main { padding: 12px 12px 12px 212px; }
+    .container { max-width: none; }
+    .app-guest .page-main { padding-left: 12px; }
+}
+@media (max-width: 1099px) {
+    .page-main { padding: 10px 10px 12px; }
+    .representative-entry-form { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    .representative-entry-form .form-submit { grid-column: 1 / -1; }
+}
+@media (max-width: 767px) {
+    .header-left, .header-portrait, .header-portrait img { height: 54px; }
+    .app-header { padding: 0 8px; gap: 8px; }
+    .app-header .site-logo { height: 48px; max-width: 140px; }
+    .record-entry-form { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    .record-entry-form .form-submit, .bill-notes-field { grid-column: 1 / -1; }
+    .record-entry-form input, .record-entry-form select, .form-submit button { min-height: 44px; height: 44px; }
+    .bottom-nav .bi-en, .bottom-nav .bi-ur { white-space: normal; }
+    .dashboard-grid .metric-card { min-height: 68px; padding: 5px 8px; }
+    .page-main { padding-bottom: 12px; }
+    .data-table .firm-disclosure { min-height: 44px; }
+}
+
+/* Keep bilingual controls and the history toolbar compact without clipping Nastaleeq. */
+.panel h2 > .bi-label > .bi-ur, .page-trash-toolbar h1 > .bi-label > .bi-ur { font-size: 24px; line-height: 1.5; }
+.transaction-card .transaction-field { gap: 0; }
+.transaction-card .transaction-actions button, .button-link, .ledger-history-filter-actions button { min-height: 36px; padding: 4px 10px; }
+.history-toolbar { gap: 8px; }
+.history-toolbar .ledger-history-filter-form { flex: 1 1 auto; width: auto; justify-content: end; }
+.history-toolbar .ledger-history-filter-group { flex: 0 0 150px; display: flex; flex-direction: column; align-items: stretch; gap: 0; }
+.history-toolbar .ledger-history-filter-group input { width: 100%; height: 36px; min-height: 36px; }
+.history-toolbar .ledger-history-filter-group label { margin-bottom: 2px; }
+.history-firm-context { margin: 0 0 6px; }
+@media (max-width: 767px) {
+    .history-toolbar .ledger-history-filter-form { order: 3; flex-basis: 100%; justify-content: start; }
+    .history-toolbar .ledger-history-filter-group { flex: 1 1 130px; }
+    .history-toolbar .ledger-history-filter-group input, .button-link, .ledger-history-filter-actions button { min-height: 44px; }
+}
+
+.entry-heading-toolbar { display: grid; grid-template-columns: minmax(0, 1fr) auto; align-items: center; gap: 6px 10px; margin-bottom: 6px; }
+.panel .entry-heading-toolbar h2 { margin: 0; }
+.entry-heading-toolbar .entry-help { position: static; margin: 0; }
+.entry-heading-toolbar .entry-help[open] { grid-column: 1 / -1; }
+
+.review-evidence { display: none; }
+@media (max-width: 650px) {
+    .review-evidence { display: inline-block; margin-left: 4px; }
+    .review-evidence > .row-action-menu, .review-evidence.opens-above > .row-action-menu { position: fixed; top: auto; bottom: 148px; left: 16px; right: 16px; width: auto; max-width: none; }
+    .review-duplicates-table th:nth-child(1), .review-duplicates-table td:nth-child(1),
+    .review-duplicates-table th:nth-child(2), .review-duplicates-table td:nth-child(2),
+    .review-duplicates-table th:nth-child(4), .review-duplicates-table td:nth-child(4),
+    .review-outliers-table th:nth-child(2), .review-outliers-table td:nth-child(2),
+    .review-outliers-table th:nth-child(3), .review-outliers-table td:nth-child(3),
+    .review-outliers-table th:nth-child(5), .review-outliers-table td:nth-child(5),
+    .review-outliers-table th:nth-child(6), .review-outliers-table td:nth-child(6),
+    .review-events-table th:nth-child(2), .review-events-table td:nth-child(2),
+    .review-events-table th:nth-child(3), .review-events-table td:nth-child(3),
+    .review-events-table th:nth-child(5), .review-events-table td:nth-child(5) { display: none; }
+    .review-duplicates-table th:nth-child(3), .review-outliers-table th:nth-child(1) { width: 60%; }
+    .review-duplicates-table th:nth-child(5), .review-outliers-table th:nth-child(4) { width: 40%; }
+    .review-events-table th:nth-child(1) { width: 60%; }
+    .review-events-table th:nth-child(4) { width: 40%; }
+}

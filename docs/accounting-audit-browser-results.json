@@ -1,0 +1,77 @@
+{
+  "environment": {
+    "browser": "154.0.8037.93",
+    "backend": "isolated loopback JSON contract fixture",
+    "real_indexeddb": true
+  },
+  "cases": [
+    {
+      "name": "B01_queue_save_resolves_even_when_storage_aborts",
+      "status": "confirmed",
+      "evidence": {
+        "resolved": true,
+        "error": null,
+        "persisted_items": 0
+      }
+    },
+    {
+      "name": "B02_invalid_head_blocks_later_valid_transactions",
+      "status": "confirmed",
+      "evidence": {
+        "sent_requests": [
+          {
+            "url": "/bad",
+            "id": "bad"
+          }
+        ],
+        "remaining_items": 2,
+        "valid_commits": 0
+      }
+    },
+    {
+      "name": "B03_legacy_queue_concurrent_claims_generate_different_ids",
+      "status": "confirmed",
+      "evidence": {
+        "queued_actions": 1,
+        "sent_request_ids": [
+          "adb22931-980b-40be-9bc1-b30266882185",
+          "47b30f5e-82f2-491d-905a-8bc2895f64a7"
+        ],
+        "committed_actions": 2,
+        "remaining_items": 0
+      }
+    },
+    {
+      "name": "B04_normal_queue_concurrent_sync_is_server_idempotent",
+      "status": "passed",
+      "evidence": {
+        "http_requests": 2,
+        "committed_actions": 1,
+        "remaining_items": 0
+      }
+    },
+    {
+      "name": "B05_authentication_failure_preserves_queue",
+      "status": "passed",
+      "evidence": {
+        "remaining_items": 2,
+        "committed_actions": 0,
+        "sent_requests": [
+          {
+            "url": "/auth",
+            "id": "stable-id"
+          }
+        ]
+      }
+    },
+    {
+      "name": "B06_lost_commit_response_replays_without_duplicate",
+      "status": "passed",
+      "evidence": {
+        "http_requests": 2,
+        "committed_actions": 1,
+        "remaining_items": 0
+      }
+    }
+  ]
+}

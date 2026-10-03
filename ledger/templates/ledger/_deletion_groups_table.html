@@ -1,0 +1,71 @@
+{% load bilingual %}
+<div class="panel compact-panel ledger-history-panel record-list-panel" id="page-trash" aria-labelledby="{% if is_trash %}page-view-heading{% else %}group-trash-heading{% endif %}">
+    {% if not is_trash %}<div class="ledger-history-header">
+        <h2 id="group-trash-heading">{{ deletion_group_heading|bilingual }}</h2>
+        {% if records_link %}<a class="button-link" href="{{ records_link }}">{% bi 'Back to records' %}</a>{% endif %}
+    </div>{% endif %}
+    <details class="trash-help"><summary>{% bi 'Help' %}</summary><p>{% bi 'Recover deleted records at any time. Transaction recovery restores every transaction in the deletion group.' %}</p></details>
+    <div class="data-table-wrap" tabindex="0" role="region" aria-label="Scrollable {{ deletion_group_heading|bilingual_plain }}">
+        <table class="data-table trash-transactions-table" aria-label="{{ deletion_group_heading|bilingual_plain }}">
+            <thead>
+                <tr>
+                    <th scope="col">{% table_heading 'Item / Transactions' %}</th>
+                    <th scope="col">{% table_heading 'Firm' %}</th>
+                    <th scope="col">{% table_heading 'Deleted On' %}</th>
+                    <th scope="col" class="amount-heading">{% table_heading 'Balance restored' %}</th>
+                    <th scope="col" class="amount-heading">{% table_heading 'Payments' %}</th>
+                    <th scope="col">{% table_heading 'Actions' %}</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for group in deletion_groups %}
+                    <tr id="trash-group-{{ group.pk }}">
+                        <td>
+                            <div class="trash-record-summary">
+                            <strong>{{ group.title|bilingual_record_title }}</strong>
+                            <span class="inline-meta"> · #{{ group.transaction_ids }}</span>
+                            </div>
+                        </td>
+                        <td>{{ group.firm.name }}</td>
+                        <td>{{ group.deleted_at|date:"d-m-Y H:i T" }}</td>
+                        <td class="amount-cell">{{ group.amount }}</td>
+                        <td class="amount-cell">{{ group.payment_amount }}</td>
+                        <td class="table-actions">
+                            <details class="row-actions"><summary aria-label="{{ 'Actions'|bilingual_plain }}" title="{{ 'Actions'|bilingual_plain }}"><span aria-hidden="true">⋯</span></summary><div class="row-action-menu">
+                            <details class="audit-details">
+                                <summary aria-label="Deletion and correction details for {{ group.title }}">{% bi 'Details' %}</summary>
+                                <p>{% bi 'Firm' %}: {{ group.firm.name }}</p>
+                                <p>{% bi 'Deleted On' %}: {{ group.deleted_at|date:"d-m-Y H:i T" }}</p>
+                                <p>{% bi 'Debt Change' %}: {{ group.amount }}</p>
+                                <p>{% bi 'Payments' %}: {{ group.payment_amount }}</p>
+                                <p>{{ group.reason }}</p>
+                                {% for member in group.members.all %}
+                                    <p>{% bi 'Transaction' %} #{{ member.batch_id }} · {{ member.batch.date|date:"d-m-Y" }}</p>
+                                    <p>{% bi 'Original posting receipt' %}: {% if member.batch.posting_receipt %}{{ member.batch.posting_receipt.date }} · before {{ member.batch.posting_receipt.previous_balance }} · after {{ member.batch.posting_receipt.balance_after }}{% else %}{% bi 'Unavailable for legacy records' %}{% endif %}</p>
+                                    {% for entry in member.batch.posting_receipt.entries %}<p>{{ entry.bill_number|default:"—" }} · +{{ entry.increase }} / −{{ entry.decrease }}</p>{% endfor %}
+                                    {% for event in member.batch.audit_events.all %}
+                                        <p>{{ event.get_kind_display|bilingual }} · {{ event.created_at|date:"d-m-Y H:i T" }} · {{ event.reason }}</p>
+                                    {% endfor %}
+                                {% endfor %}
+                            </details>
+                            <details class="batch-action" data-action="restore" data-title="Recover deletion group?" data-label="Recover" data-description="Recover {{ group.title }} for {{ group.firm.name }}, including transactions #{{ group.transaction_ids }}. Change to current debt: {{ group.amount }}. Any earlier independent deletions remain in Trash." data-description-ur="{% bi_format_urdu 'group_recover' item=group.title firm=group.firm.name ids=group.transaction_ids amount=group.amount %}">
+                                <summary class="restore-button">{% bi 'Recover' %}</summary>
+                                <form method="post" action="{% url 'ledger:recover_trash' group.pk %}" class="batch-action-form">
+                                    {% csrf_token %}
+                                    <input type="hidden" name="next" value="{% if trash_link %}{{ trash_link }}{% else %}{% url return_url %}{% endif %}">
+                                    <p>{% bi_format 'group_recover_short' ids=group.transaction_ids amount=group.amount %}</p>
+                                    <label for="recover-{{ deletion_group_heading|slugify }}-{{ group.pk }}">{% bi 'Reason for recovery' %}</label>
+                                    <input id="recover-{{ deletion_group_heading|slugify }}-{{ group.pk }}" name="reason" required maxlength="500">
+                                    <button type="submit" class="restore-button">{% bi 'Recover' %}</button>
+                                </form>
+                            </details>
+                            </div></details>
+                        </td>
+                    </tr>
+                {% empty %}
+                    <tr class="empty-table-row"><td colspan="6">{{ empty_trash_message|bilingual }}</td></tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>

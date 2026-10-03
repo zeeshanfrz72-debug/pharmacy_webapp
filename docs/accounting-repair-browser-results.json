@@ -1,0 +1,137 @@
+{
+  "environment": {
+    "browser": "154.0.8037.93",
+    "backend": "isolated loopback JSON contract fixture",
+    "real_indexeddb": true
+  },
+  "cases": [
+    {
+      "name": "B01_aborted_storage_rejects_save",
+      "status": "passed",
+      "evidence": {
+        "resolved": false,
+        "error": "Error",
+        "persisted_items": 0
+      }
+    },
+    {
+      "name": "B02_rejected_supplier_blocks_dependents_only",
+      "status": "passed",
+      "evidence": {
+        "sent_requests": [
+          {
+            "url": "/bad",
+            "id": "bad"
+          },
+          {
+            "url": "/commit",
+            "id": "valid"
+          }
+        ],
+        "remaining_items": 2,
+        "valid_commits": 1
+      }
+    },
+    {
+      "name": "B03_legacy_claim_is_durable_across_two_tabs",
+      "status": "passed",
+      "evidence": {
+        "sent_requests": [
+          {
+            "url": "/commit",
+            "id": "30a172d8-13c6-4793-b32d-a904a8a1509f"
+          }
+        ],
+        "committed_actions": 1
+      }
+    },
+    {
+      "name": "B04_normal_queue_concurrent_sync_is_server_idempotent",
+      "status": "passed",
+      "evidence": {
+        "http_requests": 1,
+        "committed_actions": 1,
+        "remaining_items": 0
+      }
+    },
+    {
+      "name": "B05_authentication_failure_preserves_queue",
+      "status": "passed",
+      "evidence": {
+        "remaining_items": 2,
+        "committed_actions": 0,
+        "sent_requests": [
+          {
+            "url": "/auth",
+            "id": "stable-id"
+          }
+        ]
+      }
+    },
+    {
+      "name": "B06_lost_commit_response_replays_without_duplicate",
+      "status": "passed",
+      "evidence": {
+        "http_requests": 2,
+        "committed_actions": 1,
+        "remaining_items": 0
+      }
+    },
+    {
+      "name": "B07_rejected_item_correction_uses_new_id_and_keeps_evidence",
+      "status": "passed",
+      "evidence": {
+        "original_request_id": "rejected-id",
+        "corrected_request_id": "3289f6fe-4403-4089-bab3-b0f3a1263d20",
+        "committed_actions": 1,
+        "uncaught_errors": []
+      }
+    },
+    {
+      "name": "B08_export_preserves_rejected_and_dependent_actions",
+      "status": "passed",
+      "evidence": {
+        "exported_items": 2,
+        "rejected_error_preserved": true,
+        "queue_retained": true
+      }
+    },
+    {
+      "name": "B09_aborted_legacy_claim_never_sends_unpersisted_id",
+      "status": "passed",
+      "evidence": {
+        "requests_before_retry": 0,
+        "committed_actions": 1
+      }
+    },
+    {
+      "name": "B10_mixed_clients_cannot_mutate_queue_across_upgrade",
+      "status": "passed",
+      "evidence": {
+        "obsolete_post_status": 428,
+        "obsolete_storage_reopen": "VersionError",
+        "committed_actions": 1,
+        "legacy_queue_preserved": true
+      }
+    },
+    {
+      "name": "B11_conflict_requires_review_and_never_reassigns_identity",
+      "status": "passed",
+      "evidence": {
+        "original_id_preserved": true,
+        "conflict_readonly": true,
+        "requests": [
+          {
+            "url": "/conflict",
+            "id": "conflicted"
+          },
+          {
+            "url": "/commit",
+            "id": "other"
+          }
+        ],
+        "committed_actions_including_original": 2
+      }
+    }
+  ]
+}

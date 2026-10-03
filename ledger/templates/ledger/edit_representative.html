@@ -1,21 +1,22 @@
 {% extends "ledger/base.html" %}
+{% load bilingual %}
 
 {% block title %}Edit Representative | Pharmacy Ledger{% endblock %}
 
 {% block content %}
     <div class="panel compact-panel add-rep-inline-panel">
-        <h2>Edit Representative: {{ representative.name }}</h2>
+        <h2>{% bi 'Edit Representative' %}: {{ representative.name }}</h2>
 
         <form method="post" class="add-rep-inline-form">
             {% csrf_token %}
 
             <div class="add-rep-inline-grid">
-                {{ form.as_p }}
+                {% include "ledger/_bilingual_form.html" %}
             </div>
 
             <div class="compact-form-actions add-rep-inline-actions">
-                <button type="submit">Update Representative</button>
-                <a class="button-link" href="{% url 'ledger:add_representative' %}">Cancel</a>
+                <button type="submit">{% bi 'Update Representative' %}</button>
+                <a class="button-link" href="{% url 'ledger:add_representative' %}">{% bi 'Cancel' %}</a>
             </div>
         </form>
     </div>
