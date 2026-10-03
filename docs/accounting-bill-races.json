@@ -1,0 +1,481 @@
+{
+  "database": "disposable file SQLite",
+  "races": [
+    {
+      "case": "payment_payment",
+      "iteration": 0,
+      "outcomes": [
+        "rejected",
+        "created"
+      ],
+      "firm_balance": "120.00",
+      "source_balance": "20.00",
+      "destination_balance": "100.00"
+    },
+    {
+      "case": "transfer_payment",
+      "iteration": 0,
+      "outcomes": [
+        "rejected",
+        "created"
+      ],
+      "firm_balance": "120.00",
+      "source_balance": "20.00",
+      "destination_balance": "100.00"
+    },
+    {
+      "case": "transfer_transfer",
+      "iteration": 0,
+      "outcomes": [
+        "rejected",
+        "created"
+      ],
+      "firm_balance": "200.00",
+      "source_balance": "0.00",
+      "destination_balance": "200.00"
+    },
+    {
+      "case": "transfer_delete",
+      "iteration": 0,
+      "outcomes": [
+        "rejected",
+        "created"
+      ],
+      "firm_balance": "100.00",
+      "source_balance": "0.00",
+      "destination_balance": "100.00"
+    },
+    {
+      "case": "undo_payment",
+      "iteration": 0,
+      "outcomes": [
+        "rejected",
+        "created"
+      ],
+      "firm_balance": "50.00",
+      "source_balance": "0.00",
+      "destination_balance": "50.00"
+    },
+    {
+      "case": "duplicate_transfer",
+      "iteration": 0,
+      "outcomes": [
+        "created",
+        "duplicate"
+      ],
+      "firm_balance": "200.00",
+      "source_balance": "0.00",
+      "destination_balance": "200.00"
+    },
+    {
+      "case": "edit_transfer",
+      "iteration": 0,
+      "outcomes": [
+        "rejected",
+        "created"
+      ],
+      "firm_balance": "300.00",
+      "source_balance": "200.00",
+      "destination_balance": "100.00"
+    },
+    {
+      "case": "supplier_delete_transfer",
+      "iteration": 0,
+      "outcomes": [
+        "rejected",
+        "created"
+      ],
+      "firm_balance": "200.00",
+      "source_balance": "100.00",
+      "destination_balance": "100.00"
+    },
+    {
+      "case": "payment_payment",
+      "iteration": 1,
+      "outcomes": [
+        "rejected",
+        "created"
+      ],
+      "firm_balance": "120.00",
+      "source_balance": "20.00",
+      "destination_balance": "100.00"
+    },
+    {
+      "case": "transfer_payment",
+      "iteration": 1,
+      "outcomes": [
+        "rejected",
+        "created"
+      ],
+      "firm_balance": "120.00",
+      "source_balance": "20.00",
+      "destination_balance": "100.00"
+    },
+    {
+      "case": "transfer_transfer",
+      "iteration": 1,
+      "outcomes": [
+        "rejected",
+        "created"
+      ],
+      "firm_balance": "200.00",
+      "source_balance": "0.00",
+      "destination_balance": "200.00"
+    },
+    {
+      "case": "transfer_delete",
+      "iteration": 1,
+      "outcomes": [
+        "rejected",
+        "created"
+      ],
+      "firm_balance": "100.00",
+      "source_balance": "0.00",
+      "destination_balance": "100.00"
+    },
+    {
+      "case": "undo_payment",
+      "iteration": 1,
+      "outcomes": [
+        "rejected",
+        "created"
+      ],
+      "firm_balance": "50.00",
+      "source_balance": "0.00",
+      "destination_balance": "50.00"
+    },
+    {
+      "case": "duplicate_transfer",
+      "iteration": 1,
+      "outcomes": [
+        "duplicate",
+        "created"
+      ],
+      "firm_balance": "200.00",
+      "source_balance": "0.00",
+      "destination_balance": "200.00"
+    },
+    {
+      "case": "edit_transfer",
+      "iteration": 1,
+      "outcomes": [
+        "rejected",
+        "created"
+      ],
+      "firm_balance": "300.00",
+      "source_balance": "200.00",
+      "destination_balance": "100.00"
+    },
+    {
+      "case": "supplier_delete_transfer",
+      "iteration": 1,
+      "outcomes": [
+        "rejected",
+        "created"
+      ],
+      "firm_balance": "200.00",
+      "source_balance": "100.00",
+      "destination_balance": "100.00"
+    },
+    {
+      "case": "payment_payment",
+      "iteration": 2,
+      "outcomes": [
+        "rejected",
+        "created"
+      ],
+      "firm_balance": "120.00",
+      "source_balance": "20.00",
+      "destination_balance": "100.00"
+    },
+    {
+      "case": "transfer_payment",
+      "iteration": 2,
+      "outcomes": [
+        "rejected",
+        "created"
+      ],
+      "firm_balance": "120.00",
+      "source_balance": "20.00",
+      "destination_balance": "100.00"
+    },
+    {
+      "case": "transfer_transfer",
+      "iteration": 2,
+      "outcomes": [
+        "rejected",
+        "created"
+      ],
+      "firm_balance": "200.00",
+      "source_balance": "0.00",
+      "destination_balance": "200.00"
+    },
+    {
+      "case": "transfer_delete",
+      "iteration": 2,
+      "outcomes": [
+        "rejected",
+        "created"
+      ],
+      "firm_balance": "100.00",
+      "source_balance": "0.00",
+      "destination_balance": "100.00"
+    },
+    {
+      "case": "undo_payment",
+      "iteration": 2,
+      "outcomes": [
+        "rejected",
+        "created"
+      ],
+      "firm_balance": "50.00",
+      "source_balance": "0.00",
+      "destination_balance": "50.00"
+    },
+    {
+      "case": "duplicate_transfer",
+      "iteration": 2,
+      "outcomes": [
+        "created",
+        "duplicate"
+      ],
+      "firm_balance": "200.00",
+      "source_balance": "0.00",
+      "destination_balance": "200.00"
+    },
+    {
+      "case": "edit_transfer",
+      "iteration": 2,
+      "outcomes": [
+        "rejected",
+        "created"
+      ],
+      "firm_balance": "300.00",
+      "source_balance": "200.00",
+      "destination_balance": "100.00"
+    },
+    {
+      "case": "supplier_delete_transfer",
+      "iteration": 2,
+      "outcomes": [
+        "rejected",
+        "created"
+      ],
+      "firm_balance": "200.00",
+      "source_balance": "100.00",
+      "destination_balance": "100.00"
+    },
+    {
+      "case": "payment_payment",
+      "iteration": 3,
+      "outcomes": [
+        "rejected",
+        "created"
+      ],
+      "firm_balance": "120.00",
+      "source_balance": "20.00",
+      "destination_balance": "100.00"
+    },
+    {
+      "case": "transfer_payment",
+      "iteration": 3,
+      "outcomes": [
+        "rejected",
+        "created"
+      ],
+      "firm_balance": "120.00",
+      "source_balance": "20.00",
+      "destination_balance": "100.00"
+    },
+    {
+      "case": "transfer_transfer",
+      "iteration": 3,
+      "outcomes": [
+        "rejected",
+        "created"
+      ],
+      "firm_balance": "200.00",
+      "source_balance": "0.00",
+      "destination_balance": "200.00"
+    },
+    {
+      "case": "transfer_delete",
+      "iteration": 3,
+      "outcomes": [
+        "rejected",
+        "created"
+      ],
+      "firm_balance": "100.00",
+      "source_balance": "0.00",
+      "destination_balance": "100.00"
+    },
+    {
+      "case": "undo_payment",
+      "iteration": 3,
+      "outcomes": [
+        "rejected",
+        "created"
+      ],
+      "firm_balance": "50.00",
+      "source_balance": "0.00",
+      "destination_balance": "50.00"
+    },
+    {
+      "case": "duplicate_transfer",
+      "iteration": 3,
+      "outcomes": [
+        "duplicate",
+        "created"
+      ],
+      "firm_balance": "200.00",
+      "source_balance": "0.00",
+      "destination_balance": "200.00"
+    },
+    {
+      "case": "edit_transfer",
+      "iteration": 3,
+      "outcomes": [
+        "rejected",
+        "created"
+      ],
+      "firm_balance": "300.00",
+      "source_balance": "200.00",
+      "destination_balance": "100.00"
+    },
+    {
+      "case": "supplier_delete_transfer",
+      "iteration": 3,
+      "outcomes": [
+        "rejected",
+        "created"
+      ],
+      "firm_balance": "200.00",
+      "source_balance": "100.00",
+      "destination_balance": "100.00"
+    },
+    {
+      "case": "payment_payment",
+      "iteration": 4,
+      "outcomes": [
+        "created",
+        "rejected"
+      ],
+      "firm_balance": "120.00",
+      "source_balance": "20.00",
+      "destination_balance": "100.00"
+    },
+    {
+      "case": "transfer_payment",
+      "iteration": 4,
+      "outcomes": [
+        "rejected",
+        "created"
+      ],
+      "firm_balance": "120.00",
+      "source_balance": "20.00",
+      "destination_balance": "100.00"
+    },
+    {
+      "case": "transfer_transfer",
+      "iteration": 4,
+      "outcomes": [
+        "rejected",
+        "created"
+      ],
+      "firm_balance": "200.00",
+      "source_balance": "0.00",
+      "destination_balance": "200.00"
+    },
+    {
+      "case": "transfer_delete",
+      "iteration": 4,
+      "outcomes": [
+        "rejected",
+        "created"
+      ],
+      "firm_balance": "100.00",
+      "source_balance": "0.00",
+      "destination_balance": "100.00"
+    },
+    {
+      "case": "undo_payment",
+      "iteration": 4,
+      "outcomes": [
+        "rejected",
+        "created"
+      ],
+      "firm_balance": "50.00",
+      "source_balance": "0.00",
+      "destination_balance": "50.00"
+    },
+    {
+      "case": "duplicate_transfer",
+      "iteration": 4,
+      "outcomes": [
+        "duplicate",
+        "created"
+      ],
+      "firm_balance": "200.00",
+      "source_balance": "0.00",
+      "destination_balance": "200.00"
+    },
+    {
+      "case": "edit_transfer",
+      "iteration": 4,
+      "outcomes": [
+        "rejected",
+        "created"
+      ],
+      "firm_balance": "300.00",
+      "source_balance": "200.00",
+      "destination_balance": "100.00"
+    },
+    {
+      "case": "supplier_delete_transfer",
+      "iteration": 4,
+      "outcomes": [
+        "rejected",
+        "created"
+      ],
+      "firm_balance": "200.00",
+      "source_balance": "100.00",
+      "destination_balance": "100.00"
+    }
+  ],
+  "migrations": {
+    "backups\\preview-before-reset-20261002-220531.sqlite3": {
+      "status": "migrated isolated snapshot",
+      "source_unchanged": true,
+      "legacy_values_preserved": true,
+      "migration": {
+        "exit_code": 0,
+        "stdout": "Operations to perform:\n  Apply all migrations: admin, auth, axes, contenttypes, ledger, sessions\nRunning migrations:\n  Applying ledger.0008_ledger_integrity... OK\n  Applying ledger.0009_exact_cent_constraints... OK\n  Applying ledger.0010_snapshot_bounds... OK\n  Applying ledger.0011_immutable_actor_identity... OK\n  Applying ledger.0012_bill_is_disabled_alter_bill_bill_number_and_more... OK\n",
+        "stderr": ""
+      },
+      "application_check": {
+        "exit_code": 0,
+        "stdout": "System check identified no issues (0 silenced).\n",
+        "stderr": ""
+      }
+    },
+    "db.sqlite3": {
+      "status": "no application schema",
+      "source_unchanged": true
+    },
+    "preview-20261001-135817.sqlite3": {
+      "status": "migrated isolated snapshot",
+      "source_unchanged": true,
+      "legacy_values_preserved": true,
+      "migration": {
+        "exit_code": 0,
+        "stdout": "Operations to perform:\n  Apply all migrations: admin, auth, axes, contenttypes, ledger, sessions\nRunning migrations:\n  Applying ledger.0008_ledger_integrity... OK\n  Applying ledger.0009_exact_cent_constraints... OK\n  Applying ledger.0010_snapshot_bounds... OK\n  Applying ledger.0011_immutable_actor_identity... OK\n  Applying ledger.0012_bill_is_disabled_alter_bill_bill_number_and_more... OK\n",
+        "stderr": ""
+      },
+      "application_check": {
+        "exit_code": 0,
+        "stdout": "System check identified no issues (0 silenced).\n",
+        "stderr": ""
+      }
+    }
+  }
+}

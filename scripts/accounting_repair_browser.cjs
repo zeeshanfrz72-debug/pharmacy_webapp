@@ -41,7 +41,7 @@ const server = http.createServer(async (req, res) => {
   if (req.url === '/auth') {
     res.statusCode=401; res.end(JSON.stringify({success:false,error:'authentication_required'})); return;
   }
-  if (!commits.has(id) && req.headers['x-ledger-queue-version']!=='3') {
+  if (!commits.has(id) && req.headers['x-ledger-queue-version']!=='4') {
     res.statusCode=428;res.end(JSON.stringify({success:false,error:'Update the offline queue client.'}));return;
   }
   const duplicate=commits.has(id); commits.add(id);

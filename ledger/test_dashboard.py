@@ -87,7 +87,7 @@ class DashboardTests(TestCase):
         self.batch(amount="100", day=self.today - timedelta(days=1))
         second = self.batch(amount="200")
         other = Firm.objects.create(name="Other", source_type=Firm.SourceType.LOCAL_MARKET)
-        create_transaction_batch({"request_id": uuid.uuid4(), "firm": other, "payment_amount": Decimal("999"), "bill_date": self.today}, user=self.owner, payload_hash="other")
+        create_transaction_batch({"request_id": uuid.uuid4(), "firm": other, "bill_choice": "add_new", "new_bill_number": "", "new_bill_amount": Decimal("999"), "payment_amount": Decimal("999"), "bill_date": self.today}, user=self.owner, payload_hash="other")
         page = self.client.get(reverse("ledger:ledger_history"), {"firm_id": self.firm.pk, "start_date": self.today.isoformat()})
         self.assertEqual(len(page.context["history_rows"]), 1)
         self.assertEqual(page.context["history_rows"][0]["remaining_debt"], Decimal("300"))

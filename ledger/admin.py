@@ -2,7 +2,7 @@ from django.contrib import admin
 from django.db.models import Q, Sum
 
 from .models import Firm, Representative, Bill, Payment, LedgerEntry, TransactionBatch, DeletionGroup, DeletionMember
-from .models import BillEditEvent
+from .models import BillEditEvent, BillCarryForward
 from .money import balance
 
 
@@ -165,3 +165,11 @@ class BillEditEventAdmin(TransactionBatchAdmin):
     list_filter = ("timestamp",)
     search_fields = ("bill__bill_number",)
     readonly_fields = tuple(field.name for field in BillEditEvent._meta.fields)
+
+
+@admin.register(BillCarryForward)
+class BillCarryForwardAdmin(TransactionBatchAdmin):
+    list_display = ("id", "source", "destination", "amount", "created_at")
+    list_filter = ("created_at",)
+    search_fields = ("source__bill_number", "destination__bill_number")
+    readonly_fields = tuple(field.name for field in BillCarryForward._meta.fields)

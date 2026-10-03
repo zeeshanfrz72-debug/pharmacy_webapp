@@ -5,6 +5,36 @@ from django.utils.html import format_html
 
 
 _VOCABULARY = """
+Disable & carry forward|غیر فعال کریں اور بقایا منتقل کریں
+Debt Carry Forward|بقایا قرضے کی منتقلی
+Undo Debt Carry Forward|بقایا قرضے کی منتقلی واپس کریں
+Destination bill|منزل کا بل
+Create a new bill|نیا بل بنائیں
+New charges|نئی خریداری کی رقم
+Carried debt|منتقل شدہ بقایا
+Actual payments|اصل ادائیگیاں
+Transferred out|دوسرے بل میں منتقل شدہ بقایا
+State|حیثیت
+Disabled|غیر فعال
+Enabled|فعال
+Optional representative|نمائندہ اختیاری ہے
+No payment|کوئی ادائیگی نہیں
+Confirm disable and carry forward|غیر فعال کرنے اور بقایا منتقل کرنے کی تصدیق کریں
+Cancel / No|منسوخ / نہیں
+New bill amounts are new charges only. Carried debt is shown separately.|نئے بل کی رقم صرف نئی خریداری ہے۔ منتقل شدہ بقایا الگ دکھایا جاتا ہے۔
+Carry-forward is available online only.|بقایا کی منتقلی صرف انٹرنیٹ پر دستیاب ہے۔
+Undo later carry-forwards first. The destination must retain enough debt to return this amount.|پہلے بعد کی منتقلیاں واپس کریں۔ منزل کے بل میں رقم واپس کرنے کے لیے کافی بقایا ہونا چاہیے۔
+Choose a source type and firm first. Local Market bills start unpaid; their representative and bill number are optional.|پہلے ذریعہ اور فرم منتخب کریں۔ مقامی مارکیٹ کے بل بغیر ادائیگی شروع ہوتے ہیں؛ نمائندہ اور بل نمبر اختیاری ہیں۔
+Bill edits are recorded in history. Amount changes update debt; recorded payments remain unchanged.|بل کی تبدیلی ریکارڈ میں محفوظ ہوتی ہے۔ رقم کی تبدیلی سے قرضہ بدلتا ہے؛ درج شدہ ادائیگی کی رقم برقرار رہتی ہے۔
+Choose one bill for this payment.|اس ادائیگی کے لیے ایک بل منتخب کریں۔
+Payment amount cannot be higher than this bill's remaining debt.|ادائیگی اس بل کے بقایا سے زیادہ نہیں ہو سکتی۔
+Reconcile this bill's credit before disabling it.|غیر فعال کرنے سے پہلے اس بل کی زائد ادا شدہ رقم کا حساب درست کریں۔
+Undo this bill's carry-forward before editing it.|ترمیم سے پہلے اس بل کی بقایا منتقلی واپس کریں۔
+Undo this bill's carry-forward before deleting it.|حذف کرنے سے پہلے اس بل کی بقایا منتقلی واپس کریں۔
+Undo later carry-forwards first.|پہلے بعد کی بقایا منتقلیاں واپس کریں۔
+Reverse dependent payments before returning this carried debt.|بقایا واپس کرنے سے پہلے متعلقہ ادائیگیوں کا اثر واپس کریں۔
+Bill disabled and debt carried forward.|بل غیر فعال اور بقایا منتقل ہو گیا۔
+Carry-forward undone.|بقایا منتقلی واپس ہو گئی۔
 Corrected chronological balance|درست کردہ تاریخی بقایا
 Original posting receipt|اصل اندراج کی رسید
 Unavailable for legacy records|پرانے ریکارڈ کے لیے دستیاب نہیں
@@ -353,6 +383,7 @@ VOCABULARY.update({
     "This account is inactive.": "یہ اکاؤنٹ غیر فعال ہے۔",
 })
 ERROR_PATTERNS = [
+    [r"Local Market Bill #(\d+)(.*)", "مقامی مارکیٹ کا بل #{1}{2}"],
     [r"Ensure this value is greater than or equal to (.+)\.", "رقم کم از کم {1} ہونی چاہیے۔"],
     [r"Ensure this value is less than or equal to (.+)\.", "رقم زیادہ سے زیادہ {1} ہونی چاہیے۔"],
     [r"Ensure this value has at most (\d+) characters \(it has (\d+)\)\.", "زیادہ سے زیادہ {1} حروف درج کریں؛ موجودہ تعداد {2} ہے۔"],

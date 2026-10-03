@@ -47,3 +47,31 @@ class DeletionBackfillTests(TransactionTestCase):
             self.assertEqual(entries.count(), 2)
         finally:
             MigrationExecutor(connection).migrate(MigrationExecutor(connection).loader.graph.leaf_nodes())
+
+    def test_invoice_migration_preserves_cash_pairs_and_unassigned_payments(self):
+        executor = MigrationExecutor(connection)
+        before = [("ledger", "0011_immutable_actor_identity")]
+        after = [("ledger", "0012_bill_is_disabled_alter_bill_bill_number_and_more")]
+        executor.migrate(before)
+        try:
+            apps = executor.loader.project_state(before).apps
+            Firm, Bill, Payment, Batch, Entry = [apps.get_model("ledger", name) for name in ("Firm", "Bill", "Payment", "TransactionBatch", "LedgerEntry")]
+            firm = Firm.objects.create(name="Historical Market", source_type="local_market")
+            root = Batch.objects.create(firm=firm, date=timezone.localdate())
+            bill = Bill.objects.create(firm=firm, bill_number="CASH-LEGACY", bill_amount=500, creation_batch=root)
+            paired = Payment.objects.create(firm=firm, bill=bill, amount=500)
+            unlinked = Payment.objects.create(firm=firm, amount=10)
+            Entry.objects.create(firm=firm, bill=bill, transaction_batch=root, entry_type="bill_created", increase=500)
+            Entry.objects.create(firm=firm, payment=paired, transaction_batch=root, entry_type="payment_made", decrease=500)
+            Entry.objects.create(firm=firm, payment=unlinked, entry_type="payment_made", decrease=10)
+            old = {name: list(apps.get_model("ledger", name).objects.order_by("pk").values()) for name in ("Bill", "Payment", "TransactionBatch", "LedgerEntry")}
+            MigrationExecutor(connection).migrate(after)
+            new_apps = MigrationExecutor(connection).loader.project_state(after).apps
+            for name, rows in old.items():
+                fresh = list(new_apps.get_model("ledger", name).objects.order_by("pk").values())
+                self.assertEqual([{key: row[key] for key in rows[0]} for row in fresh], rows)
+            self.assertFalse(new_apps.get_model("ledger", "Bill").objects.get(pk=bill.pk).is_disabled)
+            self.assertIsNone(new_apps.get_model("ledger", "Payment").objects.get(pk=unlinked.pk).bill_id)
+            self.assertEqual(new_apps.get_model("ledger", "BillCarryForward").objects.count(), 0)
+        finally:
+            MigrationExecutor(connection).migrate(MigrationExecutor(connection).loader.graph.leaf_nodes())

@@ -5,7 +5,7 @@
 <div class="panel compact-panel">
     <h2>{% bi 'Edit Bill' %}</h2>
     <p>{% bi 'Firm' %}: <bdi>{{ bill.firm.name }}</bdi> · {{ bill.firm.get_source_type_display|bilingual }}</p>
-    <p>{% bi 'Bill edits are recorded in history. Amount changes update debt; Local Market cash payments stay equal to the bill.' %}</p>
+    <p>{% bi 'Bill edits are recorded in history. Amount changes update debt; recorded payments remain unchanged.' %}</p>
     <form method="post" class="record-entry-form">
         {% csrf_token %}
         {% include 'ledger/_bilingual_form.html' %}

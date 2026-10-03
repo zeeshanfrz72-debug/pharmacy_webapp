@@ -10,7 +10,7 @@
                 <td data-label="Date">{{ row.date|date:"d-m-Y" }}</td>
                 <td data-label="Firm"><strong>{{ row.firm.name }}</strong></td>
                 <td data-label="Representative">{{ row.representative_names|first|default:"—" }}{% if row.representative_names|length > 1 %} <span class="inline-meta">(+{{ row.representative_names|length|add:"-1" }})</span>{% endif %}</td>
-                <td data-label="Bill">{{ row.related_bill_numbers|first|default:"—" }}{% if row.related_bill_numbers|length > 1 %} <span class="inline-meta">(+{{ row.related_bill_numbers|length|add:"-1" }})</span>{% endif %}</td>
+                <td data-label="Bill">{{ row.related_bill_numbers|first|default:"—"|bilingual }}{% if row.related_bill_numbers|length > 1 %} <span class="inline-meta">(+{{ row.related_bill_numbers|length|add:"-1" }})</span>{% endif %}{% if row.is_transfer %}<p>{{ row.batch.get_kind_display|bilingual }} · {{ row.batch.posting_receipt.carry_forward.amount }}</p>{% endif %}</td>
                 <td data-label="Bill amount" class="amount-cell">{{ row.bill_amount }}</td>
                 <td data-label="Payment" class="amount-cell entry-payment">{{ row.payment_made }}</td>
                 <td data-label="Balance After" class="amount-cell">{% if row.remaining_debt < 0 %}<span class="entry-credit" title="{{ 'Supplier Credits'|bilingual_plain }}">{{ row.remaining_debt }}</span>{% else %}{{ row.remaining_debt }}{% endif %}</td>
@@ -23,7 +23,8 @@
                         <p>{% bi 'Representatives' %}: {{ row.representative_names|join:", "|default:"—" }} · {% bi 'Bills' %}: {{ row.related_bill_numbers|join:", "|default:"—" }}</p>
                         {% for entry in row.entries %}<p>{{ entry.get_entry_type_display|bilingual }} · +{{ entry.increase }} / −{{ entry.decrease }}{% if entry.description %} · {{ entry.description }}{% endif %}</p>{% if entry.bill.notes %}<p>{{ entry.bill.notes }}</p>{% endif %}{% if entry.payment.notes %}<p>{{ entry.payment.notes }}</p>{% endif %}{% endfor %}
                         <p>{% bi 'Original posting receipt' %}: {% if row.batch.posting_receipt %}{{ row.batch.posting_receipt.date }} · before {{ row.batch.posting_receipt.previous_balance }} · after {{ row.batch.posting_receipt.balance_after }}{% else %}{% bi 'Unavailable for legacy records' %}{% endif %}</p>
-                        {% for entry in row.batch.posting_receipt.entries %}<p>Original reference {{ entry.bill_number|default:"—" }} · +{{ entry.increase }} / −{{ entry.decrease }}</p>{% endfor %}
+                        {% for entry in row.batch.posting_receipt.entries %}<p>Original reference {{ entry.display_reference|default:entry.bill_number|default:"—"|bilingual }} · +{{ entry.increase }} / −{{ entry.decrease }}</p>{% endfor %}
+                        {% if row.is_transfer %}<p>{{ row.batch.posting_receipt.carry_forward.source_reference|bilingual }} → {{ row.batch.posting_receipt.carry_forward.destination_reference|bilingual }} · {{ row.batch.posting_receipt.carry_forward.amount }} · {{ row.batch.posting_receipt.actor.username }} · {{ row.batch.created_at|date:'d-m-Y H:i T' }}</p>{% endif %}
                         {% for edit in row.batch.edit_events.all %}<details><summary>Bill correction · {{ edit.timestamp|date:"d-m-Y H:i T" }} · {{ edit.actor_snapshot.username|default:"Unavailable original actor" }}</summary><p>Before: {{ edit.before }}</p><p>After: {{ edit.after }}</p></details>{% endfor %}
                         {% for event in row.batch.audit_events.all %}<p>{% bi 'Correction details' %} · {{ event.created_at|date:"d-m-Y H:i T" }} · {{ event.get_kind_display|bilingual }} · {{ event.reason }}</p>{% endfor %}
                     </div></details>

@@ -1,5 +1,6 @@
 {% load bilingual %}
 <div class="firm-detail-content">
+    <p>{% bi 'Remaining Debt' %}: <strong>{{ firm.current_debt }}</strong>{% if firm.current_debt < 0 %} · {% bi 'Supplier Credits' %}{% endif %}</p>
     <p>{{ firm.get_source_type_display|bilingual }} · {% bi 'Phone Number' %}: <bdi>{{ firm.phone|default:"—" }}</bdi></p>
     <div class="firm-activity-strip" aria-label="{{ firm.name }} transaction counts">
         <a href="{% url 'ledger:ledger_history' %}?firm_id={{ firm.pk }}&amp;start_date={{ today|date:'Y-m-d' }}&amp;end_date={{ today|date:'Y-m-d' }}">{% bi 'Today' %} <strong>{{ counts.today }}</strong></a>
@@ -10,10 +11,10 @@
     <p class="muted detail-caption">{% bi 'Active bill/payment saves; combined bill and payment count once. Karachi calendar dates, weeks start Monday.' %}</p>
     <div class="data-table-wrap" tabindex="0" role="region" aria-label="Bills for {{ firm.name }}">
         <table class="data-table firm-bills-table">
-            <thead><tr><th scope="col">{% table_heading 'Bill' %}</th><th scope="col">{% table_heading 'Date' %}</th><th scope="col">{% table_heading 'Representative' %}</th><th scope="col" class="amount-heading">{% table_heading 'Amount' %}</th><th scope="col">{% table_heading 'Actions' %}</th></tr></thead>
+            <thead><tr><th scope="col">{% table_heading 'Bill' %}</th><th scope="col">{% table_heading 'Date' %}</th><th scope="col">{% table_heading 'Representative' %}</th><th scope="col" class="amount-heading">{% table_heading 'New charges' %}</th><th scope="col" class="amount-heading">{% table_heading 'Carried debt' %}</th><th scope="col" class="amount-heading">{% table_heading 'Actual payments' %}</th><th scope="col" class="amount-heading">{% table_heading 'Transferred out' %}</th><th scope="col" class="amount-heading">{% table_heading 'Remaining Debt' %}</th><th scope="col">{% table_heading 'State' %}</th><th scope="col">{% table_heading 'Actions' %}</th></tr></thead>
             <tbody>{% for bill in bills_page %}
-                <tr id="bill-{{ bill.pk }}"><td>{{ bill.bill_number }}</td><td>{{ bill.bill_date|date:"d-m-Y" }}</td><td>{{ bill.representative.name|default:"—" }}</td><td class="amount-cell">{{ bill.bill_amount }}</td><td class="table-actions">{% include 'ledger/_bill_actions.html' %}</td></tr>
-            {% empty %}<tr class="empty-table-row"><td colspan="5">{% bi 'No available bills for this firm.' %}</td></tr>{% endfor %}</tbody>
+                <tr id="bill-{{ bill.pk }}"><td>{{ bill.display_reference|bilingual }}</td><td>{{ bill.bill_date|date:"d-m-Y" }}</td><td>{{ bill.representative.name|default:"—" }}</td><td class="amount-cell">{{ bill.bill_amount }}</td><td class="amount-cell">{{ bill.carried_debt }}</td><td class="amount-cell">{{ bill.paid_amount }}</td><td class="amount-cell">{{ bill.transferred_out }}</td><td class="amount-cell {% if bill.remaining_balance < 0 %}entry-credit{% endif %}">{{ bill.remaining_balance }}{% if bill.remaining_balance < 0 %} · {% bi 'Supplier Credits' %}{% endif %}</td><td>{% if bill.is_disabled %}{% bi 'Disabled' %}{% else %}{% bi 'Enabled' %}{% endif %}</td><td class="table-actions">{% include 'ledger/_bill_actions.html' %}</td></tr>
+            {% empty %}<tr class="empty-table-row"><td colspan="10">{% bi 'No available bills for this firm.' %}</td></tr>{% endfor %}</tbody>
         </table>
     </div>
     <nav tabindex="-1" class="table-pagination" aria-label="{{ firm.name }} bill pages">
