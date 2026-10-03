@@ -8,7 +8,7 @@ from django.contrib import messages
 from django.contrib.auth.decorators import login_required
 from django.core.paginator import Paginator
 from django.core.exceptions import ValidationError
-from django.db.models import Count, Q
+from django.db.models import Count, Q, prefetch_related_objects
 from .money import MoneySum as Sum, balance, cents
 from django.db.models.functions import Coalesce, TruncMonth
 from django.http import HttpResponse, JsonResponse
@@ -18,8 +18,8 @@ from django.utils import timezone
 from django.utils.http import url_has_allowed_host_and_scheme
 from django.views.decorators.http import require_GET
 
-from .forms import BillEditForm, BillForm, FirmForm, LedgerTransactionForm, RepresentativeForm
-from .models import Bill, DeletionGroup, Firm, LedgerEntry, Representative, TransactionBatch
+from .forms import BillEditForm, BillForm, CarryForwardForm, FirmForm, LedgerTransactionForm, RepresentativeForm
+from .models import Bill, BillCarryForward, DeletionGroup, Firm, LedgerEntry, Representative, TransactionBatch
 from .services import (
     IdempotencyConflict,
     committed_retry,
@@ -28,6 +28,7 @@ from .services import (
     create_transaction_batch,
     restore_transaction_batch,
     reverse_transaction_batch,
+    carry_forward_bill, undo_carry_forward, bill_revision,
 )
 
 
@@ -35,6 +36,7 @@ def _active_activity_entries():
     """Source for operational dashboard activity, excluding reversed batches."""
     return LedgerEntry.objects.filter(is_deleted=False).filter(
         Q(transaction_batch__isnull=True)
+        | Q(transaction_batch__kind__in=("carry_forward", "transfer_undo"))
         | Q(
             transaction_batch__kind=TransactionBatch.Kind.TRANSACTION,
             transaction_batch__status=TransactionBatch.Status.ACTIVE,
@@ -94,6 +96,9 @@ def _transaction_json(summary, totals):
             "batch_id": summary["batch"].pk,
             "firm": summary["firm"].name,
             "bill_number": summary["bill"].bill_number if summary["bill"] else None,
+            "bill_id": summary["bill"].pk if summary["bill"] else None,
+            "display_reference": summary["bill"].display_reference if summary["bill"] else None,
+            "bill_remaining_balance": str(summary["bill"].remaining_balance) if summary["bill"] else None,
             "payment_amount": str(summary["payment"].amount) if summary["payment"] else None,
             "previous_debt": str(summary["previous_debt"]) if summary["previous_debt"] is not None else None,
             "remaining_debt": str(summary["remaining_debt"]) if summary["remaining_debt"] is not None else None,
@@ -145,6 +150,7 @@ def add_firm(request):
 
 def _bill_delete_previews(bills):
     """Build bill deletion previews in bulk, including complete linked batches."""
+    _prepare_bill_balances(bills)
     ids = [bill.pk for bill in bills]
     batches = TransactionBatch.objects.filter(
         kind=TransactionBatch.Kind.TRANSACTION, status=TransactionBatch.Status.ACTIVE,
@@ -162,6 +168,21 @@ def _bill_delete_previews(bills):
         bill.delete_count = len(roots)
         bill.delete_ids = ", ".join(str(root.pk) for root in roots)
         bill.delete_effect = sum((entry.decrease - entry.increase for root in roots for entry in root.entries.all() if not entry.is_deleted), Decimal("0.00"))
+    return bills
+
+
+def _prepare_bill_balances(bills):
+    ids = [b.pk for b in bills]
+    prefetch_related_objects(bills, "incoming_transfers__batch", "incoming_transfers__source", "outgoing_transfers__batch")
+    rows = LedgerEntry.objects.filter(is_deleted=False).annotate(invoice=Coalesce("bill_id", "payment__bill_id")).filter(invoice__in=ids).values("invoice").annotate(
+        inc=Sum("increase"), dec=Sum("decrease"), pi=Sum("increase", filter=Q(payment_id__isnull=False)), pd=Sum("decrease", filter=Q(payment_id__isnull=False))).order_by()
+    amounts = {r["invoice"]: r for r in rows}
+    for bill in bills:
+        row = amounts.get(bill.pk, {})
+        bill._balance_display = {"remaining": (row.get("inc") or Decimal("0.00")) - (row.get("dec") or Decimal("0.00")),
+            "paid": (row.get("pd") or Decimal("0.00")) - (row.get("pi") or Decimal("0.00")),
+            "carried": sum((t.amount for t in bill.incoming_transfers.all() if t.batch.status == "active"), Decimal("0.00")),
+            "out": sum((t.amount for t in bill.outgoing_transfers.all() if t.batch.status == "active"), Decimal("0.00"))}
     return bills
 
 
@@ -295,18 +316,26 @@ def representatives_for_firm(request):
         bills = [
             {
                 "id": bill.pk,
-                "bill_number": bill.bill_number,
-                "bill_amount": str(bill.bill_amount),
-                "bill_date": bill.bill_date.strftime("%d-%m-%Y"),
+                **_bill_lookup(bill),
                 "is_latest": index == 0,
             }
-            for index, bill in enumerate(firm.bills.available().order_by("-bill_date", "-id"))
+            for index, bill in enumerate(_prepare_bill_balances(list(firm.bills.available().order_by("-bill_date", "-id"))))
         ]
     return JsonResponse({
         "representatives": representatives,
         "source_type": source_type,
         "bills": bills,
     })
+
+
+def _bill_lookup(bill):
+    remaining = bill.remaining_balance
+    return {"bill_number": bill.bill_number, "display_reference": bill.display_reference,
+        "bill_amount": str(bill.bill_amount), "bill_date": bill.bill_date.strftime("%d-%m-%Y"),
+        "carried_debt": str(bill.carried_debt), "payments": str(bill.paid_amount),
+        "transferred_out": str(bill.transferred_out), "remaining_balance": str(remaining),
+        "is_disabled": bill.is_disabled, "payment_eligible": not bill.is_disabled and remaining > 0,
+        "carry_forward_eligible": not bill.is_disabled and remaining >= 0, "revision": bill_revision(bill)}
 
 
 @login_required
@@ -321,8 +350,8 @@ def add_transaction(request):
             if request.headers.get("x-requested-with") == "XMLHttpRequest":
                 return _transaction_json(saved_summary, _dashboard_payment_totals(timezone.localdate()))
             return redirect("ledger:add_transaction")
-        if request.headers.get("X-Offline-Sync") == "1" and request.headers.get("X-Ledger-Queue-Version") != "3":
-            return JsonResponse({"success": False, "error": "Update this page before synchronizing queued transactions. Pending data remains on this device."}, status=428)
+        if request.POST.get("posting_rules_version") != "2" or (request.headers.get("X-Offline-Sync") == "1" and request.headers.get("X-Ledger-Queue-Version") != "4"):
+            return JsonResponse({"success": False, "error": "Review this transaction under the new bill payment rules before sending. Pending data remains on this device."}, status=428)
         form = LedgerTransactionForm(request.POST)
         if form.is_valid():
             try:
@@ -366,14 +395,12 @@ def add_transaction(request):
 
     bills_by_firm = defaultdict(list)
     firm_bill_counts = defaultdict(int)
-    for bill in Bill.objects.available().select_related("firm").filter(
+    for bill in _prepare_bill_balances(list(Bill.objects.available().select_related("firm").filter(
         firm__is_deleted=False,
-    ).order_by("-bill_date", "-id"):
+    ).order_by("-bill_date", "-id"))):
         bills_by_firm[bill.firm_id].append({
             "id": bill.pk,
-            "bill_number": bill.bill_number,
-            "bill_amount": str(bill.bill_amount),
-            "bill_date": bill.bill_date.strftime("%d-%m-%Y"),
+            **_bill_lookup(bill),
             "is_latest": firm_bill_counts[bill.firm_id] == 0,
         })
         firm_bill_counts[bill.firm_id] += 1
@@ -446,8 +473,8 @@ def _history_rows(*, firm=None, start_date=None, end_date=None, limit=None, acti
     if limit:
         # Choose action identities, then retrieve their complete entries. Same-day
         # histories stay bounded even when thousands of actions share a date.
-        roots = TransactionBatch.objects.filter(kind="transaction", status="active",
-            entries__is_deleted=False, entries__entry_type__in=("bill_created", "payment_made"))
+        roots = TransactionBatch.objects.filter(Q(kind="transaction", status="active") | Q(kind__in=("carry_forward", "transfer_undo")),
+            entries__is_deleted=False)
         if firm:
             roots = roots.filter(firm=firm)
         candidates = [(day, pk, "batch") for day, pk in roots.order_by("-date", "-id").values_list("date", "id").distinct()[:limit]]
@@ -504,12 +531,12 @@ def _history_rows(*, firm=None, start_date=None, end_date=None, limit=None, acti
                 if rep and rep.name not in row["representative_names"]:
                     row["representative_names"].append(rep.name)
                 bill = source if isinstance(source, Bill) else getattr(source, "bill", None)
-                if bill and bill.bill_number not in row["related_bill_numbers"]:
-                    row["related_bill_numbers"].append(bill.bill_number)
+                if bill and bill.display_reference not in row["related_bill_numbers"]:
+                    row["related_bill_numbers"].append(bill.display_reference)
 
     history_rows = []
     for row in grouped_rows.values():
-        if activity_only and not any(entry.entry_type in ("bill_created", "payment_made") for entry in row["entries"]):
+        if activity_only and not any(entry.entry_type in ("bill_created", "payment_made", "carry_forward", "transfer_undo") for entry in row["entries"]):
             continue
         if start_date and row["date"] < start_date:
             continue
@@ -520,6 +547,7 @@ def _history_rows(*, firm=None, start_date=None, end_date=None, limit=None, acti
         row["is_reversible"] = bool(
             row["batch"] and row["batch"].kind == TransactionBatch.Kind.TRANSACTION
         )
+        row["is_transfer"] = bool(row["batch"] and row["batch"].kind in ("carry_forward", "transfer_undo"))
         history_rows.append(row)
     history_rows.sort(key=lambda row: (row["date"], row["batch_id"] or 0), reverse=True)
     return history_rows[:limit] if limit else history_rows
@@ -878,6 +906,8 @@ def bills_page(request):
         if retry:
             messages.success(request, "This bill was already saved.")
             return redirect("ledger:bills")
+        if not retry_error and request.POST.get("bill-posting_rules_version") != "2":
+            return JsonResponse({"success": False, "error": "Reload and review this bill under the new posting rules."}, status=428)
     form = BillForm(request.POST or None, prefix="bill")
     if retry_error:
         form.add_error(None, retry_error)
@@ -925,6 +955,65 @@ def edit_bill_view(request, bill_id):
     return render(request, "ledger/edit_bill.html", {"form": form, "bill": bill})
 
 
+@login_required
+def carry_forward_view(request, bill_id):
+    if request.method == "POST":
+        try:
+            replay = committed_retry(request.POST.get("request_id"), user=request.user, payload_hash=_request_fingerprint(request.POST))
+            if replay:
+                if replay["batch"].kind != "carry_forward":
+                    raise IdempotencyConflict("This request ID belongs to another action.")
+                return _transaction_json(replay, {}) if request.headers.get("x-requested-with") == "XMLHttpRequest" else redirect("ledger:bills")
+        except IdempotencyConflict as exc:
+            return JsonResponse({"success": False, "error": str(exc)}, status=409)
+    if request.headers.get("X-Offline-Sync") == "1":
+        return JsonResponse({"success": False, "error": "Carry-forward is available online only."}, status=400)
+    source = get_object_or_404(Bill.objects.available().select_related("firm"), pk=bill_id, firm__is_deleted=False)
+    form = CarryForwardForm(request.POST or None, source=source)
+    if request.method == "POST" and form.is_valid():
+        data = form.cleaned_data
+        try:
+            summary = carry_forward_bill(source.pk, destination_id=int(data["destination"]) if data["destination"] != "new" else None,
+                new_bill={key: data.get(key) for key in ("bill_number", "bill_amount", "bill_date", "representative", "notes")} if data["destination"] == "new" else None,
+                source_revision=data["source_revision"], destination_revision=data["destination_revision"],
+                user=request.user, request_id=data["request_id"], payload_hash=_request_fingerprint(request.POST))
+        except ValidationError as exc:
+            form.add_error(None, exc)
+        else:
+            if request.headers.get("x-requested-with") == "XMLHttpRequest":
+                return _transaction_json(summary, {})
+            messages.success(request, "Bill disabled and debt carried forward.")
+            return redirect("ledger:bills")
+    revisions = {str(b.pk): bill_revision(b) for b in form.destinations}
+    if request.method == "POST" and request.headers.get("x-requested-with") == "XMLHttpRequest":
+        return JsonResponse({"success": False, "errors": form.errors.get_json_data()}, status=400)
+    return render(request, "ledger/carry_forward.html", {"form": form, "bill": source, "destination_revisions": revisions})
+
+
+@login_required
+def undo_carry_forward_view(request, transfer_id):
+    import uuid
+    transfer = get_object_or_404(BillCarryForward.objects.select_related("source", "destination", "batch"), pk=transfer_id)
+    error = None
+    if request.method == "POST":
+        if request.headers.get("X-Offline-Sync") == "1":
+            return JsonResponse({"success": False, "error": "Carry-forward is available online only."}, status=400)
+        try:
+            if request.POST.get("confirm") != "yes":
+                raise ValidationError("Confirm undo before proceeding.")
+            summary = undo_carry_forward(transfer.pk, user=request.user, request_id=request.POST.get("request_id"), payload_hash=_request_fingerprint(request.POST))
+        except ValidationError as exc:
+            error = exc
+            if request.headers.get("x-requested-with") == "XMLHttpRequest":
+                return JsonResponse({"success": False, "error": str(exc)}, status=409 if isinstance(exc, IdempotencyConflict) else 400)
+        else:
+            if request.headers.get("x-requested-with") == "XMLHttpRequest":
+                return _transaction_json(summary, {})
+            messages.success(request, "Carry-forward undone.")
+            return redirect("ledger:bills")
+    return render(request, "ledger/undo_carry_forward.html", {"transfer": transfer, "error": error, "request_id": request.POST.get("request_id") or uuid.uuid4()})
+
+
 def _deletion_groups_for_page(*, firm=None, start_date=None, end_date=None):
     groups = DeletionGroup.objects.filter(
         restored_at__isnull=True,
@@ -953,9 +1042,9 @@ def _trash_group_details(group):
     group.payment_amount = sum((entry.decrease for entry in entries if entry.entry_type == "payment_made"), Decimal("0.00"))
     created_bills = [bill for member in members for bill in member.batch.created_bills.all()]
     if group.bill_id:
-        group.title = "Bill " + group.bill.bill_number
+        group.title = group.bill.display_reference
     elif created_bills:
-        group.title = "Bill " + ", ".join(bill.bill_number for bill in created_bills)
+        group.title = ", ".join(bill.display_reference for bill in created_bills)
     else:
         group.title = "Transaction #" + str(members[0].batch_id)
     return group

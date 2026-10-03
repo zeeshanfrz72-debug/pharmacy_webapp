@@ -47,7 +47,7 @@
 
                 <form method="post" id="transaction-form">
                     {% csrf_token %}
-                    {{ form.request_id }}
+                    {{ form.request_id }}{{ form.posting_rules_version }}
                     <span id="dashboard-date-context" data-today="{{ today_date }}" hidden></span>
                     {% if form.errors %}<div class="form-errors" role="alert">{{ form.errors|bilingual_errors }}</div>{% endif %}
 
@@ -499,7 +499,8 @@
             const newBillNumberLabel = document.querySelector('label[for="id_new_bill_number"]');
             const newBillAmountLabel = document.querySelector('label[for="id_new_bill_amount"]');
 
-            if (newBillNumberLabel && !newBillNumberLabel.querySelector(".required-star")) {
+            if (sourceTypeSelect.value === 'local_market') newBillNumberLabel?.querySelector('.required-star')?.remove();
+            if (sourceTypeSelect.value !== 'local_market' && newBillNumberLabel && !newBillNumberLabel.querySelector(".required-star")) {
                 const star = document.createElement("span");
                 star.className = "required-star";
                 star.textContent = "*";
@@ -534,11 +535,11 @@
             }
 
             if (!addingNewBill) {
-                saveTransactionButton.disabled = false;
+                saveTransactionButton.disabled = !billSelect.value || !paymentChoiceSelect.value;
                 return;
             }
 
-            const hasBillNumber = newBillNumberInput.value.trim() !== "";
+            const hasBillNumber = sourceType === "local_market" || newBillNumberInput.value.trim() !== "";
             const hasBillAmount = newBillAmountInput.value.trim() !== "";
 
             saveTransactionButton.disabled = !(hasBillNumber && hasBillAmount);
@@ -639,13 +640,8 @@
             clearRepresentatives();
             clearBills();
 
-            if (sourceType === "local_market") {
-                representativeSelect.disabled = true;
-                billSelect.disabled = true;
-            } else {
-                representativeSelect.disabled = false;
-                billSelect.disabled = false;
-            }
+            representativeSelect.disabled = false;
+            billSelect.disabled = false;
 
             if (!sourceType) {
                 updateSaveButtonState();
@@ -680,7 +676,7 @@
             clearRepresentatives();
             clearBills();
 
-            if (!firmId || firmId === "add_new_firm" || sourceType === "local_market") {
+            if (!firmId || firmId === "add_new_firm") {
                 updateSaveButtonState();
                 return;
             }
@@ -726,12 +722,8 @@
                 const option = document.createElement("option");
                 option.value = bill.id;
 
-                if (bill.is_latest) {
-                    option.textContent = `${ledgerUI.text('Latest')}: ${ledgerUI.isolate(bill.bill_number)} | ${ledgerUI.isolate(bill.bill_amount)} | ${ledgerUI.isolate(bill.bill_date)}`;
-                } else {
-                    option.textContent = `${ledgerUI.text('Previous')}: ${ledgerUI.isolate(bill.bill_number)} | ${ledgerUI.isolate(bill.bill_amount)} | ${ledgerUI.isolate(bill.bill_date)}`;
-                    option.disabled = true;
-                }
+                option.textContent = `${ledgerUI.text(bill.display_reference)} | ${ledgerUI.text('Remaining Debt')}: ${ledgerUI.isolate(bill.remaining_balance)} | ${ledgerUI.isolate(bill.bill_date)}`;
+                option.disabled = bill.is_disabled;
 
                 billSelect.appendChild(option);
             });

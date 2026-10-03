@@ -71,7 +71,7 @@ class PageViewTests(TestCase):
     def test_invalid_post_from_trash_url_shows_visible_form_errors(self):
         for name, data in [("add_firm", {"firm-name": "", "firm-source_type": "distributor"}),
                            ("add_representative", {"add_rep-name": "", "add_rep-source_type": "distributor"}),
-                           ("bills", {"bill-bill_number": "", "bill-source_type": "distributor"})]:
+                           ("bills", {"bill-bill_number": "", "bill-source_type": "distributor", "bill-posting_rules_version": "2"})]:
             page = self.client.post(reverse("ledger:" + name) + "?view=trash", data)
             self.assertEqual(page.status_code, 200)
             self.assertFalse(page.context["is_trash"])

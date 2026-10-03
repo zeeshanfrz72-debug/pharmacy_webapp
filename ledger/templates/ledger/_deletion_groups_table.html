@@ -42,7 +42,7 @@
                                 {% for member in group.members.all %}
                                     <p>{% bi 'Transaction' %} #{{ member.batch_id }} · {{ member.batch.date|date:"d-m-Y" }}</p>
                                     <p>{% bi 'Original posting receipt' %}: {% if member.batch.posting_receipt %}{{ member.batch.posting_receipt.date }} · before {{ member.batch.posting_receipt.previous_balance }} · after {{ member.batch.posting_receipt.balance_after }}{% else %}{% bi 'Unavailable for legacy records' %}{% endif %}</p>
-                                    {% for entry in member.batch.posting_receipt.entries %}<p>{{ entry.bill_number|default:"—" }} · +{{ entry.increase }} / −{{ entry.decrease }}</p>{% endfor %}
+                                    {% for entry in member.batch.posting_receipt.entries %}<p>{{ entry.display_reference|default:entry.bill_number|default:"—"|bilingual }} · +{{ entry.increase }} / −{{ entry.decrease }}</p>{% endfor %}
                                     {% for event in member.batch.audit_events.all %}
                                         <p>{{ event.get_kind_display|bilingual }} · {{ event.created_at|date:"d-m-Y H:i T" }} · {{ event.reason }}</p>
                                     {% endfor %}

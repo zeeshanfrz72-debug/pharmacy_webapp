@@ -65,25 +65,25 @@ class BillEditTests(TestCase):
         recent = self.client.get(reverse("ledger:dashboard_recent")).json()
         self.assertEqual(Decimal(recent["today_payment_total"]), 300)
 
-    def test_local_market_cash_edit_changes_totals_without_creating_debt(self):
+    def test_local_market_cash_edit_preserves_actual_payments_and_exposes_credit(self):
         market = Firm.objects.create(name="Market", source_type="local_market")
-        root, _ = self.create_batch(firm=market, payment_amount="1500")
+        root, _ = self.create_batch(firm=market, bill_choice="add_new", bill_amount="1500", payment_amount="1500")
         bill = Bill.objects.get(creation_batch=root)
         for amount in ["2000", "500"]:
             edit_bill(bill.pk, self.data(bill, bill_amount=Decimal(amount)), user=self.owner)
-            self.assertEqual(market.current_debt(), 0)
-            self.assertEqual(Payment.objects.get(bill=bill).amount, Decimal(amount))
+            self.assertEqual(market.current_debt(), Decimal(amount) - 1500)
+            self.assertEqual(Payment.objects.get(bill=bill).amount, Decimal("1500"))
             row = _history_rows()[0]
             self.assertEqual(row["bill_amount"], Decimal(amount))
-            self.assertEqual(row["payment_made"], Decimal(amount))
+            self.assertEqual(row["payment_made"], Decimal("1500"))
             recent = self.client.get(reverse("ledger:dashboard_recent")).json()
-            self.assertEqual(Decimal(recent["today_payment_total"]), Decimal(amount))
+            self.assertEqual(Decimal(recent["today_payment_total"]), Decimal("1500"))
             self.assertEqual(recent["today_payment_count"], 1)
         group = delete_bill(bill.pk, user=self.owner, reason="Test")["group"]
         self.assertEqual(self.client.get(reverse("ledger:dashboard_recent")).json()["today_payment_count"], 0)
         recover_deletion_group(group.pk, user=self.owner, reason="Test")
-        self.assertEqual(market.current_debt(), 0)
-        self.assertEqual(Decimal(self.client.get(reverse("ledger:dashboard_recent")).json()["today_payment_total"]), 500)
+        self.assertEqual(market.current_debt(), -1000)
+        self.assertEqual(Decimal(self.client.get(reverse("ledger:dashboard_recent")).json()["today_payment_total"]), 1500)
 
     def test_edited_bill_group_recovery_keeps_independently_deleted_payment_deleted(self):
         bill = self.new_bill()
@@ -178,7 +178,7 @@ class BillEditTests(TestCase):
             self.assertContains(page, bill.bill_date.strftime("%d-%m-%Y"))
         data = {"source_type": "distributor", "firm": self.firm.pk, "representative": self.rep.pk,
                 "bill_number": "B", "bill_amount": "1", "bill_date": "31-12-2026",
-                "request_id": self.transaction_data()["request_id"]}
+                "request_id": self.transaction_data()["request_id"], "posting_rules_version": "2"}
         form = BillForm(data)
         self.assertTrue(form.is_valid(), form.errors)
         self.assertEqual(form.cleaned_data["bill_date"], date(2026, 12, 31))

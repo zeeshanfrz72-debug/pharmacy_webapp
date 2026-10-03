@@ -1,0 +1,32 @@
+{% extends 'ledger/base.html' %}{% load bilingual %}
+{% block content %}
+<div class="panel">
+<h1>{% bi 'Disable & carry forward' %}</h1>
+<p>{{ bill.display_reference|bilingual }} · {{ bill.firm.name }}</p>
+<p>You are disabling a bill with remaining debt of {{ bill.remaining_balance }}. Add this remaining debt to the new bill or another existing bill from this firm?</p>
+<p lang="ur" dir="rtl">آپ یہ بل غیر فعال کر رہے ہیں، جس کا بقایا {{ bill.remaining_balance }} ہے۔ کیا یہ بقایا اسی فرم کے نئے بل یا کسی دوسرے موجودہ بل میں شامل کرنا چاہتے ہیں؟</p>
+<p>{% bi 'New bill amounts are new charges only. Carried debt is shown separately.' %}</p>
+<form method="post" id="carry-form">{% csrf_token %}
+{% for field in form.hidden_fields %}{{ field }}{{ field.errors|bilingual_errors }}{% endfor %}
+{{ form.non_field_errors|bilingual_errors }}
+{% for field in form.visible_fields %}<div class="form-field" {% if field.name != 'destination' and field.name != 'confirm' %}data-new-destination{% endif %}>{% field_label field %}{% bilingual_select field %}{{ field.errors|bilingual_errors }}</div>{% endfor %}
+<p id="online-error" hidden>{% bi 'Carry-forward is available online only.' %}</p>
+<button type="submit">{% bi 'Confirm disable and carry forward' %}</button>
+<a class="button-link" href="{% url 'ledger:bills' %}">{% bi 'Cancel / No' %}</a>
+</form>
+</div>
+{{ destination_revisions|json_script:'destination-revisions' }}
+<script nonce="{{ request.csp_nonce }}">
+(() => {
+const form = document.getElementById('carry-form'), select = form.querySelector('[name=destination]');
+const revisions = JSON.parse(document.getElementById('destination-revisions').textContent);
+function refresh() {
+ const isNew = select.value === 'new';
+ form.querySelector('[name=destination_revision]').value = revisions[select.value] || '';
+ form.querySelectorAll('[data-new-destination]').forEach(row => {row.hidden = !isNew; row.querySelectorAll('input,select,textarea').forEach(input => input.disabled = !isNew);});
+}
+select.addEventListener('change', refresh); refresh();
+form.addEventListener('submit', event => {if (!navigator.onLine) {event.preventDefault(); document.getElementById('online-error').hidden = false;}});
+})();
+</script>
+{% endblock %}

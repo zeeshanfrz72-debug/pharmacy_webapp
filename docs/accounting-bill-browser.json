@@ -1,0 +1,18 @@
+{
+  "backend": "disposable Django application",
+  "browser": "154.0.8037.93",
+  "cases": [
+    "older/newer invoice selection and repeated installments",
+    "unnamed local invoices with optional representative and no automatic cash payments",
+    "cancel is inert, carry preserves total, disabled source is protected, audited undo",
+    "new carry destination creates new charges separately and remains after undo",
+    "legacy queue retained for explicit review while independent supplier synchronizes"
+  ],
+  "uncaught_errors": [],
+  "persisted_verification": {
+    "firm_balance": "3400.00",
+    "older_bill_balance": "600.00",
+    "market_balance": "141.00",
+    "market_payments": 0
+  }
+}

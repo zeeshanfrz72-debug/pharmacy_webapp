@@ -1,4 +1,4 @@
-const CACHE_NAME = 'pharmacy-ledger-static-v8';
+const CACHE_NAME = 'pharmacy-ledger-static-v9';
 
 self.addEventListener('install', event => {
   // Precache the original font even when its first page request finishes before

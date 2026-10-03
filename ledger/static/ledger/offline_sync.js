@@ -83,7 +83,7 @@ async function runSync() {
             if (url.origin !== location.origin) throw new Error('Queued destination must belong to this application.');
             const response = await fetch(url.href, {method: 'POST', redirect: 'manual',
                 headers: {'Content-Type': 'application/x-www-form-urlencoded', 'X-CSRFToken': csrf,
-                    'X-Offline-Sync': '1', 'X-Ledger-Queue-Version': '3', 'X-Requested-With': 'XMLHttpRequest'},
+                    'X-Offline-Sync': '1', 'X-Ledger-Queue-Version': '4', 'X-Requested-With': 'XMLHttpRequest'},
                 body: new URLSearchParams(item.data).toString()});
             if (response.type === 'opaqueredirect' || [401, 403].includes(response.status)) {
                 syncPausedForAuthentication = true;
@@ -97,7 +97,7 @@ async function runSync() {
                 try { localStorage.setItem('ledger-records-changed', Date.now().toString()); } catch (_) {}
                 continue;
             }
-            item.state = response.status === 400 && result?.success === false ? 'rejected' : response.status === 409 && result?.success === false ? 'conflict' : 'retry';
+            item.state = [400, 428].includes(response.status) && result?.success === false ? 'rejected' : response.status === 409 && result?.success === false ? 'conflict' : 'retry';
             item.error = result?.error ? ledgerUI.errorDetail(result.error) : result?.errors ? ledgerUI.errorDetail(result.errors) : `HTTP ${response.status}`;
             await queueTransaction(db, 'readwrite', store => store.put(item));
             blocked.add(supplier);
@@ -154,12 +154,12 @@ async function updateSyncIndicator() {
         const lookup = typeof offlineData === 'undefined' ? {} : offlineData;
         const suppliers = Object.entries(lookup.firms_by_source || {}).flatMap(([type, records]) => records.map(record => ({...record, type})));
         for (const [key, value] of Object.entries(item.data)) {
-            if (['request_id', 'csrfmiddlewaretoken'].includes(key)) continue;
+            if (['request_id', 'csrfmiddlewaretoken'].includes(key) || key.endsWith('posting_rules_version')) continue;
             const canonical = key.replace(/^bill-/, '');
             let options;
             if (canonical === 'firm' && suppliers.length) options = suppliers.map(record => [String(record.id), record.name]);
             if (canonical === 'representative' && lookup.reps_by_firm) options = Object.entries(lookup.reps_by_firm).flatMap(([firmId, records]) => records.map(record => [String(record.id), `${record.name} (${suppliers.find(supplier => String(supplier.id) === firmId)?.name || firmId})`]));
-            if (canonical === 'bill_choice') options = [['add_new', 'Add New Bill'], ...Object.entries(lookup.bills_by_firm || {}).flatMap(([firmId, records]) => records.map(record => [String(record.id), `${record.bill_number} (${suppliers.find(supplier => String(supplier.id) === firmId)?.name || firmId})`]))];
+            if (canonical === 'bill_choice') options = [['add_new', 'Add New Bill'], ...Object.entries(lookup.bills_by_firm || {}).flatMap(([firmId, records]) => records.map(record => [String(record.id), `${record.display_reference} (${suppliers.find(supplier => String(supplier.id) === firmId)?.name || firmId})`]))];
             if (canonical === 'source_type') options = [['direct_company', 'Direct Company'], ['distributor', 'Distributor Company'], ['stockist', 'Stockist Company'], ['local_market', 'Open / Local Market']];
             if (canonical === 'payment_choice') options = ['1000', '1500', '2000', '2500', '3000', 'other'].map(amount => [amount, amount === 'other' ? 'Other Amount' : amount]);
             const label = document.createElement('label'); ledgerUI.set(label, vocabulary[canonical] || canonical.replaceAll('_', ' '));
@@ -198,6 +198,7 @@ async function updateSyncIndicator() {
                             if (latest.state === 'rejected') {
                                 if (!correctedData || latest.requestId !== item.requestId) { toast('The action changed. Refresh the queue before editing.', 'error'); return; }
                                 latest.corrections = [...(latest.corrections || []), {data: latest.data, error: latest.error, timestamp: Date.now()}];
+                                correctedData[item.data['bill-firm'] ? 'bill-posting_rules_version' : 'posting_rules_version'] = '2';
                                 latest.data = correctedData; latest.data.request_id = crypto.randomUUID(); latest.requestId = latest.data.request_id;
                             }
                             latest.state = 'pending'; delete latest.error; store.put(latest);

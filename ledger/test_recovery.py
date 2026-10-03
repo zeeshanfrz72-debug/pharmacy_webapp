@@ -26,7 +26,7 @@ class TrashRecoveryTests(TestCase):
     create_batch = WorkflowHelpers.create_batch
 
     def bill_data(self, **changes):
-        data = {"request_id": str(uuid.uuid4()), "source_type": self.firm.source_type,
+        data = {"posting_rules_version": "2", "request_id": str(uuid.uuid4()), "source_type": self.firm.source_type,
                 "firm": self.firm.pk, "representative": self.rep.pk,
                 "bill_number": "DEDICATED-1", "bill_date": "2026-09-15",
                 "bill_amount": "1000.50", "notes": "Delivery note"}
@@ -76,17 +76,15 @@ class TrashRecoveryTests(TestCase):
         self.firm.save()
         self.assertFalse(BillForm(self.bill_data()).is_valid())
 
-    def test_local_market_bill_is_cash_paid_and_has_no_representative(self):
+    def test_local_market_bill_starts_unpaid_and_has_optional_representative(self):
         market = Firm.objects.create(name="Market", source_type=Firm.SourceType.LOCAL_MARKET)
         data = self.bill_data(firm=market.pk, source_type=market.source_type, representative="")
         self.assertTrue(BillForm(data).is_valid())
         self.assertEqual(self.bill_post(data).status_code, 302)
         bill = Bill.objects.get(firm=market)
-        payment = Payment.objects.get(bill=bill)
-        self.assertEqual(payment.amount, bill.bill_amount)
-        self.assertEqual(payment.method, Payment.PaymentMethod.CASH)
+        self.assertFalse(Payment.objects.filter(bill=bill).exists())
         self.assertIsNone(bill.representative_id)
-        self.assertEqual(market.current_debt(), Decimal("0"))
+        self.assertEqual(market.current_debt(), bill.bill_amount)
         data["representative"] = self.rep.pk
         self.assertFalse(BillForm(data).is_valid())
 

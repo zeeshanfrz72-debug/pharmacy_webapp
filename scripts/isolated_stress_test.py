@@ -72,15 +72,16 @@ class Client:
             raise RuntimeError(f"Could not read CSRF token from {path}.")
         return match.group(1)
 
-    def pay(self, firm_id: int, representative_id: int) -> tuple[int | None, float, bool, str]:
+    def pay(self, firm_id: int, representative_id: int, bill_id: int) -> tuple[int | None, float, bool, str]:
         body = urllib.parse.urlencode(
             {
                 "csrfmiddlewaretoken": self.csrf,
                 "request_id": str(uuid.uuid4()),
+                "posting_rules_version": "2",
                 "source_type": "distributor",
                 "firm": str(firm_id),
                 "representative": str(representative_id),
-                "bill_choice": "",
+                "bill_choice": str(bill_id),
                 "new_bill_number": "",
                 "new_bill_amount": "",
                 "payment_choice": "1000",
@@ -155,7 +156,7 @@ def main() -> None:
         from django.utils import timezone
         from ledger.models import Firm, LedgerEntry, Representative
 
-        get_user_model().objects.create_user(
+        owner = get_user_model().objects.create_user(
             username=OWNER_USERNAME,
             password=OWNER_PASSWORD,
         )
@@ -200,20 +201,16 @@ def main() -> None:
                         firm=firm,
                         name=f"Synthetic Representative {client_count}",
                     )
-                    LedgerEntry.objects.create(
-                        firm=firm,
-                        entry_type=LedgerEntry.EntryType.OPENING_BALANCE,
-                        date=timezone.localdate(),
-                        increase=Decimal("5000.00"),
-                        decrease=Decimal("0.00"),
-                        description="Synthetic isolated stress-test opening balance",
-                    )
+                    from ledger.services import create_transaction_batch
+                    bill = create_transaction_batch({"firm": firm, "representative": representative,
+                        "request_id": uuid.uuid4(), "bill_choice": "add_new", "new_bill_number": "STRESS",
+                        "new_bill_amount": Decimal("5000.00")}, user=owner, payload_hash="stress-initial")["bill"]
                     clients = [Client(base_url) for _ in range(client_count)]
                     wall_started = time.perf_counter()
                     with concurrent.futures.ThreadPoolExecutor(max_workers=client_count) as pool:
                         results = list(
                             pool.map(
-                                lambda client: client.pay(firm.pk, representative.pk),
+                                lambda client: client.pay(firm.pk, representative.pk, bill.pk),
                                 clients,
                             )
                         )

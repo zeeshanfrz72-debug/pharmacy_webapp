@@ -92,7 +92,7 @@ class BilingualTests(TestCase):
     def test_ajax_save_duplicate_delete_recover_keeps_accounting_and_partial_labels(self):
         data = {"request_id": str(uuid.uuid4()), "source_type": "distributor", "firm": self.firm.pk,
                 "representative": self.rep.pk, "bill_choice": "add_new", "new_bill_number": "B-اردو-12",
-                "new_bill_amount": "1250.50", "payment_choice": "1000", "custom_payment_amount": ""}
+                "new_bill_amount": "1250.50", "payment_choice": "1000", "custom_payment_amount": "", "posting_rules_version": "2"}
         endpoint = reverse("ledger:add_transaction")
         saved = self.client.post(endpoint, data, HTTP_X_REQUESTED_WITH="XMLHttpRequest").json()
         self.assertTrue(saved["success"])

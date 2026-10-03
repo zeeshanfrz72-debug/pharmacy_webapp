@@ -49,6 +49,7 @@ class LedgerWorkflowTests(TestCase):
     ):
         firm = firm or self.firm
         data = {
+            "posting_rules_version": "2",
             "request_id": str(request_id or uuid.uuid4()),
             "source_type": firm.source_type,
             "firm": str(firm.pk),
@@ -99,7 +100,7 @@ class LedgerWorkflowTests(TestCase):
 
     def test_local_market_purchase_creates_paired_bill_and_payment(self):
         market = Firm.objects.create(name="Local Market", source_type=Firm.SourceType.LOCAL_MARKET)
-        batch, _ = self.create_batch(firm=market, payment_amount="1500")
+        batch, _ = self.create_batch(firm=market, bill_choice="add_new", bill_amount="1500", payment_amount="1500")
         self.assertEqual(batch.entries.count(), 2)
         self.assertEqual(batch.entries.filter(entry_type=LedgerEntry.EntryType.BILL_CREATED).count(), 1)
         self.assertEqual(batch.entries.filter(entry_type=LedgerEntry.EntryType.PAYMENT_MADE).count(), 1)
@@ -474,11 +475,8 @@ class ConcurrentBalanceValidationTests(TransactionTestCase):
         owner = get_user_model().objects.create_user("owner", password=uuid.uuid4().hex)
         firm = Firm.objects.create(name="Concurrent Test", source_type=Firm.SourceType.DISTRIBUTOR)
         rep = Representative.objects.create(firm=firm, name="Concurrency Rep")
-        LedgerEntry.objects.create(
-            firm=firm,
-            entry_type=LedgerEntry.EntryType.OPENING_BALANCE,
-            increase=Decimal("1000.00"),
-        )
+        bill = create_transaction_batch({"firm": firm, "representative": rep, "request_id": uuid.uuid4(),
+            "bill_choice": "add_new", "new_bill_number": "CONCURRENT", "new_bill_amount": Decimal("1000")}, user=owner, payload_hash="initial")["bill"]
 
         def submit():
             close_old_connections()
@@ -487,7 +485,7 @@ class ConcurrentBalanceValidationTests(TransactionTestCase):
                     {
                         "firm": firm,
                         "representative": rep,
-                        "bill_choice": "",
+                        "bill_choice": str(bill.pk),
                         "payment_amount": Decimal("800.00"),
                         "request_id": uuid.uuid4(),
                     },

@@ -34,9 +34,11 @@
 
             const version = ++firmVersion;
 
-            reset(rep, source.value === 'local_market' ? 'No representative — paid in cash' : 'Select representative');
+            reset(rep, source.value === 'local_market' ? 'Optional representative' : 'Select representative');
 
-            rep.disabled = source.value === 'local_market' || !firm.value;
+            rep.disabled = !firm.value;
+            const reference = form.querySelector('[name$=bill_number]');
+            if (reference) reference.required = source.value !== 'local_market';
 
             rep.required = source.value !== 'local_market';
 

@@ -1,4 +1,5 @@
 import uuid
+from decimal import Decimal
 
 from django.conf import settings
 from django.core.exceptions import ValidationError
@@ -49,8 +50,6 @@ class Firm(models.Model):
 
     def clean(self):
         super().clean()
-        if self.pk and self.source_type == self.SourceType.LOCAL_MARKET and self.representatives.exists():
-            raise ValidationError({"source_type": "Move unused representatives to another supplier before changing this supplier to Local Market."})
         if self.pk and Firm.objects.filter(pk=self.pk).exclude(source_type=self.source_type).exists() and self.has_financial_history():
             raise ValidationError({"source_type": "This supplier has financial history. Create a new supplier for a different source type."})
 
@@ -65,8 +64,6 @@ class Firm(models.Model):
             old = Firm.objects.select_for_update().get(pk=self.pk)
             if old.source_type != self.source_type and old.has_financial_history():
                 raise ValidationError("A supplier with financial history cannot change source type.")
-            if old.source_type != self.source_type and self.source_type == self.SourceType.LOCAL_MARKET and old.representatives.exists():
-                raise ValidationError("A Local Market supplier cannot retain representatives.")
             self.balance_version = old.balance_version
             return super().save(*args, **kwargs)
 
@@ -105,14 +102,11 @@ class Representative(models.Model):
     is_deleted = models.BooleanField(default=False, help_text="Soft delete flag")
     deleted_at = models.DateTimeField(null=True, blank=True, help_text="When this representative was soft deleted")
 
-    # Validation rule:
-    # local market dealings should not have representatives.
+    # Historical affiliations are protected for every source type.
     def clean(self):
         super().clean()
         if self.pk and Representative.objects.filter(pk=self.pk).exclude(firm_id=self.firm_id).exists() and (self.bills.exists() or self.payments.exists()):
             raise ValidationError({"firm": "This representative has financial history. Create a new representative for the new affiliation."})
-        if self.firm_id and self.firm.source_type == Firm.SourceType.LOCAL_MARKET:
-            raise ValidationError("Local market firms should not have representatives.")
 
     def save(self, *args, **kwargs):
         old_firm = Representative.objects.filter(pk=self.pk).values_list("firm_id", flat=True).first() if self.pk else None
@@ -136,6 +130,9 @@ class Representative(models.Model):
 # Bill means invoice/purchase bill received from a firm.
 # A bill increases the debt.
 class BillQuerySet(models.QuerySet):
+    def enabled(self):
+        return self.available().filter(is_disabled=False)
+
     def available(self):
         deleted_sources = LedgerEntry.objects.filter(entry_type="bill_created", is_deleted=True, bill_id__isnull=False).values("bill_id")
         return self.filter(Q(creation_batch__isnull=True) | Q(creation_batch__status="active")).exclude(pk__in=deleted_sources)
@@ -161,7 +158,7 @@ class Bill(models.Model):
     )
 
     # The rep who brought this bill.
-    # Optional because local market has no rep.
+    # Optional for local-market suppliers.
     representative = models.ForeignKey(
         Representative,
         on_delete=models.SET_NULL,
@@ -170,7 +167,8 @@ class Bill(models.Model):
         related_name="bills",
     )
 
-    bill_number = models.CharField(max_length=100)
+    bill_number = models.CharField(max_length=100, blank=True)
+    is_disabled = models.BooleanField(default=False, editable=False)
     bill_date = models.DateField(default=timezone.now)
 
     # Total amount of this new bill.
@@ -203,13 +201,43 @@ class Bill(models.Model):
         if self.representative and self.representative.firm_id != self.firm_id:
             raise ValidationError("Representative must belong to the selected firm.")
 
-        # Local market bills should not have reps.
-        if self.firm and self.firm.source_type == Firm.SourceType.LOCAL_MARKET:
-            if self.representative:
-                raise ValidationError("Local market bills should not have representatives.")
+        if self.firm_id and self.firm.source_type != Firm.SourceType.LOCAL_MARKET and not self.bill_number.strip():
+            raise ValidationError({"bill_number": "A bill number is required for this source type."})
+
+    @property
+    def display_reference(self):
+        return self.bill_number or f"Local Market Bill #{self.pk}"
+
+    @property
+    def remaining_balance(self):
+        if hasattr(self, "_balance_display"):
+            return self._balance_display["remaining"]
+        return balance(LedgerEntry.objects.filter(is_deleted=False).filter(Q(bill_id=self.pk) | Q(bill__isnull=True, payment__bill_id=self.pk))).quantize(Decimal("0.01"))
+
+    @property
+    def carried_debt(self):
+        if hasattr(self, "_balance_display"):
+            return self._balance_display["carried"]
+        return sum(self.incoming_transfers.filter(batch__status="active").values_list("amount", flat=True), Decimal("0.00"))
+
+    @property
+    def transferred_out(self):
+        if hasattr(self, "_balance_display"):
+            return self._balance_display["out"]
+        return sum(self.outgoing_transfers.filter(batch__status="active").values_list("amount", flat=True), Decimal("0.00"))
+
+    @property
+    def effective_amount(self):
+        return self.bill_amount + self.carried_debt
+
+    @property
+    def paid_amount(self):
+        if hasattr(self, "_balance_display"):
+            return self._balance_display["paid"]
+        return -balance(LedgerEntry.objects.filter(is_deleted=False, payment__bill_id=self.pk))
 
     def __str__(self):
-        return f"{self.firm.name} - Bill {self.bill_number}"
+        return f"{self.firm.name} - {self.display_reference}"
 
 
 # Payment means money paid to a firm.
@@ -235,7 +263,7 @@ class Payment(models.Model):
     )
 
     # Optional link to a bill.
-    # Payments may be made against the latest bill or just against total firm debt.
+    # Null is retained for legacy evidence; new postings require one bill.
     bill = models.ForeignKey(
         Bill,
         on_delete=models.SET_NULL,
@@ -278,10 +306,6 @@ class Payment(models.Model):
         if self.bill and self.bill.firm_id != self.firm_id:
             raise ValidationError("Bill must belong to the selected firm.")
 
-        # Local market payments should not have reps.
-        if self.firm and self.firm.source_type == Firm.SourceType.LOCAL_MARKET:
-            if self.representative:
-                raise ValidationError("Local market payments should not have representatives.")
 
     def __str__(self):
         return f"{self.firm.name} payment - {self.amount}"
@@ -294,6 +318,8 @@ class TransactionBatch(models.Model):
         TRANSACTION = "transaction", "Transaction"
         REVERSAL = "reversal", "Reversal"
         RESTORATION = "restoration", "Restoration"
+        CARRY_FORWARD = "carry_forward", "Debt Carry Forward"
+        TRANSFER_UNDO = "transfer_undo", "Undo Debt Carry Forward"
 
     class Status(models.TextChoices):
         ACTIVE = "active", "Active"
@@ -366,6 +392,30 @@ class DeletionGroup(models.Model):
     reason = models.CharField(max_length=500)
 
 
+class BillCarryForward(models.Model):
+    """Immutable evidence of reallocating debt within one supplier account."""
+    batch = models.OneToOneField(TransactionBatch, on_delete=models.PROTECT, related_name="carry_forward")
+    source = models.ForeignKey(Bill, on_delete=models.PROTECT, related_name="outgoing_transfers")
+    destination = models.ForeignKey(Bill, on_delete=models.PROTECT, related_name="incoming_transfers")
+    amount = models.DecimalField(max_digits=12, decimal_places=2)
+    receipt = models.JSONField(editable=False)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        constraints = [
+            models.CheckConstraint(condition=~Q(source=models.F("destination")), name="transfer_different_bills"),
+            models.CheckConstraint(condition=Q(amount__gte=0, amount__lte=MAX_AMOUNT) & Exact(Round("amount", 2), models.F("amount")), name="transfer_supported_exact_amount"),
+        ]
+
+    def save(self, *args, **kwargs):
+        from .batch_context import current_batch
+        if self.pk or current_batch() is None or current_batch().pk != self.batch_id:
+            raise ValidationError("Carry-forward receipts are immutable and require the posting service.")
+        if self.source.firm_id != self.destination.firm_id or self.source.firm_id != self.batch.firm_id:
+            raise ValidationError("Carry-forward bills must belong to the same firm.")
+        return super().save(*args, **kwargs)
+
+
 class BillEditEvent(models.Model):
     batch = models.ForeignKey(TransactionBatch, on_delete=models.PROTECT, related_name="edit_events")
     bill = models.ForeignKey(Bill, on_delete=models.PROTECT)
@@ -403,6 +453,8 @@ class LedgerEntry(models.Model):
         ADJUSTMENT = "adjustment", "Adjustment"
         REVERSAL = "reversal", "Reversal"
         RESTORATION = "restoration", "Restoration"
+        CARRY_FORWARD = "carry_forward", "Debt Carry Forward"
+        TRANSFER_UNDO = "transfer_undo", "Undo Debt Carry Forward"
 
     # Every ledger entry belongs to one firm.
     firm = models.ForeignKey(
